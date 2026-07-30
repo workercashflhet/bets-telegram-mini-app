@@ -148,23 +148,43 @@ body.fullscreen-mode {
 }
 
 /* ============================================================
-   КОНТЕНТ ДЛЯ GAME - БАННЕР
+   КОНТЕНТ ДЛЯ GAME - БАННЕР (ПОДНЯТ ВЫШЕ)
    ============================================================ */
 .game-content {
     display: flex;
-    align-items: center;
+    align-items: flex-start; /* Баннер прижат к верху */
     justify-content: center;
     height: 100%;
     padding: 10px 0;
 }
 
+.game-banner-link {
+    display: block;
+    width: 100%;
+    max-height: 450px; /* Увеличено, чтобы баннер был выше */
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    cursor: pointer;
+    border-radius: 15px;
+}
+
+.game-banner-link:active {
+    transform: scale(0.98);
+}
+
 .game-banner {
     width: 100%;
-    max-height: 400px;
+    height: 100%;
+    max-height: 450px;
     object-fit: cover;
     border-radius: 15px;
     box-shadow: 0 8px 32px rgba(12, 235, 15, 0.1);
     border: 1px solid rgba(12, 235, 15, 0.1);
+    transition: all 0.3s ease;
+    display: block;
+}
+
+.game-banner-link:hover .game-banner {
+    box-shadow: 0 8px 40px rgba(12, 235, 15, 0.2);
 }
 
 /* ============================================================
@@ -336,8 +356,12 @@ body.fullscreen-mode {
         bottom: 80px;
     }
     
+    .game-banner-link {
+        max-height: 320px;
+    }
+    
     .game-banner {
-        max-height: 280px;
+        max-height: 320px;
         border-radius: 12px;
     }
     
@@ -386,8 +410,12 @@ body.fullscreen-mode {
         bottom: 70px;
     }
     
+    .game-banner-link {
+        max-height: 250px;
+    }
+    
     .game-banner {
-        max-height: 220px;
+        max-height: 250px;
         border-radius: 10px;
     }
 }
