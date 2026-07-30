@@ -224,7 +224,7 @@ body.fullscreen-mode {
     background: var(--accent);
     border: none;
     color: var(--bg-primary);
-    font-size: 24px;
+    font-size: 32px;
     font-weight: 700;
     cursor: pointer;
     transition: all 0.3s ease;
