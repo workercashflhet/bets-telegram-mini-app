@@ -448,10 +448,10 @@ body.fullscreen-mode {
     opacity: 0.6;
 }
 
-/* Иконка Game - БОЛЬШЕ НА 20px (итого 48px) */
+/* Иконка Game - на 10px больше базовой (38px) */
 .nav-item[data-page="game"] .nav-icon {
-    width: 48px;  /* Было 28px, потом 38px, теперь 48px */
-    height: 48px; /* Было 28px, потом 38px, теперь 48px */
+    width: 38px;  /* Было 48px, стало 38px (-10px) */
+    height: 38px; /* Было 48px, стало 38px (-10px) */
 }
 
 /* Активное состояние для всех иконок */
@@ -462,9 +462,9 @@ body.fullscreen-mode {
     filter: drop-shadow(0 0 8px rgba(99, 102, 241, 0.4));
 }
 
-/* Активная иконка Game - чуть меньше масштаб */
+/* Активная иконка Game */
 .nav-item[data-page="game"].active .nav-icon {
-    transform: scale(1.05) translateY(-2px);
+    transform: scale(1.08) translateY(-2px);
 }
 
 /* Эффект при клике */
@@ -513,10 +513,10 @@ body.fullscreen-mode {
         height: 24px;
     }
     
-    /* Иконка Game на маленьких экранах - тоже больше */
+    /* Иконка Game на маленьких экранах */
     .nav-item[data-page="game"] .nav-icon {
-        width: 40px;  /* Было 24px, потом 32px, теперь 40px */
-        height: 40px; /* Было 24px, потом 32px, теперь 40px */
+        width: 32px;  /* Было 40px, стало 32px (-8px) */
+        height: 32px; /* Было 40px, стало 32px (-8px) */
     }
     
     .nav-item.active .nav-icon {
@@ -524,7 +524,7 @@ body.fullscreen-mode {
     }
     
     .nav-item[data-page="game"].active .nav-icon {
-        transform: scale(1.05) translateY(-1px);
+        transform: scale(1.06) translateY(-1px);
     }
 }
 
