@@ -384,7 +384,7 @@ body.fullscreen-mode {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 30px;
+    width: 37px; /* ← Увеличьте это значение (было 30px) */
     height: 100%;
     min-height: 32px;
     background: var(--accent);
@@ -395,7 +395,7 @@ body.fullscreen-mode {
     cursor: pointer;
     transition: all 0.3s ease;
     line-height: 1;
-    margin: -4px -1px -4px 0;
+    margin: -4px 0px -4px 0; /* ← Измените правый отступ на 0 или положительное значение */
     box-shadow: 0 0 20px rgba(12, 235, 15, 0.2);
     flex-shrink: 0;
     text-align: center;
@@ -469,9 +469,10 @@ body.fullscreen-mode {
     }
     
     .balance-deposit-btn {
-        width: 40px;
+        width: 40px; /* ← Увеличьте (было 40px, можно 45-50px) */
         min-height: 28px;
         font-size: 20px;
+        margin: -3px 0px -3px 0; /* ← Измените правый отступ */
     }
     
     .balance-item {
@@ -534,11 +535,12 @@ body.fullscreen-mode {
     }
     
     .balance-deposit-btn {
-        width: 60px;
+        width: 60px; /* ← Увеличьте (было 60px) */
         min-height: 24px;
         font-size: 17px;
-   
+        margin: -2px 0px -2px 0; /* ← Измените правый отступ */
     }
+
     
     .balance-item {
         gap: 2px;
