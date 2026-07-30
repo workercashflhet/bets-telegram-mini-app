@@ -156,7 +156,7 @@ body.fullscreen-mode {
     right: 0;
     bottom: 100px;
     padding: 0 16px;
-    overflow-y: auto;
+    overflow: hidden; /* Скрываем скролл на контейнере */
 }
 
 .tab-content {
@@ -213,15 +213,38 @@ body.fullscreen-mode {
 }
 
 /* ============================================================
-   КОНТЕНТ ДЛЯ GAME
+   КОНТЕНТ ДЛЯ GAME - СКРОЛЛ
    ============================================================ */
 .game-content {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
     height: 100%;
-    padding: 10px 0;
+    padding: 10px 0 20px;
     gap: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+    padding-right: 2px;
+}
+
+/* Кастомизация скроллбара для game-content */
+.game-content::-webkit-scrollbar {
+    width: 4px;
+}
+
+.game-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.game-content::-webkit-scrollbar-thumb {
+    background: var(--accent);
+    border-radius: 2px;
+    opacity: 0.5;
+}
+
+.game-content::-webkit-scrollbar-thumb:hover {
+    opacity: 1;
 }
 
 /* ============================================================
@@ -238,6 +261,7 @@ body.fullscreen-mode {
     touch-action: pan-y;
     -webkit-user-select: none;
     user-select: none;
+    flex-shrink: 0; /* Запрещаем сжатие карусели */
 }
 
 .carousel-track {
@@ -319,6 +343,7 @@ body.fullscreen-mode {
     margin-top: 14px;
     margin-bottom: 6px;
     padding-left: 2px;
+    flex-shrink: 0;
 }
 
 .games-title-text {
@@ -337,6 +362,7 @@ body.fullscreen-mode {
     gap: 12px;
     margin-top: 6px;
     width: 100%;
+    flex-shrink: 0;
 }
 
 .game-card {
@@ -375,6 +401,7 @@ body.fullscreen-mode {
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     cursor: pointer;
     aspect-ratio: 16 / 9;
+    flex-shrink: 0;
 }
 
 .game-card-full:active {
@@ -395,6 +422,7 @@ body.fullscreen-mode {
     width: 100%;
     height: 40px;
     margin-top: 12px;
+    margin-bottom: 8px;
     padding: 0 20px;
     background: rgba(0, 0, 0, 0.5);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
@@ -416,6 +444,7 @@ body.fullscreen-mode {
         0 0 40px rgba(12, 235, 15, 0.05);
     position: relative;
     overflow: hidden;
+    flex-shrink: 0;
 }
 
 .free-spin-btn::before {
