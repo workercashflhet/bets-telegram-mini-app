@@ -448,10 +448,10 @@ body.fullscreen-mode {
     opacity: 0.6;
 }
 
-/* Иконка Game - БОЛЬШЕ НА 10px */
+/* Иконка Game - БОЛЬШЕ НА 20px (итого 48px) */
 .nav-item[data-page="game"] .nav-icon {
-    width: 38px;  /* Было 28px */
-    height: 38px; /* Было 28px */
+    width: 48px;  /* Было 28px, потом 38px, теперь 48px */
+    height: 48px; /* Было 28px, потом 38px, теперь 48px */
 }
 
 /* Активное состояние для всех иконок */
@@ -515,8 +515,8 @@ body.fullscreen-mode {
     
     /* Иконка Game на маленьких экранах - тоже больше */
     .nav-item[data-page="game"] .nav-icon {
-        width: 32px;  /* Было 24px */
-        height: 32px; /* Было 24px */
+        width: 40px;  /* Было 24px, потом 32px, теперь 40px */
+        height: 40px; /* Было 24px, потом 32px, теперь 40px */
     }
     
     .nav-item.active .nav-icon {
