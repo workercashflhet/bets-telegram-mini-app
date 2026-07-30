@@ -246,7 +246,7 @@ body.fullscreen-mode {
 }
 
 /* ============================================================
-   КАРТОЧКИ ПОД КАРУСЕЛЬЮ
+   КАРТОЧКИ ПОД КАРУСЕЛЬЮ - НА ВСЮ ШИРИНУ
    ============================================================ */
 .game-cards-row {
     display: flex;
@@ -256,15 +256,15 @@ body.fullscreen-mode {
 }
 
 .game-card {
-    flex: 0 0 auto;
-    width: calc(50% - 6px);
-    max-width: 200px;
+    flex: 1;
+    min-width: 0;
     border-radius: 15px;
     overflow: hidden;
     box-shadow: 0 4px 20px rgba(12, 235, 15, 0.08);
     border: 1px solid rgba(12, 235, 15, 0.08);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     cursor: pointer;
+    aspect-ratio: 1 / 1;
 }
 
 .game-card:active {
@@ -273,7 +273,7 @@ body.fullscreen-mode {
 
 .game-card-image {
     width: 100%;
-    height: auto;
+    height: 100%;
     display: block;
     object-fit: cover;
 }
@@ -504,7 +504,6 @@ body.fullscreen-mode {
     
     .game-card {
         border-radius: 12px;
-        max-width: 160px;
     }
     
     .bottom-nav {
@@ -574,7 +573,6 @@ body.fullscreen-mode {
     
     .game-card {
         border-radius: 10px;
-        max-width: 130px;
     }
 }
 
