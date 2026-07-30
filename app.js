@@ -15,10 +15,23 @@ const state = {
 
 // Initialize app
 document.addEventListener('DOMContentLoaded', () => {
-    // Expand Telegram Web App
+    // Расширяем приложение на весь экран
     tg.expand();
+    
+    // Устанавливаем полноэкранный режим
+    try {
+        tg.requestFullscreen();
+    } catch (e) {
+        console.log('Fullscreen not available immediately');
+    }
+    
+    // Уведомляем Telegram, что приложение готово
     tg.ready();
-
+    
+    // Настройка внешнего вида
+    tg.setBackgroundColor('#0a0a0f');
+    tg.setHeaderColor('#0a0a0f');
+    
     // Initialize user
     initializeUser();
     
@@ -30,6 +43,20 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Update UI
     updateUI();
+    
+    // Обработчик изменения размера
+    window.addEventListener('resize', () => {
+        if (tg.isExpanded) {
+            tg.expand();
+        }
+    });
+    
+    // Обработчик события изменения вьюпорта
+    tg.onEvent('viewportChanged', () => {
+        if (!tg.isExpanded) {
+            tg.expand();
+        }
+    });
 });
 
 // Initialize user from Telegram
@@ -141,7 +168,7 @@ function setupEventListeners() {
     });
 
     // Close app on back button
-    document.addEventListener('backButtonClicked', () => {
+    tg.onEvent('backButtonClicked', () => {
         tg.close();
     });
 }

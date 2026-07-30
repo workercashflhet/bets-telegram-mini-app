@@ -17,26 +17,47 @@
     --shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
 }
 
+html, body {
+    height: 100%;
+    height: 100dvh;
+    overflow: hidden;
+}
+
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     background: var(--bg-primary);
     color: var(--text-primary);
-    min-height: 100vh;
-    overflow-x: hidden;
+    overflow: hidden;
+}
+
+body.fullscreen-mode {
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
 }
 
 #app {
     max-width: 480px;
     margin: 0 auto;
     padding: 0 16px 80px;
-    min-height: 100vh;
+    height: 100%;
+    max-height: 100vh;
+    max-height: 100dvh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
     background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
 }
 
 /* Header */
 .header {
     padding: 12px 0 8px;
     border-bottom: 1px solid var(--border-color);
+    position: sticky;
+    top: 0;
+    background: var(--bg-primary);
+    z-index: 100;
 }
 
 .header-top {
@@ -79,6 +100,10 @@ body {
     gap: 8px;
     padding: 16px 0;
     border-bottom: 1px solid var(--border-color);
+    position: sticky;
+    top: 60px;
+    background: var(--bg-primary);
+    z-index: 99;
 }
 
 .tab-btn {
@@ -107,7 +132,8 @@ body {
 
 /* Main Content */
 .main-content {
-    padding: 16px 0;
+    padding: 16px 0 100px;
+    flex: 1;
 }
 
 /* Balance Section */
@@ -208,6 +234,12 @@ body {
     padding: 16px;
     margin-bottom: 20px;
     text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.nft-message:active {
+    transform: scale(0.98);
 }
 
 .nft-message p {
@@ -393,4 +425,16 @@ body {
 
 .loading {
     animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* Дополнительные стили для полноэкранного режима */
+@media (display-mode: fullscreen) {
+    body {
+        background: var(--bg-primary);
+    }
+    
+    #app {
+        padding-top: env(safe-area-inset-top);
+        padding-bottom: env(safe-area-inset-bottom);
+    }
 }
