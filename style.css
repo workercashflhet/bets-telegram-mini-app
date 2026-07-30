@@ -1065,7 +1065,7 @@ body.fullscreen-mode {
     }
     
     .balance-island {
-        padding: 3px 6px 3px 6px;
+        padding: 3px 0px 3px 6px;
         height: 24px;
         min-height: 24px;
         border-radius: 8px 0 0 8px;
