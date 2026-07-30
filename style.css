@@ -163,8 +163,8 @@ body.fullscreen-mode {
     right: 16px;
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 4px 8px 4px 10px;
+    gap: 0px;
+    padding: 4px 0px 4px 10px;
     background: rgba(0, 0, 0, 0.6);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     backdrop-filter: blur(20px) saturate(180%);
@@ -176,6 +176,7 @@ body.fullscreen-mode {
         0 0 30px rgba(12, 235, 15, 0.03);
     z-index: 10;
     animation: floatGlow 4s ease-in-out infinite;
+    overflow: hidden;
 }
 
 .balance-item {
@@ -208,35 +209,33 @@ body.fullscreen-mode {
     width: 1px;
     height: 26px;
     background: rgba(255, 255, 255, 0.1);
-    margin: 0 2px;
+    margin: 0 8px 0 6px;
 }
 
 .balance-deposit-btn {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 40px;
+    width: 32px;
     height: 100%;
-    min-height: 28px;
-    border-radius: 6px;
+    min-height: 32px;
+    border-radius: 0 10px 10px 0;
     background: var(--accent);
     border: none;
     color: var(--bg-primary);
-    font-size: 18px;
+    font-size: 20px;
     font-weight: 700;
     cursor: pointer;
     transition: all 0.3s ease;
     padding: 0;
     line-height: 1;
-    margin-left: 4px;
-    margin-top: -4px;
-    margin-bottom: -4px;
+    margin: -4px 0;
     box-shadow: 0 0 20px rgba(12, 235, 15, 0.2);
     flex-shrink: 0;
 }
 
 .balance-deposit-btn:active {
-    transform: scale(0.9);
+    transform: scale(0.92);
 }
 
 /* Адаптив для баланса */
@@ -244,8 +243,7 @@ body.fullscreen-mode {
     .balance-island {
         top: -4px;
         right: 12px;
-        padding: 3px 6px 3px 8px;
-        gap: 6px;
+        padding: 3px 0px 3px 8px;
         border-radius: 10px;
     }
     
@@ -261,19 +259,15 @@ body.fullscreen-mode {
     
     .balance-divider {
         height: 20px;
+        margin: 0 6px 0 4px;
     }
     
     .balance-deposit-btn {
-        width: 16px;
-        min-height: 22px;
-        font-size: 15px;
-        border-radius: 4px;
-        margin-top: -3px;
-        margin-bottom: -3px;
-    }
-    
-    .balance-item:last-child {
-        gap: 1px;
+        width: 26px;
+        min-height: 26px;
+        font-size: 16px;
+        border-radius: 0 8px 8px 0;
+        margin: -3px 0;
     }
 }
 
@@ -281,8 +275,7 @@ body.fullscreen-mode {
     .balance-island {
         top: -6px;
         right: 8px;
-        padding: 2px 5px 2px 6px;
-        gap: 4px;
+        padding: 2px 0px 2px 6px;
         border-radius: 8px;
     }
     
@@ -298,19 +291,15 @@ body.fullscreen-mode {
     
     .balance-divider {
         height: 16px;
+        margin: 0 4px 0 3px;
     }
     
     .balance-deposit-btn {
-        width: 14px;
-        min-height: 18px;
-        font-size: 13px;
-        border-radius: 3px;
-        margin-top: -2px;
-        margin-bottom: -2px;
-    }
-    
-    .balance-item:last-child {
-        gap: 1px;
+        width: 22px;
+        min-height: 22px;
+        font-size: 14px;
+        border-radius: 0 6px 6px 0;
+        margin: -2px 0;
     }
 }
 
