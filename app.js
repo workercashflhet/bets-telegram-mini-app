@@ -1,6 +1,18 @@
 // Telegram Web App initialization
 const tg = window.Telegram.WebApp;
 
+// App state
+const state = {
+    user: null,
+    userId: null,
+    balance: 0.00,
+    inventory: 0,
+    currentTab: 'promocodes',
+    calcValue: '0',
+    calcOperation: null,
+    calcPrevious: null
+};
+
 // Initialize app
 document.addEventListener('DOMContentLoaded', () => {
     // Показываем прелоадер минимум 3 секунды
@@ -37,60 +49,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 3000);
 });
 
-// Добавьте в функцию initializeUser():
-
-function initializeUser() {
-    try {
-        const user = tg.initDataUnsafe?.user;
-        
-        if (user) {
-            state.user = user;
-            state.userId = user.id || Math.floor(Math.random() * 10000);
-            
-            // Обновляем имя пользователя в левом островке
-            const userNameDisplay = document.getElementById('userNameDisplay');
-            if (userNameDisplay) {
-                userNameDisplay.textContent = user.first_name || user.username || 'User';
-            }
-            
-            // Если есть avatar.png, можно использовать фото пользователя
-            const userAvatar = document.getElementById('userAvatar');
-            if (userAvatar && user.photo_url) {
-                userAvatar.src = user.photo_url;
-            }
-            
-            // Update UI
-            document.getElementById('userName').textContent = `@${user.username || 'user'}`;
-            document.getElementById('userId').textContent = `id: ${state.userId}`;
-            
-            // Save to localStorage
-            localStorage.setItem('bets_user', JSON.stringify({
-                username: user.username || 'user',
-                userId: state.userId,
-                firstName: user.first_name || '',
-                lastName: user.last_name || ''
-            }));
-        } else {
-            // Fallback for testing
-            const savedUser = localStorage.getItem('bets_user');
-            if (savedUser) {
-                const userData = JSON.parse(savedUser);
-                document.getElementById('userName').textContent = `@${userData.username}`;
-                document.getElementById('userId').textContent = `id: ${userData.userId}`;
-                state.userId = userData.userId;
-                
-                const userNameDisplay = document.getElementById('userNameDisplay');
-                if (userNameDisplay) {
-                    userNameDisplay.textContent = userData.firstName || userData.username || 'User';
-                }
-            }
-        }
-    } catch (error) {
-        console.error('Error initializing user:', error);
-    }
-}
-
 function initializeApp() {
+    // Initialize user first
+    initializeUser();
+    
     // Setup event listeners
     setupEventListeners();
     
@@ -110,6 +72,103 @@ function initializeApp() {
             tg.expand();
         }
     });
+}
+
+// Initialize user from Telegram
+function initializeUser() {
+    try {
+        // Получаем данные пользователя из Telegram
+        const user = tg.initDataUnsafe?.user;
+        
+        console.log('Telegram user data:', user); // Для отладки
+        
+        if (user) {
+            state.user = user;
+            state.userId = user.id || Math.floor(Math.random() * 10000);
+            
+            // Обновляем имя пользователя в левом островке
+            const userNameDisplay = document.getElementById('userNameDisplay');
+            if (userNameDisplay) {
+                const firstName = user.first_name || '';
+                const lastName = user.last_name || '';
+                const username = user.username || '';
+                
+                // Показываем first_name или username
+                if (firstName) {
+                    userNameDisplay.textContent = firstName + (lastName ? ' ' + lastName : '');
+                } else if (username) {
+                    userNameDisplay.textContent = '@' + username;
+                } else {
+                    userNameDisplay.textContent = 'User';
+                }
+            }
+            
+            // Обновляем аватарку пользователя
+            const userAvatar = document.getElementById('userAvatar');
+            if (userAvatar) {
+                // Если есть photo_url (для некоторых ботов)
+                if (user.photo_url) {
+                    userAvatar.src = user.photo_url;
+                } else {
+                    // Если нет фото, используем Telegram API для получения аватарки
+                    // или оставляем дефолтную
+                    const avatarUrl = `https://t.me/i/userpic/320/${user.id}.jpg`;
+                    userAvatar.src = avatarUrl;
+                    userAvatar.onerror = function() {
+                        // Если аватарка не загрузилась, оставляем дефолтную
+                        this.style.display = 'none';
+                        // Создаем инициалы как fallback
+                        const fallbackText = document.createElement('span');
+                        fallbackText.className = 'user-avatar-fallback';
+                        const firstLetter = (user.first_name || user.username || 'U')[0].toUpperCase();
+                        fallbackText.textContent = firstLetter;
+                        this.parentNode.insertBefore(fallbackText, this);
+                        this.style.display = 'none';
+                    };
+                }
+            }
+            
+            // Обновляем данные в шапке (для обратной совместимости)
+            const userNameElement = document.getElementById('userName');
+            if (userNameElement) {
+                userNameElement.textContent = `@${user.username || 'user'}`;
+            }
+            const userIdElement = document.getElementById('userId');
+            if (userIdElement) {
+                userIdElement.textContent = `id: ${state.userId}`;
+            }
+            
+            // Сохраняем в localStorage
+            localStorage.setItem('bets_user', JSON.stringify({
+                username: user.username || 'user',
+                userId: state.userId,
+                firstName: user.first_name || '',
+                lastName: user.last_name || '',
+                photoUrl: user.photo_url || ''
+            }));
+        } else {
+            // Fallback для тестирования (если пользователь не из Telegram)
+            console.warn('No Telegram user data available, using fallback');
+            const savedUser = localStorage.getItem('bets_user');
+            if (savedUser) {
+                const userData = JSON.parse(savedUser);
+                const userNameDisplay = document.getElementById('userNameDisplay');
+                if (userNameDisplay) {
+                    userNameDisplay.textContent = userData.firstName || userData.username || 'User';
+                }
+                state.userId = userData.userId;
+            } else {
+                // Демо-пользователь
+                const userNameDisplay = document.getElementById('userNameDisplay');
+                if (userNameDisplay) {
+                    userNameDisplay.textContent = 'Demo User';
+                }
+                state.userId = Math.floor(Math.random() * 10000);
+            }
+        }
+    } catch (error) {
+        console.error('Error initializing user:', error);
+    }
 }
 
 // Carousel state
@@ -369,7 +428,9 @@ function setupEventListeners() {
 
 // Export functions for debugging
 window.betsApp = {
+    state,
     showTab,
     goToSlide,
-    nextSlide
+    nextSlide,
+    initializeUser
 };
