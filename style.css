@@ -49,17 +49,18 @@ body.fullscreen-mode {
 }
 
 /* ============================================================
-   ЦЕНТРАЛЬНАЯ ИКОНКА СВЕРХУ - ПОДНЯТА НА 20px ВЫШЕ
+   ЦЕНТРАЛЬНАЯ ИКОНКА СВЕРХУ
    ============================================================ */
 .center-icon {
     position: absolute;
-    top: 80px;  /* Было 100px, стало 80px (-20px) */
+    top: 80px;
     left: 50%;
     transform: translateX(-50%);
     display: flex;
     align-items: center;
     justify-content: center;
     animation: iconPulse 3s ease-in-out infinite;
+    z-index: 10;
 }
 
 .center-icon svg {
@@ -69,7 +70,6 @@ body.fullscreen-mode {
     filter: drop-shadow(0 0 30px rgba(12, 235, 15, 0.3));
 }
 
-/* Анимация пульсации для иконки */
 @keyframes iconPulse {
     0%, 100% {
         opacity: 0.9;
@@ -79,6 +79,92 @@ body.fullscreen-mode {
         opacity: 1;
         transform: translateX(-50%) scale(1.05);
     }
+}
+
+/* ============================================================
+   КОНТЕНТ ДЛЯ ВКЛАДОК
+   ============================================================ */
+.tabs-content {
+    position: absolute;
+    top: 130px;
+    left: 0;
+    right: 0;
+    bottom: 100px;
+    padding: 0 16px;
+    overflow-y: auto;
+}
+
+.tab-content {
+    display: none;
+    width: 100%;
+    height: 100%;
+    animation: fadeIn 0.3s ease;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ============================================================
+   ПЛЕЙСХОЛДЕР ДЛЯ PROFILE И SETTINGS
+   ============================================================ */
+.placeholder-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    text-align: center;
+    color: var(--text-secondary);
+}
+
+.placeholder-icon {
+    font-size: 64px;
+    margin-bottom: 16px;
+    opacity: 0.3;
+}
+
+.placeholder-title {
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+}
+
+.placeholder-text {
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+/* ============================================================
+   КОНТЕНТ ДЛЯ GAME - БАННЕР
+   ============================================================ */
+.game-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: 10px 0;
+}
+
+.game-banner {
+    width: 100%;
+    max-height: 400px;
+    object-fit: cover;
+    border-radius: 15px;
+    box-shadow: 0 8px 32px rgba(12, 235, 15, 0.1);
+    border: 1px solid rgba(12, 235, 15, 0.1);
 }
 
 /* ============================================================
@@ -106,7 +192,6 @@ body.fullscreen-mode {
     animation: floatGlow 4s ease-in-out infinite;
 }
 
-/* Анимация свечения */
 @keyframes floatGlow {
     0%, 100% {
         box-shadow: 
@@ -123,7 +208,6 @@ body.fullscreen-mode {
     }
 }
 
-/* Эффект стекла (граница) */
 .bottom-nav::before {
     content: '';
     position: absolute;
@@ -160,7 +244,6 @@ body.fullscreen-mode {
     min-height: 48px;
 }
 
-/* Фон активного элемента */
 .nav-item::after {
     content: '';
     position: absolute;
@@ -182,7 +265,6 @@ body.fullscreen-mode {
     transform: translateY(-2px);
 }
 
-/* Индикатор активной вкладки */
 .nav-item.active::before {
     content: '';
     position: absolute;
@@ -208,11 +290,6 @@ body.fullscreen-mode {
     }
 }
 
-/* ============================================================
-   СТИЛИ ДЛЯ ИКОНОК
-   ============================================================ */
-
-/* Базовые стили для всех иконок */
 .nav-icon {
     width: 38px;
     height: 38px;
@@ -222,13 +299,11 @@ body.fullscreen-mode {
     opacity: 0.5;
 }
 
-/* Иконка Game - на 10px больше базовой */
 .nav-item[data-page="game"] .nav-icon {
     width: 48px;
     height: 48px;
 }
 
-/* Активное состояние для всех иконок */
 .nav-item.active .nav-icon {
     transform: scale(1.15) translateY(-2px);
     filter: grayscale(0) brightness(1);
@@ -236,48 +311,34 @@ body.fullscreen-mode {
     filter: drop-shadow(0 0 12px rgba(12, 235, 15, 0.3));
 }
 
-/* Активная иконка Game */
 .nav-item[data-page="game"].active .nav-icon {
     transform: scale(1.08) translateY(-2px);
     filter: drop-shadow(0 0 16px rgba(12, 235, 15, 0.4));
 }
 
-/* Эффект при клике */
 .nav-item:active {
     transform: scale(0.92);
-}
-
-/* Toast Notification */
-.toast {
-    position: fixed;
-    top: 20px;
-    left: 50%;
-    transform: translateX(-50%) translateY(-100px);
-    background: var(--bg-card);
-    color: var(--text-primary);
-    padding: 12px 24px;
-    border-radius: 12px;
-    border: 1px solid var(--accent);
-    box-shadow: 0 0 30px rgba(12, 235, 15, 0.15);
-    z-index: 9999;
-    transition: transform 0.3s ease;
-    max-width: 90%;
-    text-align: center;
-}
-
-.toast.show {
-    transform: translateX(-50%) translateY(0);
 }
 
 /* Responsive */
 @media (max-width: 420px) {
     .center-icon {
-        top: 60px;  /* Адаптив: было 80px, стало 60px (-20px) */
+        top: 60px;
     }
     
     .center-icon svg {
         width: 62px;
         height: 22px;
+    }
+    
+    .tabs-content {
+        top: 110px;
+        bottom: 80px;
+    }
+    
+    .game-banner {
+        max-height: 280px;
+        border-radius: 12px;
     }
     
     .bottom-nav {
@@ -312,12 +373,22 @@ body.fullscreen-mode {
 
 @media (max-width: 360px) {
     .center-icon {
-        top: 50px;  /* Адаптив: было 70px, стало 50px (-20px) */
+        top: 50px;
     }
     
     .center-icon svg {
         width: 52px;
         height: 18px;
+    }
+    
+    .tabs-content {
+        top: 100px;
+        bottom: 70px;
+    }
+    
+    .game-banner {
+        max-height: 220px;
+        border-radius: 10px;
     }
 }
 
@@ -327,14 +398,12 @@ body.fullscreen-mode {
     }
 }
 
-/* Для экранов с вырезом (notch) */
 @supports (padding: max(0px)) {
     .bottom-nav {
         bottom: max(40px, env(safe-area-inset-bottom, 40px));
     }
 }
 
-/* Scrollbar */
 ::-webkit-scrollbar {
     width: 6px;
 }
@@ -348,7 +417,6 @@ body.fullscreen-mode {
     border-radius: 3px;
 }
 
-/* Дополнительные стили для полноэкранного режима */
 @media (display-mode: fullscreen) {
     body {
         background: var(--bg-primary);

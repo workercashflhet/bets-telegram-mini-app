@@ -23,6 +23,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Setup event listeners
     setupEventListeners();
     
+    // Show initial tab
+    showTab('profile');
+    
     // Обработчик изменения размера
     window.addEventListener('resize', () => {
         if (tg.isExpanded) {
@@ -38,14 +41,30 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
+// Show tab content
+function showTab(page) {
+    // Скрываем все табы
+    document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    
+    // Показываем выбранный таб
+    const targetTab = document.getElementById(`tab-${page}`);
+    if (targetTab) {
+        targetTab.classList.add('active');
+    }
+}
+
 // Setup event listeners
 function setupEventListeners() {
-    // Bottom navigation - без всплывающих уведомлений
+    // Bottom navigation
     document.querySelectorAll('.nav-item').forEach(item => {
         item.addEventListener('click', (e) => {
             document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
             item.classList.add('active');
-            // Убраны все showToast() вызовы
+            
+            const page = item.dataset.page;
+            showTab(page);
         });
     });
 
@@ -55,29 +74,7 @@ function setupEventListeners() {
     });
 }
 
-// Функция showToast оставлена для возможного использования в будущем
-function showToast(message, duration = 3000) {
-    const existingToast = document.querySelector('.toast');
-    if (existingToast) {
-        existingToast.remove();
-    }
-    
-    const toast = document.createElement('div');
-    toast.className = 'toast';
-    toast.textContent = message;
-    document.body.appendChild(toast);
-    
-    setTimeout(() => {
-        toast.classList.add('show');
-    }, 10);
-    
-    setTimeout(() => {
-        toast.classList.remove('show');
-        setTimeout(() => {
-            toast.remove();
-        }, 300);
-    }, duration);
-}
-
 // Export functions for debugging
-window.betsApp = {};
+window.betsApp = {
+    showTab
+};
