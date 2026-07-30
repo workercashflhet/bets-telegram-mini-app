@@ -282,7 +282,7 @@ body.fullscreen-mode {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 37px;
+    width: 48px;
     height: 100%;
     min-height: 32px;
     border-radius: 0 11px 11px 0;
@@ -302,9 +302,7 @@ body.fullscreen-mode {
     box-sizing: border-box;
 }
 
-.balance-deposit-btn:active {
-    transform: scale(0.92);
-}
+
 
 /* ============================================================
    АДАПТИВ
