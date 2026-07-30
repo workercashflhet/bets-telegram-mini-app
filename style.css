@@ -449,7 +449,7 @@ body.fullscreen-mode {
     }
     
     .balance-island {
-        position: absolute;
+        position: fixed;
         top: 0px;
         right: 12px;
         border-radius: 10px;
