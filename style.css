@@ -6,15 +6,15 @@
 }
 
 :root {
-    --bg-primary: #0a0a0f;
-    --bg-secondary: #1a1a2e;
-    --bg-card: #16213e;
+    --bg-primary: #000000;
+    --bg-secondary: #0a0a0a;
+    --bg-card: #111111;
     --text-primary: #ffffff;
-    --text-secondary: #a0aec0;
-    --accent: #6366f1;
-    --accent-hover: #818cf8;
-    --border-color: #2d3748;
-    --shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    --text-secondary: #888888;
+    --accent: #0ceb0f;
+    --accent-hover: #33ff36;
+    --border-color: #222222;
+    --shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
 }
 
 html, body {
@@ -44,7 +44,7 @@ body.fullscreen-mode {
     max-height: 100vh;
     max-height: 100dvh;
     overflow-y: auto;
-    background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+    background: var(--bg-primary);
     padding-top: env(safe-area-inset-top);
     padding-bottom: env(safe-area-inset-bottom);
 }
@@ -91,6 +91,7 @@ body.fullscreen-mode {
     background: var(--bg-card);
     padding: 4px 12px;
     border-radius: 12px;
+    border: 1px solid var(--border-color);
 }
 
 /* Navigation Tabs */
@@ -120,9 +121,9 @@ body.fullscreen-mode {
 
 .tab-btn.active {
     background: var(--accent);
-    color: white;
+    color: var(--bg-primary);
     border-color: var(--accent);
-    box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
+    box-shadow: 0 0 30px rgba(12, 235, 15, 0.3);
 }
 
 .tab-btn:active {
@@ -161,10 +162,8 @@ body.fullscreen-mode {
 }
 
 .amount {
-    background: linear-gradient(135deg, #fbbf24, #f59e0b);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: var(--accent);
+    -webkit-text-fill-color: var(--accent);
 }
 
 .balance-buttons {
@@ -185,8 +184,8 @@ body.fullscreen-mode {
 
 .btn-primary {
     background: var(--accent);
-    color: white;
-    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+    color: var(--bg-primary);
+    box-shadow: 0 4px 20px rgba(12, 235, 15, 0.3);
 }
 
 .btn-primary:active {
@@ -222,13 +221,13 @@ body.fullscreen-mode {
 .inventory-count {
     font-size: 32px;
     font-weight: 700;
-    color: var(--text-primary);
+    color: var(--accent);
 }
 
 /* NFT Message */
 .nft-message {
-    background: rgba(99, 102, 241, 0.1);
-    border: 1px solid rgba(99, 102, 241, 0.2);
+    background: rgba(12, 235, 15, 0.05);
+    border: 1px solid rgba(12, 235, 15, 0.15);
     border-radius: 12px;
     padding: 16px;
     margin-bottom: 20px;
@@ -245,6 +244,10 @@ body.fullscreen-mode {
     color: var(--text-secondary);
     font-size: 14px;
     line-height: 1.5;
+}
+
+.nft-message p::before {
+    content: '💎 ';
 }
 
 /* Calculator */
@@ -266,6 +269,7 @@ body.fullscreen-mode {
     min-height: 60px;
     border: 1px solid var(--border-color);
     font-family: 'Courier New', monospace;
+    color: var(--accent);
 }
 
 .calc-buttons {
@@ -289,26 +293,34 @@ body.fullscreen-mode {
 .calc-btn:active {
     transform: scale(0.92);
     background: var(--accent);
+    color: var(--bg-primary);
 }
 
 .calc-btn[data-value="+"] {
-    color: #4ade80;
+    color: var(--accent);
 }
 
 .calc-btn[data-value="-"] {
-    color: #f87171;
+    color: #ff4444;
 }
 
 .calc-btn[data-value="x"] {
-    color: #60a5fa;
+    color: #4488ff;
 }
 
 .calc-btn[data-value="o"] {
-    color: #fbbf24;
+    color: #ffaa00;
+}
+
+.calc-btn[data-value="+"]:active,
+.calc-btn[data-value="-"]:active,
+.calc-btn[data-value="x"]:active,
+.calc-btn[data-value="o"]:active {
+    color: var(--bg-primary);
 }
 
 /* ============================================================
-   BOTTOM NAVIGATION - LIQUID GLASS STYLE (3 ВКЛАДКИ)
+   BOTTOM NAVIGATION - LIQUID GLASS STYLE
    ============================================================ */
 .bottom-nav {
     position: fixed;
@@ -318,16 +330,16 @@ body.fullscreen-mode {
     max-width: 420px;
     width: calc(100% - 32px);
     display: flex;
-    background: rgba(26, 26, 46, 0.35);
+    background: rgba(0, 0, 0, 0.7);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     backdrop-filter: blur(20px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(12, 235, 15, 0.15);
     border-radius: 24px;
     padding: 6px 10px;
     box-shadow: 
-        0 8px 32px rgba(0, 0, 0, 0.4),
-        inset 0 1px 0 rgba(255, 255, 255, 0.1),
-        0 0 80px rgba(99, 102, 241, 0.05);
+        0 8px 32px rgba(0, 0, 0, 0.8),
+        inset 0 1px 0 rgba(12, 235, 15, 0.1),
+        0 0 60px rgba(12, 235, 15, 0.05);
     z-index: 1000;
     animation: floatGlow 4s ease-in-out infinite;
 }
@@ -336,16 +348,16 @@ body.fullscreen-mode {
 @keyframes floatGlow {
     0%, 100% {
         box-shadow: 
-            0 8px 32px rgba(0, 0, 0, 0.4),
-            inset 0 1px 0 rgba(255, 255, 255, 0.1),
-            0 0 80px rgba(99, 102, 241, 0.05);
+            0 8px 32px rgba(0, 0, 0, 0.8),
+            inset 0 1px 0 rgba(12, 235, 15, 0.1),
+            0 0 60px rgba(12, 235, 15, 0.05);
     }
     50% {
         box-shadow: 
-            0 8px 32px rgba(0, 0, 0, 0.4),
-            inset 0 1px 0 rgba(255, 255, 255, 0.1),
-            0 0 120px rgba(99, 102, 241, 0.15),
-            0 0 200px rgba(99, 102, 241, 0.05);
+            0 8px 32px rgba(0, 0, 0, 0.8),
+            inset 0 1px 0 rgba(12, 235, 15, 0.1),
+            0 0 100px rgba(12, 235, 15, 0.12),
+            0 0 150px rgba(12, 235, 15, 0.05);
     }
 }
 
@@ -358,9 +370,9 @@ body.fullscreen-mode {
     padding: 1px;
     background: linear-gradient(
         135deg,
-        rgba(255, 255, 255, 0.1) 0%,
-        rgba(255, 255, 255, 0.02) 50%,
-        rgba(255, 255, 255, 0.1) 100%
+        rgba(12, 235, 15, 0.2) 0%,
+        rgba(12, 235, 15, 0.05) 50%,
+        rgba(12, 235, 15, 0.15) 100%
     );
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
@@ -392,16 +404,16 @@ body.fullscreen-mode {
     position: absolute;
     inset: 4px;
     border-radius: 14px;
-    background: rgba(99, 102, 241, 0);
+    background: rgba(12, 235, 15, 0);
     transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
     z-index: -1;
 }
 
 .nav-item.active::after {
-    background: rgba(99, 102, 241, 0.15);
+    background: rgba(12, 235, 15, 0.12);
     box-shadow: 
-        inset 0 1px 0 rgba(255, 255, 255, 0.05),
-        0 4px 20px rgba(99, 102, 241, 0.15);
+        inset 0 1px 0 rgba(12, 235, 15, 0.05),
+        0 4px 20px rgba(12, 235, 15, 0.1);
 }
 
 .nav-item.active {
@@ -419,7 +431,7 @@ body.fullscreen-mode {
     height: 3px;
     background: var(--accent);
     border-radius: 0 0 3px 3px;
-    box-shadow: 0 0 20px rgba(99, 102, 241, 0.6);
+    box-shadow: 0 0 20px rgba(12, 235, 15, 0.6);
     animation: pulseDot 2s ease-in-out infinite;
 }
 
@@ -435,23 +447,23 @@ body.fullscreen-mode {
 }
 
 /* ============================================================
-   СТИЛИ ДЛЯ ИКОНОК - УВЕЛИЧЕНЫ НА 20px
+   СТИЛИ ДЛЯ ИКОНОК
    ============================================================ */
 
-/* Базовые стили для всех иконок - УВЕЛИЧЕНЫ НА 20px */
+/* Базовые стили для всех иконок */
 .nav-icon {
-    width: 38px;  /* Было 18px, стало 38px (+20px) */
-    height: 38px; /* Было 18px, стало 38px (+20px) */
+    width: 38px;
+    height: 38px;
     object-fit: contain;
     transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-    filter: grayscale(1) brightness(0.6);
-    opacity: 0.6;
+    filter: grayscale(1) brightness(0.5);
+    opacity: 0.5;
 }
 
-/* Иконка Game - на 10px больше базовой (48px) */
+/* Иконка Game - на 10px больше базовой */
 .nav-item[data-page="game"] .nav-icon {
-    width: 48px;  /* Было 28px, стало 48px (+20px) */
-    height: 48px; /* Было 28px, стало 48px (+20px) */
+    width: 48px;
+    height: 48px;
 }
 
 /* Активное состояние для всех иконок */
@@ -459,12 +471,13 @@ body.fullscreen-mode {
     transform: scale(1.15) translateY(-2px);
     filter: grayscale(0) brightness(1);
     opacity: 1;
-    filter: drop-shadow(0 0 8px rgba(99, 102, 241, 0.4));
+    filter: drop-shadow(0 0 12px rgba(12, 235, 15, 0.3));
 }
 
 /* Активная иконка Game */
 .nav-item[data-page="game"].active .nav-icon {
     transform: scale(1.08) translateY(-2px);
+    filter: drop-shadow(0 0 16px rgba(12, 235, 15, 0.4));
 }
 
 /* Эффект при клике */
@@ -482,8 +495,8 @@ body.fullscreen-mode {
     color: var(--text-primary);
     padding: 12px 24px;
     border-radius: 12px;
-    border: 1px solid var(--border-color);
-    box-shadow: var(--shadow);
+    border: 1px solid var(--accent);
+    box-shadow: 0 0 30px rgba(12, 235, 15, 0.15);
     z-index: 9999;
     transition: transform 0.3s ease;
     max-width: 90%;
@@ -507,16 +520,14 @@ body.fullscreen-mode {
         min-height: 40px;
     }
     
-    /* Базовые иконки на маленьких экранах - УВЕЛИЧЕНЫ */
     .nav-icon {
-        width: 32px;  /* Было 16px, стало 32px (+16px) */
-        height: 32px; /* Было 16px, стало 32px (+16px) */
+        width: 32px;
+        height: 32px;
     }
     
-    /* Иконка Game на маленьких экранах */
     .nav-item[data-page="game"] .nav-icon {
-        width: 40px;  /* Было 24px, стало 40px (+16px) */
-        height: 40px; /* Было 24px, стало 40px (+16px) */
+        width: 40px;
+        height: 40px;
     }
     
     .nav-item.active .nav-icon {

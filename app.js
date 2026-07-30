@@ -28,9 +28,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Уведомляем Telegram, что приложение готово
     tg.ready();
     
-    // Настройка внешнего вида
-    tg.setBackgroundColor('#0a0a0f');
-    tg.setHeaderColor('#0a0a0f');
+    // Настройка внешнего вида - НОВЫЕ ЦВЕТА
+    tg.setBackgroundColor('#000000');
+    tg.setHeaderColor('#000000');
     
     // Initialize user
     initializeUser();
