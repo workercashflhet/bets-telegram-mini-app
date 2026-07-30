@@ -153,12 +153,14 @@ body.fullscreen-mode {
 .carousel-container {
     position: relative;
     width: 100%;
-    max-height: 450px;
+    max-height: 440px;
     overflow: hidden;
-    border-radius: 15px;
+    border-radius: 25px;
     box-shadow: 0 8px 32px rgba(12, 235, 15, 0.1);
     border: 1px solid rgba(12, 235, 15, 0.1);
     touch-action: pan-y;
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 .carousel-track {
@@ -166,6 +168,7 @@ body.fullscreen-mode {
     transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     will-change: transform;
     height: 100%;
+    pointer-events: none;
 }
 
 .carousel-slide {
@@ -173,16 +176,18 @@ body.fullscreen-mode {
     display: block;
     height: 100%;
     cursor: pointer;
+    pointer-events: auto;
 }
 
 .carousel-image {
     width: 100%;
     height: 100%;
-    max-height: 450px;
+    max-height: 440px;
     object-fit: cover;
     display: block;
     user-select: none;
     -webkit-user-drag: none;
+    pointer-events: none;
 }
 
 /* Точки навигации */
@@ -199,6 +204,7 @@ body.fullscreen-mode {
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     border-radius: 20px;
+    pointer-events: auto;
 }
 
 .dot {
@@ -208,6 +214,8 @@ body.fullscreen-mode {
     background: rgba(255, 255, 255, 0.3);
     cursor: pointer;
     transition: all 0.3s ease;
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 .dot.active {
@@ -421,12 +429,12 @@ body.fullscreen-mode {
     }
     
     .carousel-container {
-        max-height: 320px;
-        border-radius: 12px;
+        max-height: 310px;
+        border-radius: 20px;
     }
     
     .carousel-image {
-        max-height: 320px;
+        max-height: 310px;
     }
     
     .carousel-dots {
@@ -490,12 +498,12 @@ body.fullscreen-mode {
     }
     
     .carousel-container {
-        max-height: 250px;
-        border-radius: 10px;
+        max-height: 240px;
+        border-radius: 16px;
     }
     
     .carousel-image {
-        max-height: 250px;
+        max-height: 240px;
     }
     
     .carousel-dots {
