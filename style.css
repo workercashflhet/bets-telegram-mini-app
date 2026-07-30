@@ -312,7 +312,7 @@ body.fullscreen-mode {
    ============================================================ */
 .bottom-nav {
     position: fixed;
-    bottom: 40px;
+    bottom: 60px;
     left: 50%;
     transform: translateX(-50%);
     max-width: 400px;
