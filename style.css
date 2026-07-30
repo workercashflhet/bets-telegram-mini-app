@@ -256,24 +256,11 @@ body.fullscreen-mode {
 }
 
 .games-title-text {
-    font-size: 18px;
-    font-weight: 600;
+    font-size: 22px;
+    font-weight: 700;
     color: var(--text-primary);
     letter-spacing: 0.5px;
-    position: relative;
     display: inline-block;
-}
-
-.games-title-text::after {
-    content: '';
-    position: absolute;
-    bottom: -2px;
-    left: 0;
-    width: 100%;
-    height: 2px;
-    background: var(--accent);
-    border-radius: 2px;
-    opacity: 0.3;
 }
 
 /* ============================================================
@@ -534,7 +521,7 @@ body.fullscreen-mode {
     }
     
     .games-title-text {
-        font-size: 16px;
+        font-size: 20px;
     }
     
     .game-cards-row {
@@ -613,7 +600,7 @@ body.fullscreen-mode {
     }
     
     .games-title-text {
-        font-size: 14px;
+        font-size: 18px;
     }
     
     .game-cards-row {
