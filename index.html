@@ -30,9 +30,22 @@
             <!-- Вкладка Game -->
             <div class="tab-content" id="tab-game">
                 <div class="game-content">
-                    <a href="https://t.me/itsrefinelife" target="_blank" class="game-banner-link">
-                        <img src="assets/banner.jpg" alt="Game Banner" class="game-banner">
-                    </a>
+                    <div class="carousel-container">
+                        <div class="carousel-track" id="carouselTrack">
+                            <a href="https://t.me/itsrefinelife" target="_blank" class="carousel-slide">
+                                <img src="assets/banner.jpg" alt="Banner 1" class="carousel-image">
+                            </a>
+                            <a href="https://t.me/itsrefinelife" target="_blank" class="carousel-slide">
+                                <img src="assets/banner2.jpg" alt="Banner 2" class="carousel-image">
+                            </a>
+                        </div>
+                        
+                        <!-- Точки навигации -->
+                        <div class="carousel-dots" id="carouselDots">
+                            <span class="dot active" data-index="0"></span>
+                            <span class="dot" data-index="1"></span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
