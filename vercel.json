@@ -1,6 +1,7 @@
 {
   "version": 2,
   "name": "bets-telegram-mini-app",
+  "outputDirectory": ".",
   "routes": [
     {
       "src": "/(.*)",
