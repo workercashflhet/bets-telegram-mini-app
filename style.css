@@ -469,7 +469,7 @@ body.fullscreen-mode {
     }
     
     .balance-deposit-btn {
-        width: 0px;
+        width: 40px;
         min-height: 28px;
         font-size: 20px;
     }
