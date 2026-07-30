@@ -41,8 +41,7 @@ function initializeApp() {
     // Setup event listeners
     setupEventListeners();
     
-    // Показываем вкладку Game как первую (активная по умолчанию в HTML)
-    // Но также запускаем карусель
+    // Инициализируем карусель
     initializeCarousel();
     
     // Обработчик изменения размера
@@ -267,6 +266,25 @@ function setupEventListeners() {
             showTab(page);
         });
     });
+
+    // Free spin button
+    const freeSpinBtn = document.getElementById('freeSpinBtn');
+    if (freeSpinBtn) {
+        freeSpinBtn.addEventListener('click', () => {
+            tg.showPopup({
+                title: '🎰 Бесплатный спин',
+                message: 'Вы получили бесплатный спин! Крутите колесо удачи!',
+                buttons: [
+                    { id: 'spin', text: '🎰 Крутить!' },
+                    { id: 'cancel', text: 'Отмена', type: 'cancel' }
+                ]
+            }, (buttonId) => {
+                if (buttonId === 'spin') {
+                    tg.showAlert('🎉 Поздравляем! Вы выиграли 100 ₽!');
+                }
+            });
+        });
+    }
 
     // Close app on back button
     tg.onEvent('backButtonClicked', () => {
