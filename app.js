@@ -112,9 +112,12 @@ function setupEventListeners() {
         item.addEventListener('click', (e) => {
             document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
             item.classList.add('active');
-            if (item.dataset.page === 'profile') {
+            const page = item.dataset.page;
+            if (page === 'profile') {
                 showToast('Profile page');
-            } else {
+            } else if (page === 'game') {
+                showToast('Game page');
+            } else if (page === 'settings') {
                 showToast('Settings page');
             }
         });
