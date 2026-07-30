@@ -452,6 +452,7 @@ body.fullscreen-mode {
         position: absolute;
         top: 0px;
         right: 12px;
+
         border-radius: 10px;
         height: 28px;
         min-height: 28px;
@@ -479,7 +480,7 @@ body.fullscreen-mode {
         width: 40px;
         min-height: 28px;
         font-size: 20px;
-        margin: -4px -1px -4px -6px;
+        margin: -4px -1px -4px 0;
     }
     
     .balance-item {
