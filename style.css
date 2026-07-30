@@ -155,36 +155,35 @@ body.fullscreen-mode {
 }
 
 /* ============================================================
-   ЛЕВЫЙ ОСТРОВОК С АВАТАРКОЙ И ИМЕНЕМ - LIQUID GLASS
+   ЛЕВЫЙ ОСТРОВОК С АВАТАРКОЙ И ИМЕНЕМ - УВЕЛИЧЕН В 1.5 РАЗА
    ============================================================ */
 .user-island {
     position: absolute;
-    top: 0px;
+    top: 10px; /* Было 0px, стало 10px (-10px вниз) */
     left: 16px;
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 4px 10px 4px 6px;
+    gap: 10px; /* Увеличено */
+    padding: 6px 14px 6px 8px; /* Увеличено */
     background: rgba(0, 0, 0, 0.6);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     backdrop-filter: blur(20px) saturate(180%);
     border: 1px solid rgba(12, 235, 15, 0.15);
-    border-radius: 12px;
+    border-radius: 16px; /* Увеличено */
     box-shadow: 
         0 4px 20px rgba(0, 0, 0, 0.4),
         inset 0 1px 0 rgba(255, 255, 255, 0.05),
         0 0 30px rgba(12, 235, 15, 0.03);
     z-index: 10;
     animation: floatGlow 4s ease-in-out infinite;
-    /* Фиксированная высота как у правого островка */
-    height: 32px;
-    min-height: 32px;
+    height: 48px; /* Было 32px, стало 48px (x1.5) */
+    min-height: 48px;
     box-sizing: border-box;
 }
 
 .user-avatar {
-    width: 24px;
-    height: 24px;
+    width: 36px; /* Было 24px, стало 36px (x1.5) */
+    height: 36px;
     border-radius: 50%;
     object-fit: cover;
     border: 2px solid rgba(12, 235, 15, 0.2);
@@ -192,33 +191,33 @@ body.fullscreen-mode {
 }
 
 .user-avatar-fallback {
-    width: 24px;
-    height: 24px;
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     background: var(--accent);
     color: var(--bg-primary);
-    font-size: 12px;
+    font-size: 18px; /* Увеличено */
     font-weight: 700;
     flex-shrink: 0;
     border: 2px solid rgba(12, 235, 15, 0.2);
 }
 
 .user-name {
-    font-size: 14px;
-    font-weight: 600;
+    font-size: 20px; /* Было 14px, стало 20px (x1.5) */
+    font-weight: 700; /* Увеличено */
     color: var(--text-primary);
-    letter-spacing: 0.3px;
+    letter-spacing: 0.5px;
     white-space: nowrap;
-    max-width: 100px;
+    max-width: 150px; /* Увеличено */
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
 /* ============================================================
-   ПРАВЫЙ ОСТРОВОК С БАЛАНСОМ (TON/Stars) - LIQUID GLASS
+   ПРАВЫЙ ОСТРОВОК - ОСТАЕТСЯ БЕЗ ИЗМЕНЕНИЙ
    ============================================================ */
 .balance-island {
     position: absolute;
@@ -240,100 +239,37 @@ body.fullscreen-mode {
     z-index: 10;
     animation: floatGlow 4s ease-in-out infinite;
     overflow: hidden;
-    /* Фиксированная высота */
     height: 32px;
     min-height: 32px;
     box-sizing: border-box;
 }
 
-.balance-item {
-    display: flex;
-    align-items: center;
-    gap: 3px;
-}
-
-.balance-item:last-child {
-    gap: 2px;
-}
-
-.balance-value {
-    font-size: 18px;
-    font-weight: 700;
-    color: var(--text-primary);
-    letter-spacing: 0.5px;
-    min-width: 40px;
-    order: 1;
-}
-
-.balance-icon {
-    width: 20px;
-    height: 20px;
-    object-fit: contain;
-    order: 2;
-}
-
-.balance-divider {
-    width: 1px;
-    height: 26px;
-    background: rgba(255, 255, 255, 0.1);
-    margin: 0 8px 0 6px;
-    flex-shrink: 0;
-}
-
-.balance-deposit-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 37px;
-    height: 100%;
-    min-height: 32px;
-    border-radius: 0 11px 11px 0;
-    background: var(--accent);
-    border: none;
-    color: var(--bg-primary);
-    font-size: 24px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    padding: 0;
-    line-height: 1;
-    margin: -4px -1px -4px 0;
-    box-shadow: 0 0 20px rgba(12, 235, 15, 0.2);
-    flex-shrink: 0;
-    text-align: center;
-    box-sizing: border-box;
-}
-
-.balance-deposit-btn:active {
-    transform: scale(0.92);
-}
-
-/* Адаптив для обоих островков */
+/* Адаптив для левого островка */
 @media (max-width: 420px) {
     .user-island {
-        top: -4px;
+        top: 6px; /* Адаптив */
         left: 12px;
-        padding: 3px 8px 3px 5px;
-        gap: 6px;
-        border-radius: 10px;
-        height: 26px;
-        min-height: 26px;
+        padding: 4px 10px 4px 6px;
+        gap: 8px;
+        border-radius: 12px;
+        height: 38px;
+        min-height: 38px;
     }
     
     .user-avatar {
-        width: 20px;
-        height: 20px;
+        width: 28px;
+        height: 28px;
     }
     
     .user-avatar-fallback {
-        width: 20px;
-        height: 20px;
-        font-size: 10px;
+        width: 28px;
+        height: 28px;
+        font-size: 14px;
     }
     
     .user-name {
-        font-size: 12px;
-        max-width: 70px;
+        font-size: 16px;
+        max-width: 100px;
     }
     
     .balance-island {
@@ -344,56 +280,33 @@ body.fullscreen-mode {
         height: 26px;
         min-height: 26px;
     }
-    
-    .balance-value {
-        font-size: 15px;
-        min-width: 32px;
-    }
-    
-    .balance-icon {
-        width: 16px;
-        height: 16px;
-    }
-    
-    .balance-divider {
-        height: 20px;
-        margin: 0 6px 0 4px;
-    }
-    
-    .balance-deposit-btn {
-        width: 30px;
-        min-height: 26px;
-        font-size: 20px;
-        border-radius: 0 9px 9px 0;
-        margin: -3px -1px -3px 0;
-    }
 }
 
 @media (max-width: 360px) {
     .user-island {
-        top: -6px;
+        top: 4px;
         left: 8px;
-        padding: 2px 6px 2px 4px;
-        gap: 4px;
-        border-radius: 8px;
-        height: 22px;
-        min-height: 22px;
+        padding: 3px 8px 3px 4px;
+        gap: 6px;
+        border-radius: 10px;
+        height: 32px;
+        min-height: 32px;
     }
     
     .user-avatar {
-        width: 16px;
-        height: 16px;
+        width: 24px;
+        height: 24px;
     }
     
     .user-avatar-fallback {
-        width: 16px;
-        height: 16px;
-        font-size: 8px;
+        width: 24px;
+        height: 24px;
+        font-size: 12px;
     }
     
     .user-name {
-        font-size: 10px;
-        max-width: 50px;
+        font-size: 14px;
+        max-width: 70px;
     }
     
     .balance-island {
@@ -403,29 +316,6 @@ body.fullscreen-mode {
         border-radius: 8px;
         height: 22px;
         min-height: 22px;
-    }
-    
-    .balance-value {
-        font-size: 13px;
-        min-width: 28px;
-    }
-    
-    .balance-icon {
-        width: 14px;
-        height: 14px;
-    }
-    
-    .balance-divider {
-        height: 16px;
-        margin: 0 4px 0 3px;
-    }
-    
-    .balance-deposit-btn {
-        width: 26px;
-        min-height: 22px;
-        font-size: 17px;
-        border-radius: 0 7px 7px 0;
-        margin: -2px -1px -2px 0;
     }
 }
 
