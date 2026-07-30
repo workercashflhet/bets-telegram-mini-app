@@ -45,16 +45,18 @@
                         <img src="assets/avatar.png" alt="Avatar" class="user-avatar" id="userAvatar">
                         <span class="user-name" id="userNameDisplay">User</span>
                     </div>
-                    <!-- Правый островок -->
-                    <div class="balance-island">
-                        <div class="balance-item">
-                            <span class="balance-value" id="tonBalance">0.00</span>
-                            <img src="assets/ton.png" alt="TON" class="balance-icon">
-                        </div>
-                        <div class="balance-divider"></div>
-                        <div class="balance-item">
-                            <span class="balance-value" id="starsBalance">0</span>
-                            <img src="assets/stars.png" alt="Stars" class="balance-icon">
+                    <!-- Правый островок с балансом (TON/Stars) + кнопка депозита -->
+                    <div class="balance-wrapper">
+                        <div class="balance-island">
+                            <div class="balance-item">
+                                <span class="balance-value" id="tonBalance">0.00</span>
+                                <img src="assets/ton.png" alt="TON" class="balance-icon">
+                            </div>
+                            <div class="balance-divider"></div>
+                            <div class="balance-item">
+                                <span class="balance-value" id="starsBalance">0</span>
+                                <img src="assets/stars.png" alt="Stars" class="balance-icon">
+                            </div>
                         </div>
                         <button class="balance-deposit-btn" id="depositBtn">+</button>
                     </div>

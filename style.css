@@ -155,96 +155,33 @@ body.fullscreen-mode {
 }
 
 /* ============================================================
-   ЛЕВЫЙ ОСТРОВОК С АВАТАРКОЙ И ИМЕНЕМ - УВЕЛИЧЕН В 1.5 РАЗА
+   ФИКСИРОВАННЫЙ КОНТЕЙНЕР ДЛЯ ОСТРОВКОВ
    ============================================================ */
-.user-island {
-    position: absolute;
+.islands-container {
+    position: fixed;
     top: 10px;
-    left: 16px;
+    left: 0;
+    right: 0;
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 0 16px;
     display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 6px 14px 6px 8px;
-    background: rgba(0, 0, 0, 0.6);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
-    backdrop-filter: blur(20px) saturate(180%);
-    border: 1px solid rgba(12, 235, 15, 0.15);
-    border-radius: 16px;
-    box-shadow: 
-        0 4px 20px rgba(0, 0, 0, 0.4),
-        inset 0 1px 0 rgba(255, 255, 255, 0.05),
-        0 0 30px rgba(12, 235, 15, 0.03);
-    z-index: 10;
-    animation: floatGlow 4s ease-in-out infinite;
-    height: 48px;
-    min-height: 48px;
+    justify-content: space-between;
+    align-items: flex-start;
+    z-index: 100;
+    pointer-events: none;
+    height: auto;
     box-sizing: border-box;
 }
 
-.user-avatar {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 2px solid rgba(12, 235, 15, 0.2);
-    flex-shrink: 0;
-}
-
-.user-avatar-fallback {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--accent);
-    color: var(--bg-primary);
-    font-size: 18px;
-    font-weight: 700;
-    flex-shrink: 0;
-    border: 2px solid rgba(12, 235, 15, 0.2);
-}
-
-.user-name {
-    font-size: 20px;
-    font-weight: 700;
-    color: var(--text-primary);
-    letter-spacing: 0.5px;
-    white-space: nowrap;
-    max-width: 150px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-/* ============================================================
-   ОБЩИЙ КОНТЕЙНЕР ДЛЯ ОСТРОВКОВ - ДЛЯ ФИКСАЦИИ ПОЗИЦИЙ
-   ============================================================ */
-.game-content {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    height: 100%;
-    padding: 50px 0 40px;
-    gap: 0;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    scroll-behavior: smooth;
-    padding-right: 2px;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-    position: relative;
-    /* Добавляем для фиксации */
-    width: 100%;
-    max-width: 100%;
+.islands-container > * {
+    pointer-events: auto;
 }
 
 /* ============================================================
    ЛЕВЫЙ ОСТРОВОК С АВАТАРКОЙ И ИМЕНЕМ
    ============================================================ */
 .user-island {
-    position: absolute;
-    top: 0px;
-    left: 16px;
     display: flex;
     align-items: center;
     justify-content: flex-start;
@@ -259,17 +196,11 @@ body.fullscreen-mode {
         0 4px 20px rgba(0, 0, 0, 0.4),
         inset 0 1px 0 rgba(255, 255, 255, 0.05),
         0 0 30px rgba(12, 235, 15, 0.03);
-    z-index: 10;
     animation: floatGlow 4s ease-in-out infinite;
     height: 32px;
     min-height: 32px;
     box-sizing: border-box;
-    max-width: none;
     width: auto;
-    /* Фиксация для мобильных */
-    will-change: transform;
-    -webkit-transform: translateZ(0);
-    transform: translateZ(0);
 }
 
 .user-avatar {
@@ -308,38 +239,39 @@ body.fullscreen-mode {
 }
 
 /* ============================================================
+   ОБЕРТКА ДЛЯ ПРАВОГО ОСТРОВКА И КНОПКИ
+   ============================================================ */
+.balance-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0px;
+    height: 32px;
+    flex-shrink: 0;
+}
+
+/* ============================================================
    ПРАВЫЙ ОСТРОВОК С БАЛАНСОМ (TON/Stars)
    ============================================================ */
 .balance-island {
-    position: absolute;
-    top: 0px;
-    right: 16px;
     display: flex;
     align-items: center;
     justify-content: flex-end;
     gap: 0px;
-    padding: 4px 0px 4px 10px;
+    padding: 4px 10px 4px 10px;
     background: rgba(0, 0, 0, 0.6);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     backdrop-filter: blur(20px) saturate(180%);
     border: 1px solid rgba(12, 235, 15, 0.15);
-    border-radius: 12px;
+    border-radius: 12px 0 0 12px;
     box-shadow: 
         0 4px 20px rgba(0, 0, 0, 0.4),
         inset 0 1px 0 rgba(255, 255, 255, 0.05),
         0 0 30px rgba(12, 235, 15, 0.03);
-    z-index: 10;
     animation: floatGlow 4s ease-in-out infinite;
-    overflow: hidden;
     height: 32px;
     min-height: 32px;
     box-sizing: border-box;
-    max-width: none;
     width: auto;
-    /* Фиксация для мобильных */
-    will-change: transform;
-    -webkit-transform: translateZ(0);
-    transform: translateZ(0);
 }
 
 .balance-item {
@@ -380,23 +312,28 @@ body.fullscreen-mode {
     flex-shrink: 0;
 }
 
+/* ============================================================
+   КНОПКА ДЕПОЗИТА - ОТДЕЛЬНО СПРАВА
+   ============================================================ */
 .balance-deposit-btn {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 37px; /* ← Увеличьте это значение (было 30px) */
-    height: 100%;
+    width: 32px;
+    height: 32px;
     min-height: 32px;
     background: var(--accent);
-    border: none;
+    border: 1px solid rgba(12, 235, 15, 0.15);
+    border-left: none;
+    border-radius: 0 12px 12px 0;
     color: var(--bg-primary);
     font-size: 24px;
     font-weight: 700;
     cursor: pointer;
     transition: all 0.3s ease;
     line-height: 1;
-    margin: -4px 0px -4px 0; /* ← Измените правый отступ на 0 или положительное значение */
-    box-shadow: 0 0 20px rgba(12, 235, 15, 0.2);
+    padding: 0;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
     flex-shrink: 0;
     text-align: center;
 }
@@ -406,153 +343,29 @@ body.fullscreen-mode {
 }
 
 /* ============================================================
-   МОБИЛЬНАЯ ВЕРСИЯ - ИСПРАВЛЕНА
+   КОНТЕНТ ДЛЯ GAME - СКРОЛЛ
    ============================================================ */
-@media (max-width: 430px) {
-    .game-content {
-        padding-left: 0;
-        padding-right: 0;
-    }
-    
-    .user-island {
-        position: absolute;
-        top: 6px;
-        left: 12px;
-        padding: 4px 8px 4px 6px;
-        gap: 5px;
-        border-radius: 10px;
-        height: 28px;
-        min-height: 28px;
-        transform: none;
-        -webkit-transform: none;
-    }
-    
-    .user-avatar {
-        width: 18px;
-        height: 18px;
-    }
-    
-    .user-avatar-fallback {
-        width: 18px;
-        height: 18px;
-        font-size: 9px;
-    }
-    
-    .user-name {
-        font-size: 12px;
-        max-width: 70px;
-    }
-    
-    .balance-island {
-        position: absolute;
-        top: 0px;
-        right: 12px;
-        height: 28px;
-        min-height: 28px;
-        border-radius: 10px;
-        overflow: visible;
-    }
-    
-    .balance-value {
-        font-size: 15px;
-        letter-spacing: 0.4px;
-    }
-    
-    .balance-icon {
-        width: 16px;
-        height: 16px;
-    }
-    
-    .balance-divider {
-        height: 20px;
-        margin: 0 6px 0 4px;
-    }
-    
-    .balance-deposit-btn {
-        width: 40px;
-        min-height: 28px;
-        font-size: 20px;
-        margin: -3px -1px -3px 0;
-        border-radius: 0 10px 10px 0;
-        padding: 0;
-    }
-    
-    .balance-item {
-        gap: 2px;
-    }
-    
-    .balance-item:last-child {
-        gap: 1px;
-    }
+.game-content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    height: 100%;
+    padding: 60px 0 40px;
+    gap: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+    padding-right: 2px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    position: relative;
+    width: 100%;
+    max-width: 100%;
 }
 
-/* Для очень маленьких экранов */
-@media (max-width: 375px) {
-    .user-island {
-        left: 10px;
-        padding: 3px 6px 3px 4px;
-        gap: 4px;
-        height: 24px;
-        min-height: 24px;
-        border-radius: 8px;
-    }
-    
-    .user-avatar {
-        width: 16px;
-        height: 16px;
-    }
-    
-    .user-avatar-fallback {
-        width: 16px;
-        height: 16px;
-        font-size: 8px;
-    }
-    
-    .user-name {
-        font-size: 10px;
-        max-width: 50px;
-    }
-    
-    .balance-island {
-        right: 10px;
-        padding: 3px 0px 3px 6px;
-        height: 24px;
-        min-height: 24px;
-        border-radius: 8px;
-        overflow: hidden;
-    }
-    
-    .balance-value {
-        font-size: 13px;
-        letter-spacing: 0.3px;
-    }
-    
-    .balance-icon {
-        width: 14px;
-        height: 14px;
-    }
-    
-    .balance-divider {
-        height: 16px;
-        margin: 0 4px 0 3px;
-    }
-    
-    .balance-deposit-btn {
-        width: 36px;
-        min-height: 24px;
-        font-size: 17px;
-        margin: -2px -1px -2px 0;
-        border-radius: 0 8px 8px 0;
-        padding: 0;
-    }
-    
-    .balance-item {
-        gap: 2px;
-    }
-    
-    .balance-item:last-child {
-        gap: 1px;
-    }
+.game-content::-webkit-scrollbar {
+    display: none;
+    width: 0;
 }
 
 /* ============================================================
@@ -626,30 +439,6 @@ body.fullscreen-mode {
 .placeholder-text {
     font-size: 14px;
     color: var(--text-secondary);
-}
-
-/* ============================================================
-   КОНТЕНТ ДЛЯ GAME - СКРОЛЛ (СО СДВИГОМ ВНИЗ НА 40px)
-   ============================================================ */
-.game-content {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    height: 100%;
-    padding: 50px 0 40px;
-    gap: 0;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    scroll-behavior: smooth;
-    padding-right: 2px;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-    position: relative;
-}
-
-.game-content::-webkit-scrollbar {
-    display: none;
-    width: 0;
 }
 
 /* ============================================================
@@ -1084,27 +873,50 @@ body.fullscreen-mode {
 /* ============================================================
    АДАПТИВНОСТЬ
    ============================================================ */
-@media (max-width: 420px) {
-    .center-icon {
-        top: 60px;
+@media (max-width: 430px) {
+    .islands-container {
+        top: 6px;
+        padding: 0 12px;
     }
     
-    .center-icon svg {
-        width: 62px;
-        height: 22px;
+    .user-island {
+        padding: 4px 8px 4px 6px;
+        gap: 5px;
+        border-radius: 10px;
+        height: 28px;
+        min-height: 28px;
+    }
+    
+    .user-avatar {
+        width: 18px;
+        height: 18px;
+    }
+    
+    .user-avatar-fallback {
+        width: 18px;
+        height: 18px;
+        font-size: 9px;
+    }
+    
+    .user-name {
+        font-size: 12px;
+        max-width: 70px;
+    }
+    
+    .balance-wrapper {
+        height: 28px;
     }
     
     .balance-island {
-        top: 6px;
-        right: 12px;
-        padding: 6px 10px 6px 8px;
-        gap: 6px;
-        border-radius: 10px;
+        padding: 4px 8px 4px 8px;
+        height: 28px;
+        min-height: 28px;
+        border-radius: 10px 0 0 10px;
     }
     
     .balance-value {
         font-size: 15px;
-        min-width: 32px;
+        letter-spacing: 0.4px;
     }
     
     .balance-icon {
@@ -1114,12 +926,24 @@ body.fullscreen-mode {
     
     .balance-divider {
         height: 20px;
+        margin: 0 6px 0 4px;
     }
     
     .balance-deposit-btn {
-        width: 16px;
-        height: 16px;
-        font-size: 13px;
+        width: 28px;
+        height: 28px;
+        min-height: 28px;
+        font-size: 20px;
+        border-radius: 0 10px 10px 0;
+    }
+    
+    .center-icon {
+        top: 60px;
+    }
+    
+    .center-icon svg {
+        width: 62px;
+        height: 22px;
     }
     
     .tabs-content {
@@ -1206,27 +1030,50 @@ body.fullscreen-mode {
     }
 }
 
-@media (max-width: 360px) {
-    .center-icon {
-        top: 50px;
+@media (max-width: 375px) {
+    .islands-container {
+        top: 4px;
+        padding: 0 10px;
     }
     
-    .center-icon svg {
-        width: 52px;
-        height: 18px;
+    .user-island {
+        padding: 3px 6px 3px 4px;
+        gap: 4px;
+        height: 24px;
+        min-height: 24px;
+        border-radius: 8px;
+    }
+    
+    .user-avatar {
+        width: 16px;
+        height: 16px;
+    }
+    
+    .user-avatar-fallback {
+        width: 16px;
+        height: 16px;
+        font-size: 8px;
+    }
+    
+    .user-name {
+        font-size: 10px;
+        max-width: 50px;
+    }
+    
+    .balance-wrapper {
+        height: 24px;
     }
     
     .balance-island {
-        top: 4px;
-        right: 8px;
-        padding: 4px 8px 4px 6px;
-        gap: 4px;
-        border-radius: 8px;
+        padding: 3px 6px 3px 6px;
+        height: 24px;
+        min-height: 24px;
+        border-radius: 8px 0 0 8px;
     }
     
     .balance-value {
         font-size: 13px;
-        min-width: 28px;
+        letter-spacing: 0.3px;
     }
     
     .balance-icon {
@@ -1236,12 +1083,24 @@ body.fullscreen-mode {
     
     .balance-divider {
         height: 16px;
+        margin: 0 4px 0 3px;
     }
     
     .balance-deposit-btn {
-        width: 14px;
-        height: 14px;
-        font-size: 11px;
+        width: 24px;
+        height: 24px;
+        min-height: 24px;
+        font-size: 17px;
+        border-radius: 0 8px 8px 0;
+    }
+    
+    .center-icon {
+        top: 50px;
+    }
+    
+    .center-icon svg {
+        width: 52px;
+        height: 18px;
     }
     
     .tabs-content {
