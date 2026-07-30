@@ -164,7 +164,7 @@ body.fullscreen-mode {
     display: flex;
     align-items: center;
     gap: 0px;
-    padding: 4px 0px 0px 10px;
+    padding: 4px 0px 4px 10px;
     background: rgba(0, 0, 0, 0.6);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     backdrop-filter: blur(20px) saturate(180%);
@@ -177,12 +177,15 @@ body.fullscreen-mode {
     z-index: 10;
     animation: floatGlow 4s ease-in-out infinite;
     overflow: hidden;
+    /* Убираем возможные внутренние отступы */
+    box-sizing: border-box;
 }
 
 .balance-item {
     display: flex;
     align-items: center;
     gap: 3px;
+    padding: 0;
 }
 
 .balance-item:last-child {
@@ -209,10 +212,11 @@ body.fullscreen-mode {
     width: 1px;
     height: 26px;
     background: rgba(255, 255, 255, 0.1);
-    margin: 0 8px 0 0;
+    margin: 0 8px 0 6px;
+    flex-shrink: 0;
 }
 
-/* Кнопка депозита - вплотную к краю */
+/* Кнопка депозита - вплотную к рамке */
 .balance-deposit-btn {
     display: flex;
     align-items: center;
@@ -220,20 +224,23 @@ body.fullscreen-mode {
     width: 37px;
     height: 100%;
     min-height: 32px;
-    border-radius: 0 10px 10px 0;
+    border-radius: 0 11px 11px 0; /* Немного больше, чтобы перекрыть рамку */
     background: var(--accent);
     border: none;
     color: var(--bg-primary);
-    font-size: 32px;
+    font-size: 24px;
     font-weight: 700;
     cursor: pointer;
     transition: all 0.3s ease;
     padding: 0;
     line-height: 1;
-    margin: 0 0 0 0; /* Убираем отступ справа */
+    margin: -4px -1px -4px 0; /* Отрицательные отступы для прижатия к краю */
     box-shadow: 0 0 20px rgba(12, 235, 15, 0.2);
     flex-shrink: 0;
     text-align: center;
+    position: relative;
+    /* Убираем возможные зазоры */
+    box-sizing: border-box;
 }
 
 .balance-deposit-btn:active {
@@ -268,8 +275,8 @@ body.fullscreen-mode {
         width: 30px;
         min-height: 26px;
         font-size: 20px;
-        border-radius: 0 8px 8px 0;
-        margin: -3px -2px -3px 0;
+        border-radius: 0 9px 9px 0;
+        margin: -3px -1px -3px 0;
     }
 }
 
@@ -300,8 +307,93 @@ body.fullscreen-mode {
         width: 26px;
         min-height: 22px;
         font-size: 17px;
-        border-radius: 0 6px 6px 0;
-        margin: -2px -2px -2px 0;
+        border-radius: 0 7px 7px 0;
+        margin: -2px -1px -2px 0;
+    }
+}
+
+/* ============================================================
+   ЛЕВЫЙ ОСТРОВОК С АВАТАРКОЙ И ИМЕНЕМ - LIQUID GLASS
+   ============================================================ */
+.user-island {
+    position: absolute;
+    top: 0px;
+    left: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 10px 4px 6px;
+    background: rgba(0, 0, 0, 0.6);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(12, 235, 15, 0.15);
+    border-radius: 12px;
+    box-shadow: 
+        0 4px 20px rgba(0, 0, 0, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05),
+        0 0 30px rgba(12, 235, 15, 0.03);
+    z-index: 10;
+    animation: floatGlow 4s ease-in-out infinite;
+}
+
+.user-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(12, 235, 15, 0.2);
+    flex-shrink: 0;
+}
+
+.user-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Адаптив для левого островка */
+@media (max-width: 420px) {
+    .user-island {
+        top: -4px;
+        left: 12px;
+        padding: 3px 8px 3px 5px;
+        gap: 6px;
+        border-radius: 10px;
+    }
+    
+    .user-avatar {
+        width: 22px;
+        height: 22px;
+    }
+    
+    .user-name {
+        font-size: 12px;
+        max-width: 70px;
+    }
+}
+
+@media (max-width: 360px) {
+    .user-island {
+        top: -6px;
+        left: 8px;
+        padding: 2px 6px 2px 4px;
+        gap: 4px;
+        border-radius: 8px;
+    }
+    
+    .user-avatar {
+        width: 18px;
+        height: 18px;
+    }
+    
+    .user-name {
+        font-size: 10px;
+        max-width: 50px;
     }
 }
 

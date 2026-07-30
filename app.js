@@ -37,6 +37,59 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 3000);
 });
 
+// Добавьте в функцию initializeUser():
+
+function initializeUser() {
+    try {
+        const user = tg.initDataUnsafe?.user;
+        
+        if (user) {
+            state.user = user;
+            state.userId = user.id || Math.floor(Math.random() * 10000);
+            
+            // Обновляем имя пользователя в левом островке
+            const userNameDisplay = document.getElementById('userNameDisplay');
+            if (userNameDisplay) {
+                userNameDisplay.textContent = user.first_name || user.username || 'User';
+            }
+            
+            // Если есть avatar.png, можно использовать фото пользователя
+            const userAvatar = document.getElementById('userAvatar');
+            if (userAvatar && user.photo_url) {
+                userAvatar.src = user.photo_url;
+            }
+            
+            // Update UI
+            document.getElementById('userName').textContent = `@${user.username || 'user'}`;
+            document.getElementById('userId').textContent = `id: ${state.userId}`;
+            
+            // Save to localStorage
+            localStorage.setItem('bets_user', JSON.stringify({
+                username: user.username || 'user',
+                userId: state.userId,
+                firstName: user.first_name || '',
+                lastName: user.last_name || ''
+            }));
+        } else {
+            // Fallback for testing
+            const savedUser = localStorage.getItem('bets_user');
+            if (savedUser) {
+                const userData = JSON.parse(savedUser);
+                document.getElementById('userName').textContent = `@${userData.username}`;
+                document.getElementById('userId').textContent = `id: ${userData.userId}`;
+                state.userId = userData.userId;
+                
+                const userNameDisplay = document.getElementById('userNameDisplay');
+                if (userNameDisplay) {
+                    userNameDisplay.textContent = userData.firstName || userData.username || 'User';
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Error initializing user:', error);
+    }
+}
+
 function initializeApp() {
     // Setup event listeners
     setupEventListeners();
