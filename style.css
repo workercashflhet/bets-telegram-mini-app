@@ -472,7 +472,7 @@ body.fullscreen-mode {
         width: 40px; /* ← Увеличьте (было 40px, можно 45-50px) */
         min-height: 28px;
         font-size: 20px;
-        margin: -3px 0px -3px 0; /* ← Измените правый отступ */
+        margin: -3px 0 0 0; /* ← Измените правый отступ */
     }
     
     .balance-item {
