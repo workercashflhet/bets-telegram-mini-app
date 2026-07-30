@@ -171,8 +171,8 @@ body.fullscreen-mode {
     box-shadow: 0 8px 32px rgba(12, 235, 15, 0.1);
     border: 1px solid rgba(12, 235, 15, 0.1);
     touch-action: pan-y;
-    user-select: none;
     -webkit-user-select: none;
+    user-select: none;
 }
 
 .carousel-track {
@@ -197,6 +197,7 @@ body.fullscreen-mode {
     max-height: 440px;
     object-fit: cover;
     display: block;
+    -webkit-user-select: none;
     user-select: none;
     -webkit-user-drag: none;
     pointer-events: none;
@@ -213,8 +214,8 @@ body.fullscreen-mode {
     z-index: 5;
     padding: 4px 12px;
     background: rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
     border-radius: 20px;
     pointer-events: auto;
 }
@@ -226,8 +227,8 @@ body.fullscreen-mode {
     background: rgba(255, 255, 255, 0.3);
     cursor: pointer;
     transition: all 0.3s ease;
-    user-select: none;
     -webkit-user-select: none;
+    user-select: none;
 }
 
 .dot.active {
