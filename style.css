@@ -217,6 +217,28 @@ body.fullscreen-mode {
 }
 
 /* ============================================================
+   ОБЩИЙ КОНТЕЙНЕР ДЛЯ ОСТРОВКОВ - ДЛЯ ФИКСАЦИИ ПОЗИЦИЙ
+   ============================================================ */
+.game-content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    height: 100%;
+    padding: 50px 0 40px;
+    gap: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+    padding-right: 2px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    position: relative;
+    /* Добавляем для фиксации */
+    width: 100%;
+    max-width: 100%;
+}
+
+/* ============================================================
    ЛЕВЫЙ ОСТРОВОК С АВАТАРКОЙ И ИМЕНЕМ
    ============================================================ */
 .user-island {
@@ -387,10 +409,17 @@ body.fullscreen-mode {
 }
 
 /* ============================================================
-   АДАПТИВ ДЛЯ МОБИЛЬНЫХ УСТРОЙСТВ (iPhone и др.)
+   МОБИЛЬНАЯ ВЕРСИЯ - ИСПРАВЛЕНА
    ============================================================ */
 @media (max-width: 430px) {
+    /* Убираем absolute позиционирование для мобильных */
+    .game-content {
+        padding-left: 0;
+        padding-right: 0;
+    }
+    
     .user-island {
+        position: absolute;
         top: 0px;
         left: 12px;
         padding: 4px 8px 4px 6px;
@@ -398,6 +427,9 @@ body.fullscreen-mode {
         border-radius: 10px;
         height: 28px;
         min-height: 28px;
+        /* Убираем возможные смещения */
+        transform: none;
+        -webkit-transform: none;
     }
     
     .user-avatar {
@@ -417,12 +449,16 @@ body.fullscreen-mode {
     }
     
     .balance-island {
+        position: absolute;
         top: 0px;
         right: 12px;
         padding: 4px 0px 4px 8px;
         border-radius: 10px;
         height: 28px;
         min-height: 28px;
+        /* Убираем возможные смещения */
+        transform: none;
+        -webkit-transform: none;
     }
     
     .balance-value {
@@ -457,7 +493,7 @@ body.fullscreen-mode {
     }
 }
 
-/* Специально для очень маленьких экранов */
+/* Для очень маленьких экранов */
 @media (max-width: 375px) {
     .user-island {
         left: 10px;
@@ -528,23 +564,6 @@ body.fullscreen-mode {
 @media (min-width: 376px) and (max-width: 430px) {
     .user-island {
         left: 12px;
-        padding: 4px 8px 4px 8px;
-        height: 28px;
-        min-height: 28px;
-    }
-    
-    .balance-island {
-        right: 12px;
-        padding: 4px 8px 4px 8px;
-        height: 28px;
-        min-height: 28px;
-    }
-}
-
-/* Для iPhone 15/Pro (393px) */
-@media (min-width: 386px) and (max-width: 400px) {
-    .user-island {
-        left: 12px;
         padding: 4px 8px 4px 6px;
         height: 28px;
         min-height: 28px;
@@ -552,23 +571,6 @@ body.fullscreen-mode {
     
     .balance-island {
         right: 12px;
-        padding: 4px 0px 4px 8px;
-        height: 28px;
-        min-height: 28px;
-    }
-}
-
-/* Для iPhone 15 Pro Max (430px) */
-@media (min-width: 426px) and (max-width: 435px) {
-    .user-island {
-        left: 14px;
-        padding: 4px 10px 4px 6px;
-        height: 28px;
-        min-height: 28px;
-    }
-    
-    .balance-island {
-        right: 14px;
         padding: 4px 0px 4px 8px;
         height: 28px;
         min-height: 28px;
