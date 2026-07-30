@@ -1,0 +1,20 @@
+{
+  "name": "bets-telegram-mini-app",
+  "version": "1.0.0",
+  "description": "Telegram Mini App for Bets platform",
+  "main": "index.html",
+  "scripts": {
+    "start": "serve .",
+    "build": "echo 'No build step needed'"
+  },
+  "keywords": [
+    "telegram",
+    "mini-app",
+    "bets"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "serve": "^14.2.0"
+  }
+}

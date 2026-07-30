@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Бетс Mini App</title>
+    <script src="https://telegram.org/js/telegram-web-app.js?56"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-top">
+                <span class="header-time">3:18</span>
+                <div class="header-icons">
+                    <span class="header-icon">🔒</span>
+                    <span class="header-icon">📶</span>
+                    <span class="header-icon">🔋</span>
+                </div>
+            </div>
+            <div class="header-user">
+                <span class="user-name" id="userName">@iwashcash</span>
+                <span class="user-id" id="userId">id: 605</span>
+            </div>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <nav class="nav-tabs">
+            <button class="tab-btn active" data-tab="promocodes">Promocodes</button>
+            <button class="tab-btn" data-tab="referrals">Referrals</button>
+            <button class="tab-btn" data-tab="stacking">Stacking</button>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Balance Section -->
+            <section class="balance-section">
+                <div class="balance-amount">
+                    <span class="currency">₽</span>
+                    <span class="amount" id="balanceAmount">0.00</span>
+                </div>
+                <div class="balance-buttons">
+                    <button class="btn btn-primary" id="depositBtn">Deposit</button>
+                    <button class="btn btn-secondary" id="withdrawBtn">Withdraw</button>
+                </div>
+            </section>
+
+            <!-- Inventory Section -->
+            <section class="inventory-section">
+                <h3 class="section-title">Your Inventory</h3>
+                <div class="inventory-count" id="inventoryCount">0</div>
+            </section>
+
+            <!-- NFT Message -->
+            <div class="nft-message">
+                <p>Ha! To deposit NFT gifts, transfer them to @bets_bank</p>
+            </div>
+
+            <!-- Calculator Section -->
+            <section class="calculator-section">
+                <div class="calc-display" id="calcDisplay">0</div>
+                <div class="calc-buttons">
+                    <button class="calc-btn" data-value="+">+</button>
+                    <button class="calc-btn" data-value="-">-</button>
+                    <button class="calc-btn" data-value="x">×</button>
+                    <button class="calc-btn" data-value="o">○</button>
+                </div>
+            </section>
+        </main>
+
+        <!-- Bottom Navigation -->
+        <nav class="bottom-nav">
+            <button class="nav-item active" data-page="profile">
+                <span class="nav-icon">👤</span>
+                <span class="nav-label">Profile</span>
+            </button>
+            <button class="nav-item" data-page="settings">
+                <span class="nav-icon">⚙️</span>
+                <span class="nav-label">Settings</span>
+            </button>
+        </nav>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
