@@ -217,7 +217,7 @@ body.fullscreen-mode {
 }
 
 /* ============================================================
-   ПРАВЫЙ ОСТРОВОК С БАЛАНСОМ - ВОССТАНОВЛЕН
+   ПРАВЫЙ ОСТРОВОК С БАЛАНСОМ - ИСПРАВЛЕН
    ============================================================ */
 .balance-island {
     position: absolute;
@@ -239,28 +239,33 @@ body.fullscreen-mode {
     z-index: 10;
     animation: floatGlow 4s ease-in-out infinite;
     overflow: hidden;
-    height: 48px;
-    min-height: 48px;
+    height: 32px;
+    min-height: 32px;
     box-sizing: border-box;
 }
 
 .balance-item {
     display: flex;
     align-items: center;
-    gap: 3px;
+    gap: 2px; /* Уменьшено с 3px до 2px */
 }
 
 .balance-item:last-child {
-    gap: 2px;
+    gap: 0px; /* Убрано расстояние между суммой Stars и иконкой */
 }
 
 .balance-value {
     font-size: 18px;
     font-weight: 700;
     color: var(--text-primary);
-    letter-spacing: 0.5px;
-    min-width: 40px;
+    letter-spacing: 0.3px; /* Уменьшено с 0.5px */
+    min-width: auto; /* Убираем минимальную ширину */
     order: 1;
+    padding-right: 0px; /* Убираем отступ справа */
+}
+
+.balance-value:last-child {
+    min-width: auto; /* Для Stars тоже убираем */
 }
 
 .balance-icon {
@@ -268,13 +273,14 @@ body.fullscreen-mode {
     height: 20px;
     object-fit: contain;
     order: 2;
+    margin-left: 0px; /* Убираем отступ */
 }
 
 .balance-divider {
     width: 1px;
     height: 24px;
     background: rgba(255, 255, 255, 0.1);
-    margin: 0 8px 0 6px;
+    margin: 0 6px 0 4px; /* Уменьшены отступы */
     flex-shrink: 0;
 }
 
@@ -282,7 +288,7 @@ body.fullscreen-mode {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 48px;
+    width: 37px;
     height: 100%;
     min-height: 32px;
     border-radius: 0 11px 11px 0;
@@ -300,6 +306,97 @@ body.fullscreen-mode {
     flex-shrink: 0;
     text-align: center;
     box-sizing: border-box;
+}
+
+.balance-deposit-btn:active {
+    transform: scale(0.92);
+}
+
+/* Адаптив */
+@media (max-width: 420px) {
+    .balance-island {
+        top: -4px;
+        right: 12px;
+        padding: 3px 0px 3px 8px;
+        border-radius: 10px;
+        height: 26px;
+        min-height: 26px;
+    }
+    
+    .balance-value {
+        font-size: 15px;
+        min-width: auto;
+        letter-spacing: 0.2px;
+    }
+    
+    .balance-icon {
+        width: 16px;
+        height: 16px;
+    }
+    
+    .balance-divider {
+        height: 20px;
+        margin: 0 4px 0 3px;
+    }
+    
+    .balance-deposit-btn {
+        width: 30px;
+        min-height: 26px;
+        font-size: 20px;
+        border-radius: 0 9px 9px 0;
+        margin: -3px -1px -3px 0;
+    }
+    
+    .balance-item {
+        gap: 1px;
+    }
+    
+    .balance-item:last-child {
+        gap: 0px;
+    }
+}
+
+@media (max-width: 360px) {
+    .balance-island {
+        top: -6px;
+        right: 8px;
+        padding: 2px 0px 2px 6px;
+        border-radius: 8px;
+        height: 22px;
+        min-height: 22px;
+    }
+    
+    .balance-value {
+        font-size: 13px;
+        min-width: auto;
+        letter-spacing: 0.1px;
+    }
+    
+    .balance-icon {
+        width: 14px;
+        height: 14px;
+    }
+    
+    .balance-divider {
+        height: 16px;
+        margin: 0 3px 0 2px;
+    }
+    
+    .balance-deposit-btn {
+        width: 26px;
+        min-height: 22px;
+        font-size: 17px;
+        border-radius: 0 7px 7px 0;
+        margin: -2px -1px -2px 0;
+    }
+    
+    .balance-item {
+        gap: 1px;
+    }
+    
+    .balance-item:last-child {
+        gap: 0px;
+    }
 }
 
 
