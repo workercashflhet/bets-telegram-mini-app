@@ -156,7 +156,7 @@ body.fullscreen-mode {
     right: 0;
     bottom: 100px;
     padding: 0 16px;
-    overflow: hidden; /* Скрываем скролл на контейнере */
+    overflow: hidden;
 }
 
 .tab-content {
@@ -213,14 +213,14 @@ body.fullscreen-mode {
 }
 
 /* ============================================================
-   КОНТЕНТ ДЛЯ GAME - СКРОЛЛ
+   КОНТЕНТ ДЛЯ GAME - СКРОЛЛ (УВЕЛИЧЕНА ДЛИНА)
    ============================================================ */
 .game-content {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
     height: 100%;
-    padding: 10px 0 20px;
+    padding: 10px 0 120px;
     gap: 0;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
@@ -261,7 +261,7 @@ body.fullscreen-mode {
     touch-action: pan-y;
     -webkit-user-select: none;
     user-select: none;
-    flex-shrink: 0; /* Запрещаем сжатие карусели */
+    flex-shrink: 0;
 }
 
 .carousel-track {
