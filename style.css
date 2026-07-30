@@ -217,7 +217,7 @@ body.fullscreen-mode {
 }
 
 /* ============================================================
-   ПРАВЫЙ ОСТРОВОК С БАЛАНСОМ - ИСПРАВЛЕН
+   ПРАВЫЙ ОСТРОВОК С БАЛАНСОМ - ЕДИНЫЙ ДЛЯ ВСЕХ УСТРОЙСТВ
    ============================================================ */
 .balance-island {
     position: absolute;
@@ -242,30 +242,30 @@ body.fullscreen-mode {
     height: 32px;
     min-height: 32px;
     box-sizing: border-box;
+    /* Фиксированные размеры для всех устройств */
+    max-width: none;
+    width: auto;
 }
 
 .balance-item {
     display: flex;
     align-items: center;
-    gap: 2px; /* Уменьшено с 3px до 2px */
+    gap: 3px;
 }
 
 .balance-item:last-child {
-    gap: 0px; /* Убрано расстояние между суммой Stars и иконкой */
+    gap: 2px;
 }
 
 .balance-value {
     font-size: 18px;
     font-weight: 700;
     color: var(--text-primary);
-    letter-spacing: 0.3px; /* Уменьшено с 0.5px */
-    min-width: auto; /* Убираем минимальную ширину */
+    letter-spacing: 0.5px;
+    min-width: auto;
     order: 1;
-    padding-right: 0px; /* Убираем отступ справа */
-}
-
-.balance-value:last-child {
-    min-width: auto; /* Для Stars тоже убираем */
+    padding-right: 0px;
+    white-space: nowrap;
 }
 
 .balance-icon {
@@ -273,14 +273,14 @@ body.fullscreen-mode {
     height: 20px;
     object-fit: contain;
     order: 2;
-    margin-left: 0px; /* Убираем отступ */
+    flex-shrink: 0;
 }
 
 .balance-divider {
     width: 1px;
     height: 24px;
     background: rgba(255, 255, 255, 0.1);
-    margin: 0 6px 0 4px; /* Уменьшены отступы */
+    margin: 0 8px 0 6px;
     flex-shrink: 0;
 }
 
@@ -312,98 +312,100 @@ body.fullscreen-mode {
     transform: scale(0.92);
 }
 
-/* Адаптив */
+/* ============================================================
+   ОТМЕНЯЕМ АДАПТИВ ДЛЯ ПРАВОГО ОСТРОВКА - ОН ВСЕГДА ОДИНАКОВЫЙ
+   ============================================================ */
+/* Убираем все медиа-запросы для .balance-island */
+/* Оставляем только для левого островка и других элементов */
+
 @media (max-width: 420px) {
     .balance-island {
-        top: -4px;
-        right: 12px;
-        padding: 3px 0px 3px 8px;
-        border-radius: 10px;
-        height: 26px;
-        min-height: 26px;
+        /* Сохраняем те же размеры */
+        height: 32px;
+        min-height: 32px;
+        padding: 4px 0px 4px 10px;
+        border-radius: 12px;
+        top: 0px;
+        right: 16px;
     }
     
     .balance-value {
-        font-size: 15px;
+        font-size: 18px;
+        letter-spacing: 0.5px;
         min-width: auto;
-        letter-spacing: 0.2px;
     }
     
     .balance-icon {
-        width: 16px;
-        height: 16px;
+        width: 20px;
+        height: 20px;
     }
     
     .balance-divider {
-        height: 20px;
-        margin: 0 4px 0 3px;
+        height: 24px;
+        margin: 0 8px 0 6px;
     }
     
     .balance-deposit-btn {
-        width: 30px;
-        min-height: 26px;
-        font-size: 20px;
-        border-radius: 0 9px 9px 0;
-        margin: -3px -1px -3px 0;
+        width: 37px;
+        min-height: 32px;
+        font-size: 24px;
+        border-radius: 0 11px 11px 0;
+        margin: -4px -1px -4px 0;
     }
     
     .balance-item {
-        gap: 1px;
+        gap: 3px;
     }
     
     .balance-item:last-child {
-        gap: 0px;
+        gap: 2px;
     }
 }
 
 @media (max-width: 360px) {
     .balance-island {
-        top: -6px;
-        right: 8px;
-        padding: 2px 0px 2px 6px;
-        border-radius: 8px;
-        height: 22px;
-        min-height: 22px;
+        height: 32px;
+        min-height: 32px;
+        padding: 4px 0px 4px 10px;
+        border-radius: 12px;
+        top: 0px;
+        right: 16px;
     }
     
     .balance-value {
-        font-size: 13px;
+        font-size: 18px;
+        letter-spacing: 0.5px;
         min-width: auto;
-        letter-spacing: 0.1px;
     }
     
     .balance-icon {
-        width: 14px;
-        height: 14px;
+        width: 20px;
+        height: 20px;
     }
     
     .balance-divider {
-        height: 16px;
-        margin: 0 3px 0 2px;
+        height: 24px;
+        margin: 0 8px 0 6px;
     }
     
     .balance-deposit-btn {
-        width: 26px;
-        min-height: 22px;
-        font-size: 17px;
-        border-radius: 0 7px 7px 0;
-        margin: -2px -1px -2px 0;
+        width: 37px;
+        min-height: 32px;
+        font-size: 24px;
+        border-radius: 0 11px 11px 0;
+        margin: -4px -1px -4px 0;
     }
     
     .balance-item {
-        gap: 1px;
+        gap: 3px;
     }
     
     .balance-item:last-child {
-        gap: 0px;
+        gap: 2px;
     }
 }
 
-
-
-/* ============================================================
-   АДАПТИВ
-   ============================================================ */
+/* Адаптив для левого островка остается */
 @media (max-width: 420px) {
     .user-island {
         top: 6px;
@@ -429,38 +431,6 @@ body.fullscreen-mode {
     .user-name {
         font-size: 16px;
         max-width: 100px;
-    }
-    
-    .balance-island {
-        top: -4px;
-        right: 12px;
-        padding: 3px 0px 3px 8px;
-        border-radius: 10px;
-        height: 26px;
-        min-height: 26px;
-    }
-    
-    .balance-value {
-        font-size: 15px;
-        min-width: 32px;
-    }
-    
-    .balance-icon {
-        width: 16px;
-        height: 16px;
-    }
-    
-    .balance-divider {
-        height: 20px;
-        margin: 0 6px 0 4px;
-    }
-    
-    .balance-deposit-btn {
-        width: 30px;
-        min-height: 26px;
-        font-size: 20px;
-        border-radius: 0 9px 9px 0;
-        margin: -3px -1px -3px 0;
     }
 }
 
@@ -489,38 +459,6 @@ body.fullscreen-mode {
     .user-name {
         font-size: 14px;
         max-width: 70px;
-    }
-    
-    .balance-island {
-        top: -6px;
-        right: 8px;
-        padding: 2px 0px 2px 6px;
-        border-radius: 8px;
-        height: 22px;
-        min-height: 22px;
-    }
-    
-    .balance-value {
-        font-size: 13px;
-        min-width: 28px;
-    }
-    
-    .balance-icon {
-        width: 14px;
-        height: 14px;
-    }
-    
-    .balance-divider {
-        height: 16px;
-        margin: 0 4px 0 3px;
-    }
-    
-    .balance-deposit-btn {
-        width: 26px;
-        min-height: 22px;
-        font-size: 17px;
-        border-radius: 0 7px 7px 0;
-        margin: -2px -1px -2px 0;
     }
 }
 
