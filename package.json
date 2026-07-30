@@ -1,7 +1,7 @@
 {
   "name": "bets-telegram-mini-app",
   "version": "1.0.0",
-  "description": "Telegram Mini App for Bets platform",
+  "description": "Telegram Mini App for Bets platform with Liquid Glass UI",
   "main": "index.html",
   "scripts": {
     "start": "serve .",
@@ -10,7 +10,8 @@
   "keywords": [
     "telegram",
     "mini-app",
-    "bets"
+    "bets",
+    "liquid-glass"
   ],
   "author": "",
   "license": "MIT",
