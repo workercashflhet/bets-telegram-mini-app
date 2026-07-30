@@ -246,13 +246,19 @@ body.fullscreen-mode {
 }
 
 /* ============================================================
-   КАРТОЧКА ПОД КАРУСЕЛЬЮ
+   КАРТОЧКИ ПОД КАРУСЕЛЬЮ
    ============================================================ */
-.game-card {
-    width: 100%;
-    max-width: 200px;
+.game-cards-row {
+    display: flex;
+    gap: 12px;
     margin-top: 12px;
-    margin-left: 0;
+    width: 100%;
+}
+
+.game-card {
+    flex: 0 0 auto;
+    width: calc(50% - 6px);
+    max-width: 200px;
     border-radius: 15px;
     overflow: hidden;
     box-shadow: 0 4px 20px rgba(12, 235, 15, 0.08);
@@ -491,10 +497,14 @@ body.fullscreen-mode {
         width: 16px;
     }
     
-    .game-card {
-        max-width: 160px;
-        border-radius: 12px;
+    .game-cards-row {
+        gap: 10px;
         margin-top: 10px;
+    }
+    
+    .game-card {
+        border-radius: 12px;
+        max-width: 160px;
     }
     
     .bottom-nav {
@@ -557,10 +567,14 @@ body.fullscreen-mode {
         padding: 2px 8px;
     }
     
-    .game-card {
-        max-width: 130px;
-        border-radius: 10px;
+    .game-cards-row {
+        gap: 8px;
         margin-top: 8px;
+    }
+    
+    .game-card {
+        border-radius: 10px;
+        max-width: 130px;
     }
 }
 
