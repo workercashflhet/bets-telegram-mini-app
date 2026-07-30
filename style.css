@@ -409,7 +409,6 @@ body.fullscreen-mode {
    МОБИЛЬНАЯ ВЕРСИЯ - ИСПРАВЛЕНА
    ============================================================ */
 @media (max-width: 430px) {
-    /* Убираем absolute позиционирование для мобильных */
     .game-content {
         padding-left: 0;
         padding-right: 0;
@@ -424,7 +423,6 @@ body.fullscreen-mode {
         border-radius: 10px;
         height: 28px;
         min-height: 28px;
-        /* Убираем возможные смещения */
         transform: none;
         -webkit-transform: none;
     }
@@ -448,9 +446,12 @@ body.fullscreen-mode {
     .balance-island {
         position: absolute;
         top: 0px;
-        right: 6px;
+        right: 12px;
+        padding: 4px 0px 4px 8px;
         height: 28px;
         min-height: 28px;
+        border-radius: 10px;
+        overflow: hidden;
     }
     
     .balance-value {
@@ -469,10 +470,12 @@ body.fullscreen-mode {
     }
     
     .balance-deposit-btn {
-        width: 50px; /* ← Увеличьте (было 40px, можно 45-50px) */
+        width: 40px;
         min-height: 28px;
         font-size: 20px;
-        margin: -3px -10px 0 0; /* ← Измените правый отступ */
+        margin: -3px -1px -3px 0;
+        border-radius: 0 10px 10px 0;
+        padding: 0;
     }
     
     .balance-item {
@@ -517,6 +520,7 @@ body.fullscreen-mode {
         height: 24px;
         min-height: 24px;
         border-radius: 8px;
+        overflow: hidden;
     }
     
     .balance-value {
@@ -535,12 +539,13 @@ body.fullscreen-mode {
     }
     
     .balance-deposit-btn {
-        width: 60px; /* ← Увеличьте (было 60px) */
+        width: 36px;
         min-height: 24px;
         font-size: 17px;
-        margin: -2px 0px -2px 0; /* ← Измените правый отступ */
+        margin: -2px -1px -2px 0;
+        border-radius: 0 8px 8px 0;
+        padding: 0;
     }
-
     
     .balance-item {
         gap: 2px;
@@ -548,23 +553,6 @@ body.fullscreen-mode {
     
     .balance-item:last-child {
         gap: 1px;
-    }
-}
-
-/* Для iPhone 12/13/14 (390px) */
-@media (min-width: 376px) and (max-width: 430px) {
-    .user-island {
-        left: 12px;
-        padding: 4px 8px 4px 6px;
-        height: 28px;
-        min-height: 28px;
-    }
-    
-    .balance-island {
-        right: 12px;
-        padding: 4px 0px 4px 8px;
-        height: 28px;
-        min-height: 28px;
     }
 }
 
