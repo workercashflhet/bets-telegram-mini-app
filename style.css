@@ -308,19 +308,19 @@ body.fullscreen-mode {
 }
 
 /* ============================================================
-   BOTTOM NAVIGATION - LIQUID GLASS STYLE
+   BOTTOM NAVIGATION - LIQUID GLASS STYLE (ПОДНЯТА НА 40px)
    ============================================================ */
 .bottom-nav {
     position: fixed;
-    bottom: 60px;
+    bottom: 40px; /* Было 20px, подняли на 20px выше */
     left: 50%;
     transform: translateX(-50%);
     max-width: 400px;
     width: calc(100% - 32px);
     display: flex;
     background: rgba(26, 26, 46, 0.35);
-    backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
+    backdrop-filter: blur(20px) saturate(180%);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 24px;
     padding: 6px 8px;
@@ -363,6 +363,7 @@ body.fullscreen-mode {
         rgba(255, 255, 255, 0.1) 100%
     );
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
     pointer-events: none;
@@ -490,7 +491,7 @@ body.fullscreen-mode {
     .bottom-nav {
         max-width: 340px;
         padding: 4px 6px;
-        bottom: 16px;
+        bottom: 32px; /* Для маленьких экранов тоже поднимаем */
     }
     
     .nav-item {
@@ -524,7 +525,7 @@ body.fullscreen-mode {
 /* Для экранов с вырезом (notch) */
 @supports (padding: max(0px)) {
     .bottom-nav {
-        bottom: max(20px, env(safe-area-inset-bottom, 20px));
+        bottom: max(40px, env(safe-area-inset-bottom, 40px));
     }
 }
 
