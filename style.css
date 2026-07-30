@@ -212,26 +212,28 @@ body.fullscreen-mode {
     margin: 0 8px 0 6px;
 }
 
+/* Кнопка депозита - вплотную к краю */
 .balance-deposit-btn {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 32px;
+    width: 37px;
     height: 100%;
     min-height: 32px;
     border-radius: 0 10px 10px 0;
     background: var(--accent);
     border: none;
     color: var(--bg-primary);
-    font-size: 20px;
+    font-size: 24px;
     font-weight: 700;
     cursor: pointer;
     transition: all 0.3s ease;
     padding: 0;
     line-height: 1;
-    margin: -4px 0;
+    margin: -4px -2px -4px 0; /* Убираем отступ справа */
     box-shadow: 0 0 20px rgba(12, 235, 15, 0.2);
     flex-shrink: 0;
+    text-align: center;
 }
 
 .balance-deposit-btn:active {
@@ -263,11 +265,11 @@ body.fullscreen-mode {
     }
     
     .balance-deposit-btn {
-        width: 26px;
+        width: 30px;
         min-height: 26px;
-        font-size: 16px;
+        font-size: 20px;
         border-radius: 0 8px 8px 0;
-        margin: -3px 0;
+        margin: -3px -2px -3px 0;
     }
 }
 
@@ -295,11 +297,11 @@ body.fullscreen-mode {
     }
     
     .balance-deposit-btn {
-        width: 22px;
+        width: 26px;
         min-height: 22px;
-        font-size: 14px;
+        font-size: 17px;
         border-radius: 0 6px 6px 0;
-        margin: -2px 0;
+        margin: -2px -2px -2px 0;
     }
 }
 
