@@ -246,7 +246,7 @@ body.fullscreen-mode {
 }
 
 /* ============================================================
-   КАРТОЧКИ ПОД КАРУСЕЛЬЮ - УВЕЛИЧЕНЫ НА 20px
+   КАРТОЧКИ ПОД КАРУСЕЛЬЮ - УВЕЛИЧЕНЫ ЕЩЕ НА 20px
    ============================================================ */
 .game-cards-row {
     display: flex;
@@ -264,7 +264,7 @@ body.fullscreen-mode {
     border: 1px solid rgba(12, 235, 15, 0.08);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     cursor: pointer;
-    aspect-ratio: 1 / 1.1;
+    aspect-ratio: 1 / 1.2;
 }
 
 .game-card:active {
@@ -504,7 +504,7 @@ body.fullscreen-mode {
     
     .game-card {
         border-radius: 12px;
-        aspect-ratio: 1 / 1.08;
+        aspect-ratio: 1 / 1.15;
     }
     
     .bottom-nav {
@@ -574,7 +574,7 @@ body.fullscreen-mode {
     
     .game-card {
         border-radius: 10px;
-        aspect-ratio: 1 / 1.06;
+        aspect-ratio: 1 / 1.1;
     }
 }
 
