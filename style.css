@@ -308,14 +308,14 @@ body.fullscreen-mode {
 }
 
 /* ============================================================
-   BOTTOM NAVIGATION - LIQUID GLASS STYLE (С ИКОНКАМИ)
+   BOTTOM NAVIGATION - LIQUID GLASS STYLE (РАСШИРЕНА НА 20px)
    ============================================================ */
 .bottom-nav {
     position: fixed;
     bottom: 40px;
     left: 50%;
     transform: translateX(-50%);
-    max-width: 400px;
+    max-width: 420px; /* Было 400px, стало 420px (+20px) */
     width: calc(100% - 32px);
     display: flex;
     background: rgba(26, 26, 46, 0.35);
@@ -323,7 +323,7 @@ body.fullscreen-mode {
     backdrop-filter: blur(20px) saturate(180%);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 24px;
-    padding: 6px 8px;
+    padding: 6px 10px; /* Увеличил паддинги для баланса */
     box-shadow: 
         0 8px 32px rgba(0, 0, 0, 0.4),
         inset 0 1px 0 rgba(255, 255, 255, 0.1),
@@ -481,8 +481,8 @@ body.fullscreen-mode {
 /* Responsive */
 @media (max-width: 420px) {
     .bottom-nav {
-        max-width: 340px;
-        padding: 4px 6px;
+        max-width: 360px; /* Было 340px, стало 360px (+20px) */
+        padding: 4px 8px;
         bottom: 32px;
     }
     
