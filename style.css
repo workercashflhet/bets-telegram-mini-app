@@ -481,7 +481,7 @@ body.fullscreen-mode {
     }
     
     .balance-item {
-        gap: 2px;
+        gap: 1px;
     }
     
     .balance-item:last-child {
