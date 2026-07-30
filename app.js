@@ -41,10 +41,8 @@ function initializeApp() {
     // Setup event listeners
     setupEventListeners();
     
-    // Show initial tab
-    showTab('profile');
-    
-    // Инициализируем карусель
+    // Показываем вкладку Game как первую (активная по умолчанию в HTML)
+    // Но также запускаем карусель
     initializeCarousel();
     
     // Обработчик изменения размера
