@@ -528,14 +528,14 @@ body.fullscreen-mode {
 @media (min-width: 376px) and (max-width: 430px) {
     .user-island {
         left: 12px;
-        padding: 4px 8px 4px 6px;
+        padding: 4px 8px 4px 8px;
         height: 28px;
         min-height: 28px;
     }
     
     .balance-island {
         right: 12px;
-        padding: 4px 0px 4px 8px;
+        padding: 4px 8px 4px 8px;
         height: 28px;
         min-height: 28px;
     }
