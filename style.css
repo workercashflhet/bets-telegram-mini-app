@@ -228,14 +228,14 @@ body.fullscreen-mode {
 }
 
 /* ============================================================
-   КОНТЕНТ ДЛЯ GAME - СКРОЛЛ (СКРЫТЫЙ СКРОЛЛБАР)
+   КОНТЕНТ ДЛЯ GAME - СКРОЛЛ (УМЕНЬШЕНА ДЛИНА НА 60px)
    ============================================================ */
 .game-content {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
     height: 100%;
-    padding: 10px 0 120px;
+    padding: 10px 0 60px;
     gap: 0;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
@@ -419,7 +419,7 @@ body.fullscreen-mode {
 }
 
 /* ============================================================
-   КНОПКА "БЕСПЛАТНЫЙ СПИН" - LIQUID GLASS (ШИРИНА КАК У КАРТОЧКИ)
+   КНОПКА "БЕСПЛАТНЫЙ СПИН" - LIQUID GLASS
    ============================================================ */
 .free-spin-btn {
     width: 100%;
@@ -500,29 +500,6 @@ body.fullscreen-mode {
     -webkit-text-fill-color: transparent;
     background-clip: text;
     text-shadow: 0 0 30px rgba(12, 235, 15, 0.2);
-}
-
-/* Адаптив для кнопки */
-@media (max-width: 420px) {
-    .free-spin-btn {
-        height: 64px;
-        margin-top: 10px;
-        font-size: 16px;
-        border-radius: 10px;
-        width: 100%;
-        margin-left: 0;
-    }
-}
-
-@media (max-width: 360px) {
-    .free-spin-btn {
-        height: 56px;
-        margin-top: 8px;
-        font-size: 14px;
-        border-radius: 8px;
-        width: 100%;
-        margin-left: 0;
-    }
 }
 
 /* ============================================================
