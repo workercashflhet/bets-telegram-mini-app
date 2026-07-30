@@ -452,7 +452,6 @@ body.fullscreen-mode {
         position: absolute;
         top: 0px;
         right: 12px;
-        border-radius: 10px;
         height: 28px;
         min-height: 28px;
         /* Убираем возможные смещения */
