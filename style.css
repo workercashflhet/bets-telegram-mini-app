@@ -396,7 +396,6 @@ body.fullscreen-mode {
     transition: all 0.3s ease;
     padding: 0;
     line-height: 1;
-    margin: -4px -1px -4px 0;
     box-shadow: 0 0 20px rgba(12, 235, 15, 0.2);
     flex-shrink: 0;
     text-align: center;
