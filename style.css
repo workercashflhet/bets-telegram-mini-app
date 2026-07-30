@@ -167,7 +167,7 @@ body.fullscreen-mode {
     padding: 0 16px;
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: center;
     z-index: 100;
     pointer-events: none;
     height: auto;
@@ -201,6 +201,7 @@ body.fullscreen-mode {
     min-height: 32px;
     box-sizing: border-box;
     width: auto;
+    flex-shrink: 0;
 }
 
 .user-avatar {
