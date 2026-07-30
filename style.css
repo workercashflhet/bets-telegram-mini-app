@@ -239,8 +239,8 @@ body.fullscreen-mode {
     z-index: 10;
     animation: floatGlow 4s ease-in-out infinite;
     overflow: hidden;
-    height: 32px;
-    min-height: 32px;
+    height: 48px;
+    min-height: 48px;
     box-sizing: border-box;
 }
 
