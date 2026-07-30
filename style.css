@@ -148,6 +148,18 @@ body.fullscreen-mode {
 }
 
 /* ============================================================
+   КОНТЕНТ ДЛЯ GAME
+   ============================================================ */
+.game-content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    height: 100%;
+    padding: 10px 0;
+    gap: 0;
+}
+
+/* ============================================================
    КАРУСЕЛЬ ДЛЯ БАННЕРОВ
    ============================================================ */
 .carousel-container {
@@ -231,6 +243,33 @@ body.fullscreen-mode {
 
 .dot.active:hover {
     background: var(--accent);
+}
+
+/* ============================================================
+   КАРТОЧКА ПОД КАРУСЕЛЬЮ
+   ============================================================ */
+.game-card {
+    width: 100%;
+    max-width: 200px;
+    margin-top: 12px;
+    margin-left: 0;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(12, 235, 15, 0.08);
+    border: 1px solid rgba(12, 235, 15, 0.08);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    cursor: pointer;
+}
+
+.game-card:active {
+    transform: scale(0.97);
+}
+
+.game-card-image {
+    width: 100%;
+    height: auto;
+    display: block;
+    object-fit: cover;
 }
 
 /* ============================================================
@@ -452,6 +491,12 @@ body.fullscreen-mode {
         width: 16px;
     }
     
+    .game-card {
+        max-width: 160px;
+        border-radius: 12px;
+        margin-top: 10px;
+    }
+    
     .bottom-nav {
         max-width: 360px;
         padding: 4px 8px;
@@ -510,6 +555,12 @@ body.fullscreen-mode {
         bottom: 6px;
         gap: 5px;
         padding: 2px 8px;
+    }
+    
+    .game-card {
+        max-width: 130px;
+        border-radius: 10px;
+        margin-top: 8px;
     }
 }
 
