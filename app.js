@@ -1,6 +1,15 @@
 // Telegram Web App initialization
 const tg = window.Telegram.WebApp;
 
+// Carousel state
+let currentSlide = 0;
+let totalSlides = 0;
+let autoPlayInterval = null;
+let isTransitioning = false;
+let startX = 0;
+let currentX = 0;
+let isDragging = false;
+
 // Initialize app
 document.addEventListener('DOMContentLoaded', () => {
     // Расширяем приложение на весь экран
@@ -19,6 +28,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Настройка внешнего вида
     tg.setBackgroundColor('#000000');
     tg.setHeaderColor('#000000');
+    
+    // Инициализация карусели
+    initializeCarousel();
     
     // Setup event listeners
     setupEventListeners();
@@ -41,6 +53,171 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
+// Initialize carousel
+function initializeCarousel() {
+    const track = document.getElementById('carouselTrack');
+    const dots = document.querySelectorAll('.dot');
+    
+    if (!track) return;
+    
+    totalSlides = track.children.length;
+    
+    // Set initial position
+    updateCarousel(0);
+    
+    // Start autoplay
+    startAutoPlay();
+    
+    // Add touch/click events for dots
+    dots.forEach((dot, index) => {
+        dot.addEventListener('click', () => {
+            goToSlide(index);
+        });
+    });
+    
+    // Touch events for swipe
+    track.parentElement.addEventListener('touchstart', handleTouchStart, { passive: true });
+    track.parentElement.addEventListener('touchmove', handleTouchMove, { passive: true });
+    track.parentElement.addEventListener('touchend', handleTouchEnd, { passive: true });
+    
+    // Mouse events for desktop swipe
+    track.parentElement.addEventListener('mousedown', handleMouseDown);
+    track.parentElement.addEventListener('mouseleave', handleMouseLeave);
+    track.parentElement.addEventListener('mouseup', handleMouseUp);
+    track.parentElement.addEventListener('mousemove', handleMouseMove);
+}
+
+// Update carousel position
+function updateCarousel(index) {
+    const track = document.getElementById('carouselTrack');
+    const dots = document.querySelectorAll('.dot');
+    
+    if (!track) return;
+    
+    currentSlide = index;
+    const offset = -index * 100;
+    track.style.transform = `translateX(${offset}%)`;
+    
+    // Update dots
+    dots.forEach((dot, i) => {
+        dot.classList.toggle('active', i === index);
+    });
+}
+
+// Go to specific slide
+function goToSlide(index) {
+    if (isTransitioning || index === currentSlide) return;
+    if (index < 0) index = totalSlides - 1;
+    if (index >= totalSlides) index = 0;
+    
+    isTransitioning = true;
+    updateCarousel(index);
+    setTimeout(() => {
+        isTransitioning = false;
+    }, 500);
+    
+    resetAutoPlay();
+}
+
+// Next slide
+function nextSlide() {
+    goToSlide((currentSlide + 1) % totalSlides);
+}
+
+// Start autoplay
+function startAutoPlay() {
+    stopAutoPlay();
+    autoPlayInterval = setInterval(nextSlide, 7000);
+}
+
+// Stop autoplay
+function stopAutoPlay() {
+    if (autoPlayInterval) {
+        clearInterval(autoPlayInterval);
+        autoPlayInterval = null;
+    }
+}
+
+// Reset autoplay
+function resetAutoPlay() {
+    startAutoPlay();
+}
+
+// Touch handlers
+function handleTouchStart(e) {
+    startX = e.touches[0].clientX;
+    isDragging = true;
+    stopAutoPlay();
+}
+
+function handleTouchMove(e) {
+    if (!isDragging) return;
+    currentX = e.touches[0].clientX;
+}
+
+function handleTouchEnd(e) {
+    if (!isDragging) return;
+    isDragging = false;
+    
+    const diff = startX - currentX;
+    const threshold = 50;
+    
+    if (Math.abs(diff) > threshold) {
+        if (diff > 0) {
+            goToSlide(currentSlide + 1);
+        } else {
+            goToSlide(currentSlide - 1);
+        }
+    } else {
+        resetAutoPlay();
+    }
+    
+    startX = 0;
+    currentX = 0;
+}
+
+// Mouse handlers for desktop
+function handleMouseDown(e) {
+    startX = e.clientX;
+    isDragging = true;
+    stopAutoPlay();
+}
+
+function handleMouseMove(e) {
+    if (!isDragging) return;
+    currentX = e.clientX;
+}
+
+function handleMouseUp(e) {
+    if (!isDragging) return;
+    isDragging = false;
+    
+    const diff = startX - currentX;
+    const threshold = 50;
+    
+    if (Math.abs(diff) > threshold) {
+        if (diff > 0) {
+            goToSlide(currentSlide + 1);
+        } else {
+            goToSlide(currentSlide - 1);
+        }
+    } else {
+        resetAutoPlay();
+    }
+    
+    startX = 0;
+    currentX = 0;
+}
+
+function handleMouseLeave() {
+    if (isDragging) {
+        isDragging = false;
+        startX = 0;
+        currentX = 0;
+        resetAutoPlay();
+    }
+}
+
 // Show tab content
 function showTab(page) {
     // Скрываем все табы
@@ -52,6 +229,13 @@ function showTab(page) {
     const targetTab = document.getElementById(`tab-${page}`);
     if (targetTab) {
         targetTab.classList.add('active');
+    }
+    
+    // Если переключились на вкладку Game, возобновляем автоплей
+    if (page === 'game') {
+        resetAutoPlay();
+    } else {
+        stopAutoPlay();
     }
 }
 
@@ -76,5 +260,7 @@ function setupEventListeners() {
 
 // Export functions for debugging
 window.betsApp = {
-    showTab
+    showTab,
+    goToSlide,
+    nextSlide
 };
