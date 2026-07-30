@@ -155,6 +155,56 @@ body.fullscreen-mode {
 }
 
 /* ============================================================
+   ОСТРОВОК С БАЛАНСОМ (TON/Stars) - LIQUID GLASS
+   ============================================================ */
+.balance-island {
+    position: absolute;
+    top: 20px;
+    right: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px 6px 10px;
+    background: rgba(0, 0, 0, 0.6);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(12, 235, 15, 0.15);
+    border-radius: 20px;
+    box-shadow: 
+        0 4px 20px rgba(0, 0, 0, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05),
+        0 0 30px rgba(12, 235, 15, 0.03);
+    z-index: 10;
+    animation: floatGlow 4s ease-in-out infinite;
+}
+
+.balance-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.balance-icon {
+    width: 18px;
+    height: 18px;
+    object-fit: contain;
+}
+
+.balance-value {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    letter-spacing: 0.3px;
+    min-width: 30px;
+}
+
+.balance-divider {
+    width: 1px;
+    height: 20px;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* ============================================================
    КОНТЕНТ ДЛЯ ВКЛАДОК
    ============================================================ */
 .tabs-content {
@@ -228,14 +278,14 @@ body.fullscreen-mode {
 }
 
 /* ============================================================
-   КОНТЕНТ ДЛЯ GAME - СКРОЛЛ (УМЕНЬШЕНА ДЛИНА ЕЩЕ НА 20px)
+   КОНТЕНТ ДЛЯ GAME - СКРОЛЛ (СО СДВИГОМ ВНИЗ НА 40px)
    ============================================================ */
 .game-content {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
     height: 100%;
-    padding: 10px 0 40px;
+    padding: 50px 0 40px;
     gap: 0;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
@@ -243,6 +293,7 @@ body.fullscreen-mode {
     padding-right: 2px;
     scrollbar-width: none;
     -ms-overflow-style: none;
+    position: relative;
 }
 
 .game-content::-webkit-scrollbar {
@@ -692,6 +743,28 @@ body.fullscreen-mode {
         height: 22px;
     }
     
+    .balance-island {
+        top: 12px;
+        right: 12px;
+        padding: 4px 10px 4px 8px;
+        gap: 6px;
+        border-radius: 16px;
+    }
+    
+    .balance-icon {
+        width: 14px;
+        height: 14px;
+    }
+    
+    .balance-value {
+        font-size: 11px;
+        min-width: 24px;
+    }
+    
+    .balance-divider {
+        height: 16px;
+    }
+    
     .tabs-content {
         top: 110px;
         bottom: 80px;
@@ -784,6 +857,28 @@ body.fullscreen-mode {
     .center-icon svg {
         width: 52px;
         height: 18px;
+    }
+    
+    .balance-island {
+        top: 8px;
+        right: 8px;
+        padding: 3px 8px 3px 6px;
+        gap: 4px;
+        border-radius: 14px;
+    }
+    
+    .balance-icon {
+        width: 12px;
+        height: 12px;
+    }
+    
+    .balance-value {
+        font-size: 10px;
+        min-width: 20px;
+    }
+    
+    .balance-divider {
+        height: 14px;
     }
     
     .tabs-content {
