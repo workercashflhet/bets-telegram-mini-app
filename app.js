@@ -286,6 +286,28 @@ function setupEventListeners() {
         });
     }
 
+    // Deposit button in balance island
+    const depositBtn = document.getElementById('depositBtn');
+    if (depositBtn) {
+        depositBtn.addEventListener('click', () => {
+            tg.showPopup({
+                title: '💰 Deposit',
+                message: 'Select deposit method',
+                buttons: [
+                    { id: 'crypto', text: 'Crypto' },
+                    { id: 'card', text: 'Card' },
+                    { id: 'cancel', text: 'Cancel', type: 'cancel' }
+                ]
+            }, (buttonId) => {
+                if (buttonId === 'crypto') {
+                    tg.showAlert('Crypto deposit selected');
+                } else if (buttonId === 'card') {
+                    tg.showAlert('Card deposit selected');
+                }
+            });
+        });
+    }
+
     // Close app on back button
     tg.onEvent('backButtonClicked', () => {
         tg.close();
