@@ -1,17 +1,12 @@
 // Telegram Web App initialization
 const tg = window.Telegram.WebApp;
 
-// Carousel state
-let currentSlide = 0;
-let totalSlides = 0;
-let autoPlayInterval = null;
-let isTransitioning = false;
-let startX = 0;
-let currentX = 0;
-let isDragging = false;
-
 // Initialize app
 document.addEventListener('DOMContentLoaded', () => {
+    // Показываем прелоадер минимум 3 секунды
+    const preloader = document.getElementById('preloader');
+    const app = document.getElementById('app');
+    
     // Расширяем приложение на весь экран
     tg.expand();
     
@@ -29,14 +24,28 @@ document.addEventListener('DOMContentLoaded', () => {
     tg.setBackgroundColor('#000000');
     tg.setHeaderColor('#000000');
     
-    // Инициализация карусели
-    initializeCarousel();
-    
+    // Показываем прелоадер минимум 3 секунды
+    setTimeout(() => {
+        // Скрываем прелоадер
+        preloader.classList.add('hidden');
+        
+        // Показываем приложение
+        app.style.display = 'block';
+        
+        // Инициализируем приложение
+        initializeApp();
+    }, 3000);
+});
+
+function initializeApp() {
     // Setup event listeners
     setupEventListeners();
     
     // Show initial tab
     showTab('profile');
+    
+    // Инициализируем карусель
+    initializeCarousel();
     
     // Обработчик изменения размера
     window.addEventListener('resize', () => {
@@ -51,7 +60,16 @@ document.addEventListener('DOMContentLoaded', () => {
             tg.expand();
         }
     });
-});
+}
+
+// Carousel state
+let currentSlide = 0;
+let totalSlides = 0;
+let autoPlayInterval = null;
+let isTransitioning = false;
+let startX = 0;
+let currentX = 0;
+let isDragging = false;
 
 // Initialize carousel
 function initializeCarousel() {
