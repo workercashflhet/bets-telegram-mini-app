@@ -40,19 +40,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Setup event listeners
 function setupEventListeners() {
-    // Bottom navigation
+    // Bottom navigation - без всплывающих уведомлений
     document.querySelectorAll('.nav-item').forEach(item => {
         item.addEventListener('click', (e) => {
             document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
             item.classList.add('active');
-            const page = item.dataset.page;
-            if (page === 'profile') {
-                showToast('Profile page');
-            } else if (page === 'game') {
-                showToast('Game page');
-            } else if (page === 'settings') {
-                showToast('Settings page');
-            }
+            // Убраны все showToast() вызовы
         });
     });
 
@@ -62,7 +55,7 @@ function setupEventListeners() {
     });
 }
 
-// Show toast notification
+// Функция showToast оставлена для возможного использования в будущем
 function showToast(message, duration = 3000) {
     const existingToast = document.querySelector('.toast');
     if (existingToast) {
