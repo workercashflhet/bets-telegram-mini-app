@@ -384,10 +384,9 @@ body.fullscreen-mode {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 37px;
+    width: 50px;
     height: 100%;
     min-height: 32px;
-    border-radius: 0 11px 11px 0;
     background: var(--accent);
     border: none;
     color: var(--bg-primary);
