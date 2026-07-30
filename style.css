@@ -447,11 +447,10 @@ body.fullscreen-mode {
         position: absolute;
         top: 0px;
         right: 12px;
-        padding: 4px 0px 4px 8px;
         height: 28px;
         min-height: 28px;
         border-radius: 10px;
-        overflow: hidden;
+        overflow: visible;
     }
     
     .balance-value {
