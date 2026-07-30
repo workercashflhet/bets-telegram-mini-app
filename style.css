@@ -384,7 +384,7 @@ body.fullscreen-mode {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 50px;
+    width: 30px;
     height: 100%;
     min-height: 32px;
     background: var(--accent);
