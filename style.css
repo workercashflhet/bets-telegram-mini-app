@@ -228,14 +228,14 @@ body.fullscreen-mode {
 }
 
 /* ============================================================
-   КОНТЕНТ ДЛЯ GAME - СКРОЛЛ (УМЕНЬШЕНА ДЛИНА НА 60px)
+   КОНТЕНТ ДЛЯ GAME - СКРОЛЛ (УМЕНЬШЕНА ДЛИНА ЕЩЕ НА 20px)
    ============================================================ */
 .game-content {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
     height: 100%;
-    padding: 10px 0 60px;
+    padding: 10px 0 40px;
     gap: 0;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
