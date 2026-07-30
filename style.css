@@ -49,11 +49,11 @@ body.fullscreen-mode {
 }
 
 /* ============================================================
-   ЦЕНТРАЛЬНАЯ ИКОНКА СВЕРХУ - УМЕНЬШЕНА НА 20px И СМЕЩЕНА НИЖЕ
+   ЦЕНТРАЛЬНАЯ ИКОНКА СВЕРХУ - ПОДНЯТА НА 20px ВЫШЕ
    ============================================================ */
 .center-icon {
     position: absolute;
-    top: 100px;  /* Было 60px, стало 100px (+40px) */
+    top: 80px;  /* Было 100px, стало 80px (-20px) */
     left: 50%;
     transform: translateX(-50%);
     display: flex;
@@ -63,8 +63,8 @@ body.fullscreen-mode {
 }
 
 .center-icon svg {
-    width: 73px;  /* Было 93px, стало 73px (-20px) */
-    height: 26px; /* Было 33px, стало 26px (-20px) */
+    width: 73px;
+    height: 26px;
     opacity: 0.9;
     filter: drop-shadow(0 0 30px rgba(12, 235, 15, 0.3));
 }
@@ -272,12 +272,12 @@ body.fullscreen-mode {
 /* Responsive */
 @media (max-width: 420px) {
     .center-icon {
-        top: 80px;  /* Адаптив: было 40px, стало 80px (+40px) */
+        top: 60px;  /* Адаптив: было 80px, стало 60px (-20px) */
     }
     
     .center-icon svg {
-        width: 62px;  /* Было 78px, стало 62px (-16px) */
-        height: 22px; /* Было 28px, стало 22px (-6px) */
+        width: 62px;
+        height: 22px;
     }
     
     .bottom-nav {
@@ -312,12 +312,12 @@ body.fullscreen-mode {
 
 @media (max-width: 360px) {
     .center-icon {
-        top: 70px;  /* Адаптив: было 30px, стало 70px (+40px) */
+        top: 50px;  /* Адаптив: было 70px, стало 50px (-20px) */
     }
     
     .center-icon svg {
-        width: 52px;  /* Было 66px, стало 52px (-14px) */
-        height: 18px; /* Было 24px, стало 18px (-6px) */
+        width: 52px;
+        height: 18px;
     }
 }
 
