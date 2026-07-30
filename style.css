@@ -454,9 +454,6 @@ body.fullscreen-mode {
         right: 12px;
         height: 28px;
         min-height: 28px;
-        /* Убираем возможные смещения */
-        transform: none;
-        -webkit-transform: none;
     }
     
     .balance-value {
