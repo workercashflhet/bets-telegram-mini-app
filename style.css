@@ -49,7 +49,7 @@ body.fullscreen-mode {
 }
 
 /* ============================================================
-   ЦЕНТРАЛЬНАЯ ИКОНКА СВЕРХУ
+   ЦЕНТРАЛЬНАЯ ИКОНКА СВЕРХУ - УВЕЛИЧЕНА В 3 РАЗА
    ============================================================ */
 .center-icon {
     position: absolute;
@@ -63,10 +63,10 @@ body.fullscreen-mode {
 }
 
 .center-icon svg {
-    width: 31px;
-    height: 11px;
+    width: 93px;  /* Было 31px, стало 93px (x3) */
+    height: 33px; /* Было 11px, стало 33px (x3) */
     opacity: 0.9;
-    filter: drop-shadow(0 0 20px rgba(12, 235, 15, 0.2));
+    filter: drop-shadow(0 0 30px rgba(12, 235, 15, 0.3));
 }
 
 /* Анимация пульсации для иконки */
@@ -276,8 +276,8 @@ body.fullscreen-mode {
     }
     
     .center-icon svg {
-        width: 26px;
-        height: 9px;
+        width: 78px;  /* Уменьшаем для маленьких экранов, но сохраняем пропорции */
+        height: 28px;
     }
     
     .bottom-nav {
@@ -316,8 +316,8 @@ body.fullscreen-mode {
     }
     
     .center-icon svg {
-        width: 22px;
-        height: 8px;
+        width: 66px;
+        height: 24px;
     }
 }
 
