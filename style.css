@@ -86,7 +86,6 @@ html, body {
     height: 100%;
     height: 100dvh;
     overflow: hidden;
-    /* Скрываем скроллбар */
     scrollbar-width: none;
     -ms-overflow-style: none;
 }
@@ -166,7 +165,6 @@ body.fullscreen-mode {
     bottom: 100px;
     padding: 0 16px;
     overflow: hidden;
-    /* Скрываем скроллбар */
     scrollbar-width: none;
     -ms-overflow-style: none;
 }
@@ -243,12 +241,10 @@ body.fullscreen-mode {
     -webkit-overflow-scrolling: touch;
     scroll-behavior: smooth;
     padding-right: 2px;
-    /* Скрываем скроллбар */
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE и Edge */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
 }
 
-/* Скрываем скроллбар для Chrome, Safari и Opera */
 .game-content::-webkit-scrollbar {
     display: none;
     width: 0;
@@ -423,14 +419,14 @@ body.fullscreen-mode {
 }
 
 /* ============================================================
-   КНОПКА "БЕСПЛАТНЫЙ СПИН" - LIQUID GLASS (ВЫСОТА 80px)
+   КНОПКА "БЕСПЛАТНЫЙ СПИН" - LIQUID GLASS (ШИРИНА КАК У КАРТОЧКИ)
    ============================================================ */
 .free-spin-btn {
-    width: calc(100% + 40px);
+    width: 100%;
     height: 80px;
     margin-top: 12px;
     margin-bottom: 8px;
-    margin-left: -20px;
+    margin-left: 0;
     padding: 0 20px;
     background: rgba(0, 0, 0, 0.5);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
@@ -513,16 +509,8 @@ body.fullscreen-mode {
         margin-top: 10px;
         font-size: 16px;
         border-radius: 10px;
-        width: calc(100% + 32px);
-        margin-left: -16px;
-    }
-    
-    .free-spin-btn::before {
-        border-radius: 10px;
-    }
-    
-    .free-spin-btn::after {
-        border-radius: 12px;
+        width: 100%;
+        margin-left: 0;
     }
 }
 
@@ -532,16 +520,8 @@ body.fullscreen-mode {
         margin-top: 8px;
         font-size: 14px;
         border-radius: 8px;
-        width: calc(100% + 24px);
-        margin-left: -12px;
-    }
-    
-    .free-spin-btn::before {
-        border-radius: 8px;
-    }
-    
-    .free-spin-btn::after {
-        border-radius: 10px;
+        width: 100%;
+        margin-left: 0;
     }
 }
 
