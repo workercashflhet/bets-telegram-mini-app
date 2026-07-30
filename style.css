@@ -86,6 +86,15 @@ html, body {
     height: 100%;
     height: 100dvh;
     overflow: hidden;
+    /* Скрываем скроллбар */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+    display: none;
+    width: 0;
 }
 
 body {
@@ -157,6 +166,14 @@ body.fullscreen-mode {
     bottom: 100px;
     padding: 0 16px;
     overflow: hidden;
+    /* Скрываем скроллбар */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.tabs-content::-webkit-scrollbar {
+    display: none;
+    width: 0;
 }
 
 .tab-content {
@@ -213,7 +230,7 @@ body.fullscreen-mode {
 }
 
 /* ============================================================
-   КОНТЕНТ ДЛЯ GAME - СКРОЛЛ
+   КОНТЕНТ ДЛЯ GAME - СКРОЛЛ (СКРЫТЫЙ СКРОЛЛБАР)
    ============================================================ */
 .game-content {
     display: flex;
@@ -226,25 +243,15 @@ body.fullscreen-mode {
     -webkit-overflow-scrolling: touch;
     scroll-behavior: smooth;
     padding-right: 2px;
+    /* Скрываем скроллбар */
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE и Edge */
 }
 
-/* Кастомизация скроллбара для game-content */
+/* Скрываем скроллбар для Chrome, Safari и Opera */
 .game-content::-webkit-scrollbar {
-    width: 4px;
-}
-
-.game-content::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-.game-content::-webkit-scrollbar-thumb {
-    background: var(--accent);
-    border-radius: 2px;
-    opacity: 0.5;
-}
-
-.game-content::-webkit-scrollbar-thumb:hover {
-    opacity: 1;
+    display: none;
+    width: 0;
 }
 
 /* ============================================================
@@ -884,19 +891,11 @@ body.fullscreen-mode {
 }
 
 /* ============================================================
-   СКРОЛЛБАР
+   ГЛОБАЛЬНОЕ СКРЫТИЕ СКРОЛЛБАРА
    ============================================================ */
 ::-webkit-scrollbar {
-    width: 6px;
-}
-
-::-webkit-scrollbar-track {
-    background: var(--bg-primary);
-}
-
-::-webkit-scrollbar-thumb {
-    background: var(--accent);
-    border-radius: 3px;
+    display: none;
+    width: 0;
 }
 
 /* ============================================================
