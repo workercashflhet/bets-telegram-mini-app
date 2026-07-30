@@ -159,30 +159,30 @@ body.fullscreen-mode {
    ============================================================ */
 .user-island {
     position: absolute;
-    top: 10px; /* Было 0px, стало 10px (-10px вниз) */
+    top: 10px;
     left: 16px;
     display: flex;
     align-items: center;
-    gap: 10px; /* Увеличено */
-    padding: 6px 14px 6px 8px; /* Увеличено */
+    gap: 10px;
+    padding: 6px 14px 6px 8px;
     background: rgba(0, 0, 0, 0.6);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     backdrop-filter: blur(20px) saturate(180%);
     border: 1px solid rgba(12, 235, 15, 0.15);
-    border-radius: 16px; /* Увеличено */
+    border-radius: 16px;
     box-shadow: 
         0 4px 20px rgba(0, 0, 0, 0.4),
         inset 0 1px 0 rgba(255, 255, 255, 0.05),
         0 0 30px rgba(12, 235, 15, 0.03);
     z-index: 10;
     animation: floatGlow 4s ease-in-out infinite;
-    height: 48px; /* Было 32px, стало 48px (x1.5) */
+    height: 48px;
     min-height: 48px;
     box-sizing: border-box;
 }
 
 .user-avatar {
-    width: 36px; /* Было 24px, стало 36px (x1.5) */
+    width: 36px;
     height: 36px;
     border-radius: 50%;
     object-fit: cover;
@@ -199,25 +199,25 @@ body.fullscreen-mode {
     justify-content: center;
     background: var(--accent);
     color: var(--bg-primary);
-    font-size: 18px; /* Увеличено */
+    font-size: 18px;
     font-weight: 700;
     flex-shrink: 0;
     border: 2px solid rgba(12, 235, 15, 0.2);
 }
 
 .user-name {
-    font-size: 20px; /* Было 14px, стало 20px (x1.5) */
-    font-weight: 700; /* Увеличено */
+    font-size: 20px;
+    font-weight: 700;
     color: var(--text-primary);
     letter-spacing: 0.5px;
     white-space: nowrap;
-    max-width: 150px; /* Увеличено */
+    max-width: 150px;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
 /* ============================================================
-   ПРАВЫЙ ОСТРОВОК - ОСТАЕТСЯ БЕЗ ИЗМЕНЕНИЙ
+   ПРАВЫЙ ОСТРОВОК С БАЛАНСОМ - ВОССТАНОВЛЕН
    ============================================================ */
 .balance-island {
     position: absolute;
@@ -244,10 +244,74 @@ body.fullscreen-mode {
     box-sizing: border-box;
 }
 
-/* Адаптив для левого островка */
+.balance-item {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.balance-item:last-child {
+    gap: 2px;
+}
+
+.balance-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: 0.5px;
+    min-width: 40px;
+    order: 1;
+}
+
+.balance-icon {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+    order: 2;
+}
+
+.balance-divider {
+    width: 1px;
+    height: 24px;
+    background: rgba(255, 255, 255, 0.1);
+    margin: 0 8px 0 6px;
+    flex-shrink: 0;
+}
+
+.balance-deposit-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 37px;
+    height: 100%;
+    min-height: 32px;
+    border-radius: 0 11px 11px 0;
+    background: var(--accent);
+    border: none;
+    color: var(--bg-primary);
+    font-size: 24px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    padding: 0;
+    line-height: 1;
+    margin: -4px -1px -4px 0;
+    box-shadow: 0 0 20px rgba(12, 235, 15, 0.2);
+    flex-shrink: 0;
+    text-align: center;
+    box-sizing: border-box;
+}
+
+.balance-deposit-btn:active {
+    transform: scale(0.92);
+}
+
+/* ============================================================
+   АДАПТИВ
+   ============================================================ */
 @media (max-width: 420px) {
     .user-island {
-        top: 6px; /* Адаптив */
+        top: 6px;
         left: 12px;
         padding: 4px 10px 4px 6px;
         gap: 8px;
@@ -279,6 +343,29 @@ body.fullscreen-mode {
         border-radius: 10px;
         height: 26px;
         min-height: 26px;
+    }
+    
+    .balance-value {
+        font-size: 15px;
+        min-width: 32px;
+    }
+    
+    .balance-icon {
+        width: 16px;
+        height: 16px;
+    }
+    
+    .balance-divider {
+        height: 20px;
+        margin: 0 6px 0 4px;
+    }
+    
+    .balance-deposit-btn {
+        width: 30px;
+        min-height: 26px;
+        font-size: 20px;
+        border-radius: 0 9px 9px 0;
+        margin: -3px -1px -3px 0;
     }
 }
 
@@ -316,6 +403,29 @@ body.fullscreen-mode {
         border-radius: 8px;
         height: 22px;
         min-height: 22px;
+    }
+    
+    .balance-value {
+        font-size: 13px;
+        min-width: 28px;
+    }
+    
+    .balance-icon {
+        width: 14px;
+        height: 14px;
+    }
+    
+    .balance-divider {
+        height: 16px;
+        margin: 0 4px 0 3px;
+    }
+    
+    .balance-deposit-btn {
+        width: 26px;
+        min-height: 22px;
+        font-size: 17px;
+        border-radius: 0 7px 7px 0;
+        margin: -2px -1px -2px 0;
     }
 }
 
