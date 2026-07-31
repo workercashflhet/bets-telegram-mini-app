@@ -119,7 +119,7 @@ body.fullscreen-mode {
     padding-top: env(safe-area-inset-top);
     padding-bottom: env(safe-area-inset-bottom);
     position: relative;
-    overflow: hidden; /* ← Добавить */
+    overflow: hidden;
 }
 
 /* ============================================================
@@ -229,6 +229,41 @@ body.fullscreen-mode {
     flex-shrink: 0;
 }
 
+.user-avatar {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(12, 235, 15, 0.2);
+    flex-shrink: 0;
+}
+
+.user-avatar-fallback {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--accent);
+    color: var(--bg-primary);
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+    border: 2px solid rgba(12, 235, 15, 0.2);
+}
+
+.user-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 /* ============================================================
    ОБЕРТКА ДЛЯ ПРАВОГО ОСТРОВКА И КНОПКИ
    ============================================================ */
@@ -263,6 +298,45 @@ body.fullscreen-mode {
     min-height: 32px;
     box-sizing: border-box;
     width: auto;
+}
+
+.balance-item {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    flex-shrink: 0;
+}
+
+.balance-item:last-child {
+    gap: 2px;
+}
+
+.balance-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: 0.5px;
+    min-width: auto;
+    order: 1;
+    padding-right: 0px;
+    white-space: nowrap;
+}
+
+.balance-icon {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+    order: 2;
+    flex-shrink: 0;
+    transform: translateY(2px);
+}
+
+.balance-divider {
+    width: 1px;
+    height: 24px;
+    background: rgba(255, 255, 255, 0.1);
+    margin: 0 8px 0 6px;
+    flex-shrink: 0;
 }
 
 /* ============================================================
@@ -802,8 +876,9 @@ body.fullscreen-mode {
    ============================================================ */
 @media (max-width: 430px) {
     .islands-container {
-        top: 6px;
+        top: 0px;
         padding: 0 12px;
+        height: 40px;
     }
     
     .user-island {
@@ -849,6 +924,7 @@ body.fullscreen-mode {
     .balance-icon {
         width: 16px;
         height: 16px;
+        transform: translateY(2px);
     }
     
     .balance-divider {
@@ -876,6 +952,10 @@ body.fullscreen-mode {
     .tabs-content {
         top: 110px;
         bottom: 80px;
+    }
+    
+    .game-content {
+        padding: 50px 0 40px;
     }
     
     .carousel-container {
@@ -959,8 +1039,9 @@ body.fullscreen-mode {
 
 @media (max-width: 375px) {
     .islands-container {
-        top: 4px;
+        top: 0px;
         padding: 0 10px;
+        height: 34px;
     }
     
     .user-island {
@@ -1006,6 +1087,7 @@ body.fullscreen-mode {
     .balance-icon {
         width: 14px;
         height: 14px;
+        transform: translateY(1.5px);
     }
     
     .balance-divider {
@@ -1033,6 +1115,10 @@ body.fullscreen-mode {
     .tabs-content {
         top: 100px;
         bottom: 70px;
+    }
+    
+    .game-content {
+        padding: 44px 0 40px;
     }
     
     .carousel-container {
