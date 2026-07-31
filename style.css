@@ -156,6 +156,30 @@ body.fullscreen-mode {
 }
 
 /* ============================================================
+   ФИКСИРОВАННЫЙ КОНТЕЙНЕР ДЛЯ ОСТРОВКОВ
+   ============================================================ */
+.islands-container {
+    position: fixed;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: 480px;
+    width: calc(100% - 32px);
+    padding: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 1000;
+    pointer-events: none;
+    height: auto;
+    box-sizing: border-box;
+}
+
+.islands-container > * {
+    pointer-events: auto;
+}
+
+/* ============================================================
    ЛЕВЫЙ ОСТРОВОК С АВАТАРКОЙ И ИМЕНЕМ
    ============================================================ */
 .user-island {
