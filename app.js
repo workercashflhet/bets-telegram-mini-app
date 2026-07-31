@@ -80,7 +80,7 @@ function initializeUser() {
         // Получаем данные пользователя из Telegram
         const user = tg.initDataUnsafe?.user;
         
-        console.log('Telegram user data:', user); // Для отладки
+        console.log('Telegram user data:', user);
         
         if (user) {
             state.user = user;
@@ -93,7 +93,6 @@ function initializeUser() {
                 const lastName = user.last_name || '';
                 const username = user.username || '';
                 
-                // Показываем first_name или username
                 if (firstName) {
                     userNameDisplay.textContent = firstName + (lastName ? ' ' + lastName : '');
                 } else if (username) {
@@ -106,18 +105,13 @@ function initializeUser() {
             // Обновляем аватарку пользователя
             const userAvatar = document.getElementById('userAvatar');
             if (userAvatar) {
-                // Если есть photo_url (для некоторых ботов)
                 if (user.photo_url) {
                     userAvatar.src = user.photo_url;
                 } else {
-                    // Если нет фото, используем Telegram API для получения аватарки
-                    // или оставляем дефолтную
                     const avatarUrl = `https://t.me/i/userpic/320/${user.id}.jpg`;
                     userAvatar.src = avatarUrl;
                     userAvatar.onerror = function() {
-                        // Если аватарка не загрузилась, оставляем дефолтную
                         this.style.display = 'none';
-                        // Создаем инициалы как fallback
                         const fallbackText = document.createElement('span');
                         fallbackText.className = 'user-avatar-fallback';
                         const firstLetter = (user.first_name || user.username || 'U')[0].toUpperCase();
@@ -128,7 +122,7 @@ function initializeUser() {
                 }
             }
             
-            // Обновляем данные в шапке (для обратной совместимости)
+            // Обновляем данные в шапке
             const userNameElement = document.getElementById('userName');
             if (userNameElement) {
                 userNameElement.textContent = `@${user.username || 'user'}`;
@@ -147,7 +141,6 @@ function initializeUser() {
                 photoUrl: user.photo_url || ''
             }));
         } else {
-            // Fallback для тестирования (если пользователь не из Telegram)
             console.warn('No Telegram user data available, using fallback');
             const savedUser = localStorage.getItem('bets_user');
             if (savedUser) {
@@ -158,7 +151,6 @@ function initializeUser() {
                 }
                 state.userId = userData.userId;
             } else {
-                // Демо-пользователь
                 const userNameDisplay = document.getElementById('userNameDisplay');
                 if (userNameDisplay) {
                     userNameDisplay.textContent = 'Demo User';
