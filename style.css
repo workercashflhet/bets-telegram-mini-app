@@ -156,22 +156,46 @@ body.fullscreen-mode {
 }
 
 /* ============================================================
-   ФИКСИРОВАННЫЙ КОНТЕЙНЕР ДЛЯ ОСТРОВКОВ
+   КОНТЕНТ ДЛЯ GAME - СКРОЛЛ
+   ============================================================ */
+.game-content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    height: 100%;
+    padding: 60px 0 40px;
+    gap: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+    padding-right: 2px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    position: relative;
+    width: 100%;
+    max-width: 100%;
+}
+
+.game-content::-webkit-scrollbar {
+    display: none;
+    width: 0;
+}
+
+/* ============================================================
+   КОНТЕЙНЕР ДЛЯ ОСТРОВКОВ (абсолют внутри game-content)
    ============================================================ */
 .islands-container {
-    position: fixed;
-    top: 10px;
-    left: 50%;
-    transform: translateX(-50%);
-    max-width: 480px;
-    width: calc(100% - 32px);
-    padding: 0;
+    position: absolute;
+    top: 0px;
+    left: 0;
+    right: 0;
+    padding: 0 16px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    z-index: 1000;
+    z-index: 100;
     pointer-events: none;
-    height: auto;
+    height: 48px;
     box-sizing: border-box;
 }
 
@@ -203,42 +227,6 @@ body.fullscreen-mode {
     box-sizing: border-box;
     width: auto;
     flex-shrink: 0;
-
-}
-
-.user-avatar {
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 2px solid rgba(12, 235, 15, 0.2);
-    flex-shrink: 0;
-}
-
-.user-avatar-fallback {
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--accent);
-    color: var(--bg-primary);
-    font-size: 11px;
-    font-weight: 700;
-    flex-shrink: 0;
-    border: 2px solid rgba(12, 235, 15, 0.2);
-}
-
-.user-name {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--text-primary);
-    letter-spacing: 0.3px;
-    white-space: nowrap;
-    max-width: 100px;
-    overflow: hidden;
-    text-overflow: ellipsis;
 }
 
 /* ============================================================
@@ -277,44 +265,6 @@ body.fullscreen-mode {
     width: auto;
 }
 
-.balance-item {
-    display: flex;
-    align-items: center;
-    gap: 3px;
-    flex-shrink: 0;
-}
-
-.balance-item:last-child {
-    gap: 2px;
-}
-
-.balance-value {
-    font-size: 18px;
-    font-weight: 700;
-    color: var(--text-primary);
-    letter-spacing: 0.5px;
-    min-width: auto;
-    order: 1;
-    padding-right: 0px;
-    white-space: nowrap;
-}
-
-.balance-icon {
-    width: 20px;
-    height: 20px;
-    object-fit: contain;
-    order: 2;
-    flex-shrink: 0;
-}
-
-.balance-divider {
-    width: 1px;
-    height: 24px;
-    background: rgba(255, 255, 255, 0.1);
-    margin: 0 8px 0 6px;
-    flex-shrink: 0;
-}
-
 /* ============================================================
    КНОПКА ДЕПОЗИТА - ОТДЕЛЬНО СПРАВА
    ============================================================ */
@@ -343,32 +293,6 @@ body.fullscreen-mode {
 
 .balance-deposit-btn:active {
     transform: scale(0.92);
-}
-
-/* ============================================================
-   КОНТЕНТ ДЛЯ GAME - СКРОЛЛ
-   ============================================================ */
-.game-content {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    height: 100%;
-    padding: 60px 0 40px;
-    gap: 0;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    scroll-behavior: smooth;
-    padding-right: 2px;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-    position: relative;
-    width: 100%;
-    max-width: 100%;
-}
-
-.game-content::-webkit-scrollbar {
-    display: none;
-    width: 0;
 }
 
 /* ============================================================
