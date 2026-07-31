@@ -328,7 +328,7 @@ body.fullscreen-mode {
     object-fit: contain;
     order: 2;
     flex-shrink: 0;
-    transform: translateY(2px);
+    transform: translateY(1px);
 }
 
 .balance-divider {
@@ -924,7 +924,7 @@ body.fullscreen-mode {
     .balance-icon {
         width: 16px;
         height: 16px;
-        transform: translateY(2px);
+        transform: translateY(1px);
     }
     
     .balance-divider {
@@ -1087,7 +1087,7 @@ body.fullscreen-mode {
     .balance-icon {
         width: 14px;
         height: 14px;
-        transform: translateY(1.5px);
+        transform: translateY(1px);
     }
     
     .balance-divider {
