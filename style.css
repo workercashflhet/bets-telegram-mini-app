@@ -179,6 +179,7 @@ body.fullscreen-mode {
     box-sizing: border-box;
     width: auto;
     flex-shrink: 0;
+
 }
 
 .user-avatar {
