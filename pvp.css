@@ -381,7 +381,7 @@ body {
 }
 
 /* ============================================================
-   ТРЕУГОЛЬНИК УКАЗАТЕЛЬ (СКРУГЛЕННЫЙ, СМЕЩЕН НИЖЕ)
+   ТРЕУГОЛЬНИК УКАЗАТЕЛЬ (ЧЕРНЫЙ С БЕЛОЙ ОБВОДКОЙ)
    ============================================================ */
 .wheel-pointer {
     position: absolute;
@@ -393,8 +393,23 @@ body {
     height: 0;
     border-left: 16px solid transparent;
     border-right: 16px solid transparent;
-    border-top: 28px solid #ffffff;
-    filter: drop-shadow(0 0 10px rgba(255,255,255,0.4));
+    border-top: 28px solid #000000;
+    filter: drop-shadow(0 0 4px rgba(255,255,255,0.5));
+    border-radius: 2px;
+}
+
+/* Белая обводка через псевдоэлемент */
+.wheel-pointer::before {
+    content: '';
+    position: absolute;
+    top: -30px;
+    left: -18px;
+    width: 0;
+    height: 0;
+    border-left: 18px solid transparent;
+    border-right: 18px solid transparent;
+    border-top: 32px solid rgba(255,255,255,0.8);
+    z-index: -1;
     border-radius: 2px;
 }
 
@@ -1068,7 +1083,6 @@ body {
         margin-top: 134px;
     }
     
-    /* Увеличенное колесо на 430px */
     .wheel-container {
         width: 320px;
         height: 320px;
@@ -1106,7 +1120,6 @@ body {
         height: 32px;
     }
     
-    /* Сдвиг элементов ниже колеса */
     .spinning-status {
         margin-top: 16px;
     }
@@ -1162,9 +1175,17 @@ body {
     .wheel-pointer {
         border-left: 12px solid transparent;
         border-right: 12px solid transparent;
-        border-top: 22px solid #ffffff;
+        border-top: 22px solid #000000;
         top: -2px;
         border-radius: 1px;
+    }
+    
+    .wheel-pointer::before {
+        top: -24px;
+        left: -14px;
+        border-left: 14px solid transparent;
+        border-right: 14px solid transparent;
+        border-top: 26px solid rgba(255,255,255,0.8);
     }
 }
 
@@ -1237,7 +1258,6 @@ body {
         margin-top: 116px;
     }
     
-    /* Увеличенное колесо на 375px */
     .wheel-container {
         width: 270px;
         height: 270px;
@@ -1275,7 +1295,6 @@ body {
         height: 28px;
     }
     
-    /* Сдвиг элементов ниже колеса */
     .spinning-status {
         margin-top: 14px;
     }
@@ -1320,8 +1339,16 @@ body {
     .wheel-pointer {
         border-left: 10px solid transparent;
         border-right: 10px solid transparent;
-        border-top: 18px solid #ffffff;
+        border-top: 18px solid #000000;
         top: -1px;
         border-radius: 1px;
+    }
+    
+    .wheel-pointer::before {
+        top: -20px;
+        left: -12px;
+        border-left: 12px solid transparent;
+        border-right: 12px solid transparent;
+        border-top: 22px solid rgba(255,255,255,0.8);
     }
 }
