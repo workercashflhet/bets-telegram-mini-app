@@ -43,23 +43,20 @@ body {
     pointer-events: auto;
 }
 
-/* Левый островок с профилем (БЕЗ ОБВОДКИ) */
+/* Левый островок (БЕЗ ФОНА, БЕЗ ОБВОДКИ, БЕЗ ПОДСВЕТКИ) */
 .user-island {
     display: flex;
     align-items: center;
     justify-content: flex-start;
     gap: 10px;
     padding: 6px 16px 6px 10px;
-    background: rgba(0, 0, 0, 0.6);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
-    backdrop-filter: blur(20px) saturate(180%);
+    background: transparent;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
     border: none;
-    border-radius: 16px;
-    box-shadow: 
-        0 4px 20px rgba(0, 0, 0, 0.4),
-        inset 0 1px 0 rgba(255, 255, 255, 0.05),
-        0 0 30px rgba(12, 235, 15, 0.03);
-    animation: floatGlow 4s ease-in-out infinite;
+    border-radius: 0;
+    box-shadow: none;
+    animation: none;
     height: 44px;
     min-height: 44px;
     box-sizing: border-box;
@@ -882,7 +879,6 @@ body {
     .user-island {
         padding: 5px 12px 5px 8px;
         gap: 8px;
-        border-radius: 14px;
         height: 36px;
         min-height: 36px;
     }
@@ -999,7 +995,7 @@ body {
         gap: 6px;
         height: 30px;
         min-height: 30px;
-        border-radius: 12px;
+        border-radius: 0;
     }
     
     .user-avatar {
