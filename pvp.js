@@ -42,6 +42,12 @@ document.addEventListener('DOMContentLoaded', () => {
     tg.setBackgroundColor('#121216');
     tg.setHeaderColor('#121216');
     
+    // Настройка кнопки "Назад" в Telegram
+    tg.BackButton.show();
+    tg.BackButton.onClick(() => {
+        tg.close(); // Закрывает приложение
+    });
+    
     loadBalance();
     initializePvPUser();
     setupUI();

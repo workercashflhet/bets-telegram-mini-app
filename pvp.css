@@ -1,5 +1,5 @@
 /* ============================================================
-   PvP КОЛЕСО - ПОЛНЫЙ СТИЛЬ (БЕЗ ЗАГОЛОВКА)
+   PvP КОЛЕСО - ПОЛНЫЙ СТИЛЬ (БЕЗ ЗАГОЛОВКА И БЕЗ КНОПКИ НАЗАД)
    ============================================================ */
 
 /* Основной фон */
@@ -217,45 +217,14 @@ body {
 }
 
 /* ============================================================
-   КНОПКА НАЗАД
-   ============================================================ */
-.pvp-back {
-    position: fixed;
-    top: 10px;
-    left: 10px;
-    z-index: 99;
-    width: 36px;
-    height: 36px;
-    background: rgba(0,0,0,0.6);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    border: 1px solid rgba(255,255,255,0.05);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-}
-
-.pvp-back:active {
-    transform: scale(0.9);
-}
-
-.pvp-back svg {
-    width: 20px;
-    height: 20px;
-}
-
-/* ============================================================
-   ВЕРХНИЙ БАР (HEADER)
+   ВЕРХНИЙ БАР (HEADER) - СДВИНУТ НА 40px ВНИЗ
    ============================================================ */
 .pvp-header-bar {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 12px 0 16px;
-    margin-top: 4px;
+    margin-top: 44px; /* Было 4px, стало 44px (+40px) */
     border-bottom: 1px solid rgba(255,255,255,0.05);
 }
 
@@ -326,8 +295,10 @@ body {
 }
 
 /* ============================================================
-   МОИ СТАВКИ
+   ОСТАЛЬНЫЕ ЭЛЕМЕНТЫ - ТОЖЕ СДВИНУТЫ НА 40px ВНИЗ
    ============================================================ */
+
+/* Мои ставки */
 .my-bets-bar {
     display: flex;
     justify-content: space-between;
@@ -336,6 +307,7 @@ body {
     background: rgba(12, 235, 15, 0.06);
     border: 1px solid rgba(12, 235, 15, 0.1);
     border-radius: 10px;
+    margin-top: 4px; /* Добавлен отступ сверху */
     margin-bottom: 12px;
     font-size: 13px;
     font-weight: 500;
@@ -348,9 +320,7 @@ body {
     color: #0ceb0f;
 }
 
-/* ============================================================
-   СТАТИСТИКА
-   ============================================================ */
+/* Статистика */
 .pvp-stats {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -379,9 +349,7 @@ body {
     color: #ffffff;
 }
 
-/* ============================================================
-   КОЛЕСО
-   ============================================================ */
+/* Колесо */
 .wheel-wrapper {
     display: flex;
     justify-content: center;
@@ -528,9 +496,7 @@ body {
     50% { opacity: 0.5; transform: scale(0.95); }
 }
 
-/* ============================================================
-   СТАТУС СПИННИНГА
-   ============================================================ */
+/* Статус спиннинга */
 .spinning-status {
     text-align: center;
     padding: 12px;
@@ -551,9 +517,7 @@ body {
     50% { opacity: 0.6; }
 }
 
-/* ============================================================
-   ПОБЕДИТЕЛЬ
-   ============================================================ */
+/* Победитель */
 .winner-section {
     text-align: center;
     padding: 16px;
@@ -598,9 +562,7 @@ body {
     transform: scale(0.95);
 }
 
-/* ============================================================
-   СТАВКИ
-   ============================================================ */
+/* Секция ставок */
 .bet-section {
     background: rgba(255,255,255,0.02);
     border-radius: 16px;
@@ -718,9 +680,7 @@ body {
     margin-top: 6px;
 }
 
-/* ============================================================
-   СПИСОК ИГРОКОВ
-   ============================================================ */
+/* Список игроков */
 .players-compact {
     margin-top: 10px;
     background: rgba(255,255,255,0.02);
@@ -798,9 +758,7 @@ body {
     padding: 8px 0;
 }
 
-/* ============================================================
-   МОДАЛЬНОЕ ОКНО ПОБЕДИТЕЛЯ
-   ============================================================ */
+/* Модальное окно победителя */
 .winner-modal {
     position: fixed;
     top: 0;
@@ -974,20 +932,8 @@ body {
         border-radius: 0 10px 10px 0;
     }
     
-    .pvp-back {
-        top: 6px;
-        left: 8px;
-        width: 30px;
-        height: 30px;
-    }
-    
-    .pvp-back svg {
-        width: 16px;
-        height: 16px;
-    }
-    
     .pvp-header-bar {
-        margin-top: 0px;
+        margin-top: 36px; /* Адаптив: было 32px, стало 36px (+4px) */
     }
     
     .wheel-container {
@@ -1100,16 +1046,8 @@ body {
         border-radius: 0 8px 8px 0;
     }
     
-    .pvp-back {
-        top: 4px;
-        left: 6px;
-        width: 26px;
-        height: 26px;
-    }
-    
-    .pvp-back svg {
-        width: 14px;
-        height: 14px;
+    .pvp-header-bar {
+        margin-top: 32px;
     }
     
     .wheel-container {
