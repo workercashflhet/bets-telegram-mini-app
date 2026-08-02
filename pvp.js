@@ -313,7 +313,9 @@ function updateUI() {
     // Общий банк
     const totalInTon = gameState.totalPoolTon + (gameState.totalPoolStars / TON_TO_STARS_RATE);
     const poolEl = document.getElementById('poolTotal');
-    if (poolEl) poolEl.textContent = `${totalInTon.toFixed(2)} TON`;
+    if (poolEl) {
+        poolEl.innerHTML = `<img src="assets/ton.png" alt="TON" class="pool-icon"> ${totalInTon.toFixed(2)}`;
+    }
     
     // Количество игроков
     const activePlayers = getActivePlayers();

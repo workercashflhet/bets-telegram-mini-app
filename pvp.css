@@ -299,6 +299,39 @@ body {
 }
 
 /* ============================================================
+   СТАТИСТИКА - ИКОНКА В POOL
+   ============================================================ */
+.pool-icon {
+    width: 18px;
+    height: 18px;
+    vertical-align: middle;
+    display: inline-block;
+    margin-right: 2px;
+    transform: translateY(-1px);
+}
+
+/* ============================================================
+   ПОБЕДИТЕЛЬ - ИКОНКА В ПРИЗЕ
+   ============================================================ */
+.winner-prize-icon {
+    width: 18px;
+    height: 18px;
+    vertical-align: middle;
+    display: inline-block;
+    margin-right: 2px;
+    transform: translateY(-1px);
+}
+
+.winner-modal-icon-small {
+    width: 16px;
+    height: 16px;
+    vertical-align: middle;
+    display: inline-block;
+    margin-right: 2px;
+    transform: translateY(-1px);
+}
+
+/* ============================================================
    ОСТАЛЬНЫЕ ЭЛЕМЕНТЫ
    ============================================================ */
 
@@ -351,6 +384,10 @@ body {
     font-size: 16px;
     font-weight: 700;
     color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
 }
 
 /* Колесо */
@@ -548,6 +585,10 @@ body {
     font-weight: 700;
     color: #FFD700;
     margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
 }
 
 .new-round-button {
@@ -841,6 +882,10 @@ body {
     font-size: 16px;
     font-weight: 700;
     color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
 }
 
 .winner-prize {
@@ -983,6 +1028,21 @@ body {
     .winner-stat-value {
         font-size: 14px;
     }
+    
+    .pool-icon {
+        width: 16px;
+        height: 16px;
+    }
+    
+    .winner-prize-icon {
+        width: 16px;
+        height: 16px;
+    }
+    
+    .winner-modal-icon-small {
+        width: 14px;
+        height: 14px;
+    }
 }
 
 @media (max-width: 375px) {
@@ -1089,5 +1149,20 @@ body {
     .info-value {
         font-size: 9px;
         max-width: 50px;
+    }
+    
+    .pool-icon {
+        width: 14px;
+        height: 14px;
+    }
+    
+    .winner-prize-icon {
+        width: 14px;
+        height: 14px;
+    }
+    
+    .winner-modal-icon-small {
+        width: 12px;
+        height: 12px;
     }
 }
