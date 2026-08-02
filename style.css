@@ -204,34 +204,34 @@ body.fullscreen-mode {
 }
 
 /* ============================================================
-   ЛЕВЫЙ ОСТРОВОК С АВАТАРКОЙ И ИМЕНЕМ
+   ЛЕВЫЙ ОСТРОВОК С АВАТАРКОЙ И ИМЕНЕМ (УВЕЛИЧЕН)
    ============================================================ */
 .user-island {
     display: flex;
     align-items: center;
     justify-content: flex-start;
-    gap: 6px;
-    padding: 4px 10px 4px 8px;
+    gap: 8px;
+    padding: 6px 14px 6px 10px;
     background: rgba(0, 0, 0, 0.6);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     backdrop-filter: blur(20px) saturate(180%);
     border: 1px solid rgba(12, 235, 15, 0.15);
-    border-radius: 12px;
+    border-radius: 14px;
     box-shadow: 
         0 4px 20px rgba(0, 0, 0, 0.4),
         inset 0 1px 0 rgba(255, 255, 255, 0.05),
         0 0 30px rgba(12, 235, 15, 0.03);
     animation: floatGlow 4s ease-in-out infinite;
-    height: 32px;
-    min-height: 32px;
+    height: 38px;
+    min-height: 38px;
     box-sizing: border-box;
     width: auto;
     flex-shrink: 0;
 }
 
 .user-avatar {
-    width: 23px;
-    height: 23px;
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
     object-fit: cover;
     border: none;
@@ -239,27 +239,27 @@ body.fullscreen-mode {
 }
 
 .user-avatar-fallback {
-    width: 23px;
-    height: 23px;
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     background: var(--accent);
     color: var(--bg-primary);
-    font-size: 11px;
+    font-size: 13px;
     font-weight: 700;
     flex-shrink: 0;
     border: none;
 }
 
 .user-name {
-    font-size: 14px;
+    font-size: 16px;
     font-weight: 600;
     color: var(--text-primary);
     letter-spacing: 0.3px;
     white-space: nowrap;
-    max-width: 100px;
+    max-width: 120px;
     overflow: hidden;
     text-overflow: ellipsis;
 }
@@ -882,39 +882,27 @@ body.fullscreen-mode {
     }
     
     .user-island {
-        padding: 4px 8px 4px 6px;
-        gap: 5px;
-        border-radius: 10px;
-        height: 28px;
-        min-height: 28px;
+        padding: 5px 10px 5px 8px;
+        gap: 6px;
+        border-radius: 12px;
+        height: 32px;
+        min-height: 32px;
     }
     
     .user-avatar {
-        width: 19px;
-        height: 19px;
-        border-radius: 50%;
-        object-fit: cover;
-        border: none;
+        width: 22px;
+        height: 22px;
     }
     
     .user-avatar-fallback {
-        width: 19px;
-        height: 19px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: var(--accent);
-        color: var(--bg-primary);
-        font-size: 9px;
-        font-weight: 700;
-        flex-shrink: 0;
-        border: none;
+        width: 22px;
+        height: 22px;
+        font-size: 11px;
     }
     
     .user-name {
-        font-size: 12px;
-        max-width: 70px;
+        font-size: 14px;
+        max-width: 80px;
     }
     
     .balance-wrapper {
@@ -1057,39 +1045,27 @@ body.fullscreen-mode {
     }
     
     .user-island {
-        padding: 3px 6px 3px 4px;
-        gap: 4px;
-        height: 24px;
-        min-height: 24px;
-        border-radius: 8px;
+        padding: 4px 8px 4px 6px;
+        gap: 5px;
+        height: 28px;
+        min-height: 28px;
+        border-radius: 10px;
     }
     
     .user-avatar {
-        width: 16px;
-        height: 16px;
-        border-radius: 50%;
-        object-fit: cover;
-        border: none;
+        width: 18px;
+        height: 18px;
     }
     
     .user-avatar-fallback {
-        width: 16px;
-        height: 16px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: var(--accent);
-        color: var(--bg-primary);
-        font-size: 8px;
-        font-weight: 700;
-        flex-shrink: 0;
-        border: none;
+        width: 18px;
+        height: 18px;
+        font-size: 9px;
     }
     
     .user-name {
-        font-size: 10px;
-        max-width: 50px;
+        font-size: 12px;
+        max-width: 60px;
     }
     
     .balance-wrapper {
