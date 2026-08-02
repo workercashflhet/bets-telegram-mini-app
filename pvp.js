@@ -460,11 +460,17 @@ function updateHub(type, data) {
     
     if (type === 'timer') {
         if (timerEl) {
-            timerEl.textContent = data;
-            if (data <= 5) {
-                timerEl.classList.add('warning');
+            const activePlayers = getActivePlayers().length;
+            if (activePlayers > 1 && gameState.roundPhase !== 'waiting') {
+                timerEl.textContent = data;
+                timerEl.classList.remove('hidden');
+                if (data <= 5) {
+                    timerEl.classList.add('warning');
+                } else {
+                    timerEl.classList.remove('warning');
+                }
             } else {
-                timerEl.classList.remove('warning');
+                timerEl.classList.add('hidden');
             }
         }
     } else if (type === 'status') {
