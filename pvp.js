@@ -42,10 +42,11 @@ document.addEventListener('DOMContentLoaded', () => {
     tg.setBackgroundColor('#121216');
     tg.setHeaderColor('#121216');
     
-    // Настройка кнопки "Назад" в Telegram
+    // Настройка кнопки "Назад" в Telegram - возврат на главную
     tg.BackButton.show();
     tg.BackButton.onClick(() => {
-        tg.close(); // Закрывает приложение
+        // Возвращаемся на главную страницу
+        window.location.href = 'index.html';
     });
     
     loadBalance();
