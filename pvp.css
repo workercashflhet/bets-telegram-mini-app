@@ -381,20 +381,21 @@ body {
 }
 
 /* ============================================================
-   ТРЕУГОЛЬНИК УКАЗАТЕЛЬ (РАВНОСТОРОННИЙ, ОДИН, СМЕЩЕН НА 5px ВНИЗ)
+   ТРЕУГОЛЬНИК УКАЗАТЕЛЬ (УМЕНЬШЕННЫЙ, СКРУГЛЕННЫЙ)
    ============================================================ */
 .wheel-pointer {
     position: absolute;
-    top: -19px;
+    top: -14px;
     left: 50%;
     transform: translateX(-50%);
     z-index: 15;
     width: 0;
     height: 0;
-    border-left: 16px solid transparent;
-    border-right: 16px solid transparent;
-    border-top: 28px solid #ffffff;
-    filter: drop-shadow(0 0 10px rgba(255,255,255,0.4));
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+    border-top: 18px solid #ffffff;
+    filter: drop-shadow(0 0 8px rgba(255,255,255,0.4));
+    border-radius: 2px;
 }
 
 /* ============================================================
@@ -1068,10 +1069,11 @@ body {
     }
     
     .wheel-pointer {
-        border-left: 12px solid transparent;
-        border-right: 12px solid transparent;
-        border-top: 22px solid #ffffff;
-        top: -14px;
+        border-left: 8px solid transparent;
+        border-right: 8px solid transparent;
+        border-top: 14px solid #ffffff;
+        top: -10px;
+        border-radius: 1px;
     }
 }
 
@@ -1197,9 +1199,10 @@ body {
     }
     
     .wheel-pointer {
-        border-left: 10px solid transparent;
-        border-right: 10px solid transparent;
-        border-top: 18px solid #ffffff;
-        top: -10px;
+        border-left: 6px solid transparent;
+        border-right: 6px solid transparent;
+        border-top: 12px solid #ffffff;
+        top: -8px;
+        border-radius: 1px;
     }
 }
