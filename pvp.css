@@ -381,11 +381,11 @@ body {
 }
 
 /* ============================================================
-   ТРЕУГОЛЬНИК УКАЗАТЕЛЬ (РАВНОСТОРОННИЙ, ОДИН)
+   ТРЕУГОЛЬНИК УКАЗАТЕЛЬ (РАВНОСТОРОННИЙ, ОДИН, СМЕЩЕН НА 5px ВНИЗ)
    ============================================================ */
 .wheel-pointer {
     position: absolute;
-    top: -24px;
+    top: -19px;
     left: 50%;
     transform: translateX(-50%);
     z-index: 15;
@@ -1071,7 +1071,7 @@ body {
         border-left: 12px solid transparent;
         border-right: 12px solid transparent;
         border-top: 22px solid #ffffff;
-        top: -18px;
+        top: -14px;
     }
 }
 
@@ -1200,6 +1200,6 @@ body {
         border-left: 10px solid transparent;
         border-right: 10px solid transparent;
         border-top: 18px solid #ffffff;
-        top: -14px;
+        top: -10px;
     }
 }
