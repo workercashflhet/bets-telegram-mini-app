@@ -299,7 +299,7 @@ body {
 }
 
 /* ============================================================
-   СТАТИСТИКА - ИКОНКА В POOL
+   СТАТИСТИКА - ИКОНКА В POOL (СЛЕВА ОТ СУММЫ)
    ============================================================ */
 .pool-icon {
     width: 18px;
@@ -308,6 +308,21 @@ body {
     display: inline-block;
     margin-right: 2px;
     transform: translateY(-1px);
+}
+
+.stat-value {
+    font-size: 16px;
+    font-weight: 700;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+}
+
+.stat-value .pool-icon {
+    order: 0;
+    margin-right: 2px;
 }
 
 /* ============================================================
@@ -329,6 +344,27 @@ body {
     display: inline-block;
     margin-right: 2px;
     transform: translateY(-1px);
+}
+
+.winner-prize {
+    font-size: 16px;
+    font-weight: 700;
+    color: #FFD700;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+.winner-stat-value {
+    font-size: 16px;
+    font-weight: 700;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
 }
 
 /* ============================================================
@@ -378,16 +414,6 @@ body {
     color: #888888;
     text-transform: uppercase;
     margin-bottom: 4px;
-}
-
-.stat-value {
-    font-size: 16px;
-    font-weight: 700;
-    color: #ffffff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 2px;
 }
 
 /* Колесо */
@@ -578,17 +604,6 @@ body {
     font-weight: 700;
     color: #FFD700;
     margin-bottom: 4px;
-}
-
-.winner-prize {
-    font-size: 16px;
-    font-weight: 700;
-    color: #FFD700;
-    margin-bottom: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
 }
 
 .new-round-button {
@@ -876,16 +891,6 @@ body {
     text-transform: uppercase;
     display: block;
     margin-bottom: 4px;
-}
-
-.winner-stat-value {
-    font-size: 16px;
-    font-weight: 700;
-    color: #ffffff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 2px;
 }
 
 .winner-prize {
