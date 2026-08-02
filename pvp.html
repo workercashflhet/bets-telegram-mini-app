@@ -10,6 +10,37 @@
 </head>
 <body class="fullscreen-mode">
     <div id="app">
+        <!-- ФИКСИРОВАННЫЙ КОНТЕЙНЕР ДЛЯ ОСТРОВКОВ (как на вкладке Game) -->
+        <div class="islands-container">
+            <!-- Левый островок с профилем -->
+            <div class="user-island">
+                <img src="assets/avatar.png" alt="Avatar" class="user-avatar" id="pvpUserAvatar">
+                <span class="user-name" id="pvpUserNameDisplay">User</span>
+            </div>
+            <!-- Правый островок с балансом -->
+            <div class="balance-wrapper">
+                <div class="balance-island">
+                    <div class="balance-item">
+                        <span class="balance-value" id="pvpTonBalance">0.00</span>
+                        <img src="assets/ton.png" alt="TON" class="balance-icon">
+                    </div>
+                    <div class="balance-divider"></div>
+                    <div class="balance-item">
+                        <span class="balance-value" id="pvpStarsBalance">0</span>
+                        <img src="assets/stars.png" alt="Stars" class="balance-icon">
+                    </div>
+                </div>
+                <button class="balance-deposit-btn" id="pvpDepositBtn" title="Deposit">+</button>
+            </div>
+        </div>
+
+        <!-- Назад (кнопка поверх островков) -->
+        <div class="pvp-back" onclick="window.history.back()">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+        </div>
+
         <!-- Верхний бар (Header) -->
         <div class="pvp-header-bar">
             <div class="header-left">
@@ -18,13 +49,13 @@
                         <path d="M12 8v4l3 3M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z"/>
                     </svg>
                 </button>
-                <div class="info-block" id="prevGameInfo">
+                <div class="info-block">
                     <span class="info-label">ПРЕД. ИГРА</span>
                     <span class="info-value" id="prevGameText">—</span>
                 </div>
             </div>
             <div class="header-right">
-                <div class="info-block" id="topGameInfo">
+                <div class="info-block">
                     <span class="info-label">ТОП ИГРА</span>
                     <span class="info-value" id="topGameText">—</span>
                 </div>
@@ -40,19 +71,6 @@
         <div class="pvp-header">
             <h1 class="pvp-title">🎰 PvP Колесо</h1>
             <p class="pvp-subtitle">Сделай ставку и крути колесо!</p>
-        </div>
-
-        <!-- Баланс -->
-        <div class="player-balance-bar">
-            <div class="balance-item-small active-currency" data-currency="ton">
-                <img src="assets/ton.png" alt="TON" class="balance-icon-small">
-                <span class="balance-value-small" id="tonBalanceSmall">0.00</span>
-            </div>
-            <div class="balance-item-small" data-currency="stars">
-                <img src="assets/stars.png" alt="Stars" class="balance-icon-small">
-                <span class="balance-value-small" id="starsBalanceSmall">0</span>
-            </div>
-            <button class="deposit-nav-button" id="depositBtnSmall">+</button>
         </div>
 
         <!-- Мои ставки -->

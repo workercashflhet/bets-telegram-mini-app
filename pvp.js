@@ -13,7 +13,7 @@ const gameState = {
     selectedCurrency: 'ton',
     balance: { ton: 0.00, stars: 0 },
     playerBets: [],
-    roundPhase: 'waiting', // waiting | countdown | spinning | finished
+    roundPhase: 'waiting',
     timeLeft: 20,
     timer: null,
     isSpinning: false,
@@ -43,11 +43,64 @@ document.addEventListener('DOMContentLoaded', () => {
     tg.setHeaderColor('#121216');
     
     loadBalance();
+    initializePvPUser();
     setupUI();
     addDemoPlayers();
     startWaitingPhase();
     updateUI();
 });
+
+// ============================================================
+// ПОЛЬЗОВАТЕЛЬ (ОСТРОВКИ)
+// ============================================================
+
+function initializePvPUser() {
+    const user = tg.initDataUnsafe?.user;
+    
+    const userNameDisplay = document.getElementById('pvpUserNameDisplay');
+    const userAvatar = document.getElementById('pvpUserAvatar');
+    
+    if (user) {
+        // Имя пользователя
+        if (userNameDisplay) {
+            const firstName = user.first_name || '';
+            const lastName = user.last_name || '';
+            const username = user.username || '';
+            
+            if (firstName) {
+                userNameDisplay.textContent = firstName + (lastName ? ' ' + lastName : '');
+            } else if (username) {
+                userNameDisplay.textContent = '@' + username;
+            } else {
+                userNameDisplay.textContent = 'User';
+            }
+        }
+        
+        // Аватарка
+        if (userAvatar) {
+            if (user.photo_url) {
+                userAvatar.src = user.photo_url;
+            } else {
+                const avatarUrl = `https://t.me/i/userpic/320/${user.id}.jpg`;
+                userAvatar.src = avatarUrl;
+                userAvatar.onerror = function() {
+                    this.style.display = 'none';
+                    const fallbackText = document.createElement('span');
+                    fallbackText.className = 'user-avatar-fallback';
+                    const firstLetter = (user.first_name || user.username || 'U')[0].toUpperCase();
+                    fallbackText.textContent = firstLetter;
+                    this.parentNode.insertBefore(fallbackText, this);
+                    this.style.display = 'none';
+                };
+            }
+        }
+    } else {
+        // Fallback
+        if (userNameDisplay) {
+            userNameDisplay.textContent = 'Demo User';
+        }
+    }
+}
 
 // ============================================================
 // БАЛАНС
@@ -61,6 +114,7 @@ function loadBalance() {
         gameState.balance.stars = data.inventory || 0;
     }
     updateBalanceUI();
+    updatePvPBalanceUI();
 }
 
 function saveBalance() {
@@ -68,11 +122,19 @@ function saveBalance() {
         balance: gameState.balance.ton,
         inventory: gameState.balance.stars
     }));
+    updatePvPBalanceUI();
 }
 
 function updateBalanceUI() {
     const tonEl = document.getElementById('tonBalanceSmall');
     const starsEl = document.getElementById('starsBalanceSmall');
+    if (tonEl) tonEl.textContent = gameState.balance.ton.toFixed(2);
+    if (starsEl) starsEl.textContent = Math.floor(gameState.balance.stars);
+}
+
+function updatePvPBalanceUI() {
+    const tonEl = document.getElementById('pvpTonBalance');
+    const starsEl = document.getElementById('pvpStarsBalance');
     if (tonEl) tonEl.textContent = gameState.balance.ton.toFixed(2);
     if (starsEl) starsEl.textContent = Math.floor(gameState.balance.stars);
 }
@@ -92,7 +154,23 @@ function setupUI() {
         tg.showAlert('💬 Чат пока не доступен');
     });
     
-    // Депозит
+    // Депозит в островке
+    document.getElementById('pvpDepositBtn').addEventListener('click', () => {
+        tg.showPopup({
+            title: '💰 Депозит',
+            message: 'Выберите способ пополнения',
+            buttons: [
+                { id: 'crypto', text: 'Криптовалюта' },
+                { id: 'card', text: 'Банковская карта' },
+                { id: 'cancel', text: 'Отмена', type: 'cancel' }
+            ]
+        }, (buttonId) => {
+            if (buttonId === 'crypto') tg.showAlert('💰 Пополните баланс через криптовалюту');
+            else if (buttonId === 'card') tg.showAlert('💳 Пополните баланс через банковскую карту');
+        });
+    });
+    
+    // Депозит внизу (старый)
     document.getElementById('depositBtnSmall').addEventListener('click', () => {
         tg.showPopup({
             title: '💰 Депозит',
@@ -167,7 +245,7 @@ function setupUI() {
         startNewRound();
     });
     
-    // Кнопка нового раунда (старая версия для обратной совместимости)
+    // Кнопка нового раунда (старая версия)
     const newRoundBtn = document.getElementById('newRoundBtn');
     if (newRoundBtn) {
         newRoundBtn.addEventListener('click', () => {
@@ -266,7 +344,6 @@ function updateUI() {
 }
 
 function updateHeaderInfo() {
-    // Предыдущая игра
     const prevGameText = document.getElementById('prevGameText');
     if (prevGameText) {
         if (gameState.history.length > 0) {
@@ -279,7 +356,6 @@ function updateHeaderInfo() {
         }
     }
     
-    // Топ игра
     const topGameText = document.getElementById('topGameText');
     if (topGameText) {
         if (gameState.topGame) {
