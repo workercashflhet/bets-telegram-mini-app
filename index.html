@@ -19,8 +19,6 @@
     </div>
 
     <div id="app" style="display: none;">
-        <!-- ФИКСИРОВАННЫЙ КОНТЕЙНЕР ДЛЯ ОСТРОВКОВ (вне вкладок) -->   
-
         <!-- Центральная иконка сверху -->
         <div class="center-icon">
             <svg width="31" height="11" viewBox="0 0 31 11" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -42,7 +40,6 @@
             <!-- Вкладка Game (активная по умолчанию) -->
             <div class="tab-content active" id="tab-game">
                 <div class="game-content">
-                    <!-- Островки внутри game-content -->
                     <div class="islands-container">
                         <!-- Левый островок -->
                         <div class="user-island">
@@ -62,7 +59,7 @@
                                     <img src="assets/stars.png" alt="Stars" class="balance-icon">
                                 </div>
                             </div>
-                            <button class="balance-deposit-btn" id="depositBtn">+</button>
+                            <button class="balance-deposit-btn" id="depositBtn" title="Deposit">+</button>
                         </div>
                     </div>
                     
@@ -91,7 +88,6 @@
 
                     <!-- Карточки под каруселью -->
                     <div class="game-cards-row">
-                        <!-- Карточка game1 (с ссылкой на PvP) -->
                         <div class="game-card" onclick="window.location.href='pvp.html'">
                             <img src="assets/game1.jpg" alt="Game Card 1" class="game-card-image">
                         </div>
@@ -126,16 +122,15 @@
 
         <!-- Bottom Navigation - Liquid Glass -->
         <nav class="bottom-nav">
-            <button class="nav-item" data-page="profile">
+            <button class="nav-item" data-page="profile" title="Profile">
                 <img src="assets/user.png" alt="Profile" class="nav-icon">
             </button>
-            <button class="nav-item active" data-page="game">
+            <button class="nav-item active" data-page="game" title="Game">
                 <img src="assets/game.png" alt="Game" class="nav-icon">
             </button>
-            <button class="nav-item" data-page="settings">
+            <button class="nav-item" data-page="settings" title="Settings">
                 <img src="assets/settings.png" alt="Settings" class="nav-icon">
             </button>
-
         </nav>
     </div>
 

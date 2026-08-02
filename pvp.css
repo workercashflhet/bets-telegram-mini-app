@@ -1,159 +1,120 @@
 /* ============================================================
-   PvP СТИЛИ - АДАПТИРОВАНЫ ПОД ОСНОВНОЕ ПРИЛОЖЕНИЕ
+   PvP КОЛЕСО - НОВАЯ АРХИТЕКТУРА
    ============================================================ */
 
-/* Назад */
-.pvp-back {
-    position: absolute;
-    top: 16px;
-    left: 16px;
-    z-index: 20;
-    width: 36px;
-    height: 36px;
-    background: rgba(255,255,255,0.05);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    border: 1px solid rgba(255,255,255,0.05);
+/* Основной фон */
+body {
+    background: #121216 !important;
 }
 
-.pvp-back:active {
-    transform: scale(0.9);
+#app {
+    background: #121216 !important;
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 0 12px 80px;
+    min-height: 100vh;
+    position: relative;
 }
 
-.pvp-back svg {
-    width: 20px;
-    height: 20px;
-}
-
-/* Заголовок */
-.pvp-header {
-    text-align: center;
-    padding: 20px 0 12px;
-    margin-top: 40px;
-}
-
-.pvp-title {
-    font-size: 26px;
-    font-weight: 700;
-    color: #ffffff;
-    margin: 0 0 4px;
-}
-
-.pvp-subtitle {
-    font-size: 14px;
-    color: #888888;
-    margin: 0;
-}
-
-/* Баланс */
-.player-balance-bar {
-    display: flex;
-    gap: 8px;
-    justify-content: center;
-    align-items: center;
-    margin-bottom: 16px;
-    padding: 10px;
-    background: rgba(255, 255, 255, 0.03);
-    border-radius: 12px;
-}
-
-.balance-item-small {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    background: #111111;
-    padding: 6px 12px;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s;
-    border: 1px solid transparent;
-}
-
-.balance-item-small.active-currency {
-    border-color: #0ceb0f;
-}
-
-.balance-icon-small {
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-}
-
-.balance-value-small {
-    font-size: 14px;
-    font-weight: 600;
-    color: #ffffff;
-}
-
-.deposit-nav-button {
-    padding: 8px 16px;
-    background: #0ceb0f;
-    color: #000000;
-    border: none;
-    border-radius: 8px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: all 0.2s;
-}
-
-.deposit-nav-button:active {
-    transform: scale(0.95);
-}
-
-/* Мои ставки */
-.my-bets-bar {
+/* ============================================================
+   ВЕРХНИЙ БАР (HEADER)
+   ============================================================ */
+.pvp-header-bar {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 16px;
-    background: rgba(12, 235, 15, 0.08);
-    border: 1px solid rgba(12, 235, 15, 0.15);
-    border-radius: 10px;
-    margin-bottom: 12px;
-    font-size: 13px;
-    font-weight: 500;
-    color: #ffffff;
+    padding: 12px 0 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
 }
 
-.bets-count {
-    font-size: 14px;
-    font-weight: 700;
+.header-left, .header-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.header-btn {
+    background: rgba(255,255,255,0.05);
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: rgba(255,255,255,0.6);
+}
+
+.header-btn:active {
+    transform: scale(0.9);
+    background: rgba(255,255,255,0.1);
+}
+
+.info-block {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    background: rgba(255,255,255,0.03);
+    padding: 4px 10px;
+    border-radius: 8px;
+    min-width: 80px;
+    border: 1px solid rgba(255,255,255,0.04);
+}
+
+.header-right .info-block {
+    align-items: flex-end;
+}
+
+.info-label {
+    font-size: 8px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.3);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.info-value {
+    font-size: 11px;
+    font-weight: 600;
+    color: #ffffff;
+    white-space: nowrap;
+    max-width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.info-value.win {
     color: #0ceb0f;
 }
 
-/* Статистика */
-.pvp-stats {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-    margin-bottom: 16px;
+.info-value.loss {
+    color: #ff453a;
 }
 
-.stat-box {
-    background: #111111;
-    border-radius: 12px;
-    padding: 12px;
+/* ============================================================
+   ЦЕНТРАЛЬНАЯ ЗОНА С КОЛЕСОМ
+   ============================================================ */
+.wheel-center-zone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px 0 12px;
+}
+
+.total-pot-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.7);
     text-align: center;
-    border: 1px solid #222222;
+    margin-bottom: 8px;
+    letter-spacing: 0.5px;
 }
 
-.stat-label {
-    font-size: 11px;
-    color: #888888;
-    text-transform: uppercase;
-    margin-bottom: 4px;
-}
-
-.stat-value {
-    font-size: 16px;
+.total-pot-label span {
+    color: #0ceb0f;
     font-weight: 700;
-    color: #ffffff;
 }
 
 /* Колесо */
@@ -161,7 +122,8 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 10px 0;
+    padding: 0;
+    position: relative;
 }
 
 .wheel-container {
@@ -170,56 +132,33 @@
     height: 300px;
 }
 
-.wheel {
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    position: relative;
-    border: none;
-    box-shadow: 0 0 40px rgba(0, 0, 0, 0.6);
-}
-
-.wheel-center-solid {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 90px;
-    height: 90px;
-    z-index: 5;
-}
-
-.timer-circle-svg {
-    width: 100%;
-    height: 100%;
-    position: absolute;
-    top: 0;
-    left: 0;
-}
-
-.timer-text {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 22px;
-    font-weight: 700;
-    color: white;
-    text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
-    z-index: 1;
-}
-
+/* Указатель-стрелка (закреплен сверху) */
 .wheel-pointer {
     position: absolute;
     top: -18px;
     left: 50%;
     transform: translateX(-50%);
-    font-size: 30px;
-    color: #FFD700;
-    filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.6));
-    z-index: 10;
+    font-size: 28px;
+    color: #ffffff;
+    filter: drop-shadow(0 0 10px rgba(255,255,255,0.3));
+    z-index: 15;
+    text-shadow: 0 0 20px rgba(255,255,255,0.1);
 }
 
+/* Колесо */
+.wheel {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    position: relative;
+    border: 2px solid rgba(255,255,255,0.06);
+    box-shadow: 
+        0 0 60px rgba(0, 0, 0, 0.6),
+        inset 0 0 60px rgba(0, 0, 0, 0.3);
+    transition: transform 5s cubic-bezier(0.17, 0.67, 0.12, 0.99);
+}
+
+/* Сегменты с аватарками */
 .wheel-avatar-container {
     position: absolute;
     top: 50%;
@@ -232,171 +171,198 @@
 
 .avatar-position {
     position: absolute;
-    transform: translate(-50%, -50%) translateY(-85px);
+    transform: translate(-50%, -50%) translateY(-88px);
 }
 
 .wheel-player-avatar {
-    width: 28px;
-    height: 28px;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
     object-fit: cover;
     border: 2px solid rgba(255, 255, 255, 0.9);
-    box-shadow: 0 0 8px rgba(0, 0, 0, 0.7);
+    box-shadow: 0 0 12px rgba(0, 0, 0, 0.8);
     background: #2c2c2e;
     display: block;
 }
 
-.spinning {
+/* Центральный дисплей (Hub) */
+.wheel-center-solid {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80px;
+    height: 80px;
+    z-index: 10;
+    background: #1a1a1e;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.06);
+    box-shadow: 
+        0 0 30px rgba(0, 0, 0, 0.8),
+        inset 0 0 30px rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.hub-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.hub-timer {
+    font-size: 28px;
+    font-weight: 700;
+    color: #ffffff;
+    line-height: 1;
+    text-shadow: 0 0 20px rgba(255,255,255,0.1);
+}
+
+.hub-timer.warning {
+    color: #ff453a;
+    animation: timePulse 0.8s infinite;
+}
+
+.hub-status {
+    font-size: 10px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.4);
+    margin-top: 2px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.hub-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(255,255,255,0.2);
+    margin-bottom: 2px;
+}
+
+.hub-player-name {
+    font-size: 11px;
+    font-weight: 600;
+    color: #ffffff;
+    max-width: 60px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+@keyframes timePulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.95); }
+}
+
+/* Анимация вращения */
+.wheel.spinning {
     animation: wheelGlow 0.5s ease-in-out infinite alternate;
 }
 
 @keyframes wheelGlow {
-    from { box-shadow: 0 0 40px rgba(0, 0, 0, 0.6); }
-    to { box-shadow: 0 0 60px rgba(255, 215, 0, 0.4); }
+    from { box-shadow: 0 0 60px rgba(0, 0, 0, 0.6); }
+    to { box-shadow: 0 0 80px rgba(255, 215, 0, 0.2); }
 }
 
-/* Статус спиннинга */
-.spinning-status {
-    text-align: center;
-    padding: 12px;
-    background: rgba(255, 215, 0, 0.08);
-    border-radius: 12px;
-    margin-bottom: 16px;
-}
-
-.spinning-text {
-    font-size: 16px;
-    font-weight: 600;
-    color: #FFD700;
-    animation: spinPulse 0.5s infinite;
-}
-
-@keyframes spinPulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.6; }
-}
-
-/* Победитель */
-.winner-section {
-    text-align: center;
-    padding: 16px;
-    background: linear-gradient(135deg, rgba(255, 215, 0, 0.08), rgba(255, 165, 0, 0.08));
+/* ============================================================
+   БЛОК УПРАВЛЕНИЯ (СТАВКИ)
+   ============================================================ */
+.pvp-controls {
+    background: rgba(255,255,255,0.02);
     border-radius: 16px;
-    margin-bottom: 16px;
-    border: 1px solid rgba(255, 215, 0, 0.1);
+    padding: 12px 16px;
+    margin-top: 8px;
+    border: 1px solid rgba(255,255,255,0.04);
 }
 
-.winner-crown {
-    font-size: 36px;
-    margin-bottom: 4px;
+.balance-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 10px;
 }
 
-.winner-announcement {
-    font-size: 18px;
-    font-weight: 700;
-    color: #FFD700;
-    margin-bottom: 4px;
+.currency-tab {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 8px;
+    color: rgba(255,255,255,0.5);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
 }
 
-.winner-prize {
-    font-size: 16px;
-    font-weight: 700;
-    color: #FFD700;
-    margin-bottom: 12px;
+.currency-tab.active {
+    border-color: #0ceb0f;
+    background: rgba(12, 235, 15, 0.06);
+    color: #ffffff;
 }
 
-.new-round-button {
-    padding: 10px 24px;
+.currency-icon-small {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+}
+
+.deposit-btn-small {
+    padding: 6px 14px;
     background: #0ceb0f;
     color: #000000;
     border: none;
-    border-radius: 10px;
+    border-radius: 8px;
     font-size: 14px;
-    font-weight: 600;
+    font-weight: 700;
     cursor: pointer;
     transition: all 0.2s;
 }
 
-.new-round-button:active {
+.deposit-btn-small:active {
     transform: scale(0.95);
 }
 
-/* Секция ставок */
-.bet-section {
-    background: #111111;
-    border-radius: 16px;
-    padding: 16px;
-    margin-bottom: 16px;
-    border: 1px solid #222222;
-}
-
-.currency-toggle {
-    display: flex;
-    gap: 12px;
-    margin-bottom: 14px;
-}
-
-.currency-btn {
-    flex: 1;
-    padding: 10px;
-    border: 2px solid rgba(255, 255, 255, 0.08);
-    border-radius: 10px;
-    background: #0a0a0a;
-    color: #ffffff;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
+.bet-controls {
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 6px;
-}
-
-.currency-icon {
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    flex-shrink: 0;
-}
-
-.currency-btn.active {
-    border-color: #0ceb0f;
-    background: rgba(12, 235, 15, 0.08);
-}
-
-.bet-input-group {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 14px;
+    gap: 10px;
+    margin-bottom: 10px;
 }
 
 .bet-adjust {
-    width: 40px;
-    height: 40px;
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: #0a0a0a;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.06);
+    background: rgba(255,255,255,0.03);
     color: #ffffff;
-    font-size: 20px;
+    font-size: 18px;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: all 0.2s;
 }
 
 .bet-adjust:active {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(255,255,255,0.08);
 }
 
 .bet-input {
     flex: 1;
-    height: 40px;
-    background: #0a0a0a;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 10px;
+    height: 36px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 8px;
     color: #ffffff;
     text-align: center;
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 600;
 }
 
@@ -407,19 +373,19 @@
 
 .place-bet-button {
     width: 100%;
-    padding: 14px;
+    padding: 12px;
     background: #0ceb0f;
     color: #000000;
     border: none;
-    border-radius: 12px;
-    font-size: 16px;
+    border-radius: 10px;
+    font-size: 15px;
     font-weight: 700;
     cursor: pointer;
     transition: all 0.2s;
 }
 
 .place-bet-button:disabled {
-    opacity: 0.4;
+    opacity: 0.3;
     cursor: not-allowed;
 }
 
@@ -427,116 +393,204 @@
     transform: scale(0.97);
 }
 
-.color-auto-text {
+.bet-hint {
+    font-size: 10px;
+    color: rgba(255,255,255,0.2);
     text-align: center;
-    font-size: 11px;
-    color: #888888;
-    margin-top: 8px;
+    margin-top: 6px;
 }
 
-/* Список игроков */
-.players-list {
-    background: #111111;
-    border-radius: 16px;
-    padding: 16px;
-    border: 1px solid #222222;
-    margin-bottom: 80px;
+/* ============================================================
+   СПИСОК ИГРОКОВ (КОМПАКТНЫЙ)
+   ============================================================ */
+.players-compact {
+    margin-top: 12px;
+    background: rgba(255,255,255,0.02);
+    border-radius: 12px;
+    padding: 10px 14px;
+    border: 1px solid rgba(255,255,255,0.04);
 }
 
-.players-list h3 {
-    font-size: 16px;
+.players-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
     font-weight: 600;
-    color: #ffffff;
-    margin-bottom: 12px;
+    color: rgba(255,255,255,0.4);
+    margin-bottom: 8px;
 }
 
-.player-item {
+.players-list-compact {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.player-row {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 10px;
-    background: #0a0a0a;
-    border-radius: 10px;
-    margin-bottom: 6px;
+    gap: 8px;
+    padding: 4px 0;
 }
 
-.player-item:last-child {
-    margin-bottom: 0;
-}
-
-.winner-player {
-    background: rgba(255, 215, 0, 0.08) !important;
-    border: 1px solid rgba(255, 215, 0, 0.15) !important;
-}
-
-.player-color {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    flex-shrink: 0;
-}
-
-.player-avatar-small {
-    width: 24px;
-    height: 24px;
+.player-row-avatar {
+    width: 20px;
+    height: 20px;
     border-radius: 50%;
     object-fit: cover;
+}
+
+.player-row-color {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
     flex-shrink: 0;
 }
 
-.player-info {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-    min-width: 0;
-}
-
-.player-name {
-    font-size: 14px;
+.player-row-name {
+    font-size: 12px;
     font-weight: 500;
     color: #ffffff;
+    flex: 1;
 }
 
-.player-username {
+.player-row-bet {
     font-size: 11px;
-    color: #888888;
+    color: rgba(255,255,255,0.4);
 }
 
-.player-stats {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    flex-shrink: 0;
-}
-
-.player-bet {
-    font-size: 13px;
+.player-row-share {
+    font-size: 11px;
     font-weight: 600;
+    color: #0ceb0f;
+    min-width: 36px;
+    text-align: right;
+}
+
+.player-row.winner-row {
+    background: rgba(255, 215, 0, 0.06);
+    border-radius: 6px;
+    padding: 4px 6px;
+}
+
+.no-players-compact {
+    font-size: 12px;
+    color: rgba(255,255,255,0.2);
+    text-align: center;
+    padding: 8px 0;
+}
+
+/* ============================================================
+   МОДАЛЬНОЕ ОКНО ПОБЕДИТЕЛЯ
+   ============================================================ */
+.winner-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.85);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px); /* ← Теперь после -webkit- */
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+}
+
+.winner-modal.show {
+    display: flex;
+}
+
+.winner-modal-content {
+    background: #1a1a1e;
+    border-radius: 24px;
+    padding: 32px 24px 24px;
+    max-width: 340px;
+    width: 100%;
+    text-align: center;
+    border: 1px solid rgba(255,215,0,0.1);
+    box-shadow: 0 0 60px rgba(255,215,0,0.05);
+}
+
+.winner-modal-icon {
+    font-size: 48px;
+    margin-bottom: 8px;
+}
+
+.winner-modal-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.3);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 4px;
+}
+
+.winner-modal-name {
+    font-size: 22px;
+    font-weight: 700;
+    color: #FFD700;
+    margin-bottom: 16px;
+}
+
+.winner-modal-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.winner-stat {
+    background: rgba(255,255,255,0.03);
+    border-radius: 10px;
+    padding: 10px 8px;
+}
+
+.winner-stat-label {
+    font-size: 9px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.3);
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.winner-stat-value {
+    font-size: 16px;
+    font-weight: 700;
     color: #ffffff;
 }
 
-.player-share {
-    font-size: 13px;
+.winner-prize {
+    color: #0ceb0f !important;
+}
+
+.winner-multiplier {
+    color: #FFD700 !important;
+}
+
+.winner-modal-btn {
+    width: 100%;
+    padding: 14px;
+    background: #0ceb0f;
+    color: #000000;
+    border: none;
+    border-radius: 12px;
+    font-size: 15px;
     font-weight: 700;
-    color: #0ceb0f;
+    cursor: pointer;
+    transition: all 0.2s;
 }
 
-.no-players {
-    text-align: center;
-    padding: 16px;
+.winner-modal-btn:active {
+    transform: scale(0.97);
 }
 
-.no-players p {
-    color: #888888;
-    margin: 4px 0;
-}
-
-.no-players-sub {
-    font-size: 12px;
-    opacity: 0.7;
-}
-
-/* Адаптив */
+/* ============================================================
+   АДАПТИВ
+   ============================================================ */
 @media (max-width: 420px) {
     .wheel-container {
         width: 260px;
@@ -544,25 +598,46 @@
     }
     
     .wheel-center-solid {
-        width: 76px;
-        height: 76px;
+        width: 68px;
+        height: 68px;
     }
     
-    .timer-text {
-        font-size: 18px;
+    .hub-timer {
+        font-size: 24px;
     }
     
     .avatar-position {
-        transform: translate(-50%, -50%) translateY(-74px);
+        transform: translate(-50%, -50%) translateY(-76px);
     }
     
     .wheel-player-avatar {
-        width: 24px;
-        height: 24px;
+        width: 26px;
+        height: 26px;
     }
     
-    .pvp-title {
-        font-size: 22px;
+    .info-value {
+        font-size: 10px;
+        max-width: 60px;
+    }
+    
+    .info-label {
+        font-size: 7px;
+    }
+    
+    .total-pot-label {
+        font-size: 12px;
+    }
+    
+    .winner-modal-content {
+        padding: 24px 16px 20px;
+    }
+    
+    .winner-modal-name {
+        font-size: 18px;
+    }
+    
+    .winner-stat-value {
+        font-size: 14px;
     }
 }
 
@@ -573,20 +648,34 @@
     }
     
     .wheel-center-solid {
-        width: 64px;
-        height: 64px;
+        width: 56px;
+        height: 56px;
     }
     
-    .timer-text {
-        font-size: 16px;
+    .hub-timer {
+        font-size: 20px;
+    }
+    
+    .hub-status {
+        font-size: 8px;
     }
     
     .avatar-position {
-        transform: translate(-50%, -50%) translateY(-62px);
+        transform: translate(-50%, -50%) translateY(-64px);
     }
     
     .wheel-player-avatar {
-        width: 20px;
-        height: 20px;
+        width: 22px;
+        height: 22px;
+    }
+    
+    .info-block {
+        padding: 2px 8px;
+        min-width: 60px;
+    }
+    
+    .info-value {
+        font-size: 9px;
+        max-width: 50px;
     }
 }
