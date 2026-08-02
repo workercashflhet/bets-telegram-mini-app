@@ -34,7 +34,7 @@ const gameState = {
     spinTimer: null,
     history: [],
     topGame: null,
-    currentRoundId: null // UUID для текущего раунда в БД
+    currentRoundId: null
 };
 
 const TON_TO_STARS_RATE = 76;
@@ -54,7 +54,6 @@ document.addEventListener('DOMContentLoaded', () => {
     tg.setBackgroundColor('#121216');
     tg.setHeaderColor('#121216');
     
-    // Настройка кнопки "Назад" в Telegram - возврат на главную
     tg.BackButton.show();
     tg.BackButton.onClick(() => {
         window.location.href = 'index.html';
@@ -75,7 +74,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function loadHistoryFromDB() {
     try {
-        // Получаем последний завершенный раунд для определения номера
         const { data: lastRound, error: roundError } = await supabaseClient
             .from('pvp_rounds')
             .select('round_number')
@@ -87,14 +85,12 @@ async function loadHistoryFromDB() {
             console.error('Error loading last round:', roundError);
         }
         
-        // Если есть последний раунд, устанавливаем roundId
         if (lastRound) {
             gameState.roundId = lastRound.round_number;
         } else {
             gameState.roundId = 0;
         }
         
-        // Получаем историю игр (последние 50)
         const { data: historyData, error: historyError } = await supabaseClient
             .from('pvp_rounds')
             .select('*')
@@ -116,7 +112,6 @@ async function loadHistoryFromDB() {
             }));
         }
         
-        // Получаем топ игру
         const { data: topData, error: topError } = await supabaseClient
             .from('pvp_rounds')
             .select('winner_name, prize, round_number')
@@ -136,14 +131,12 @@ async function loadHistoryFromDB() {
             };
         }
         
-        // Обновляем отображение
         updateRoundDisplay();
         updateTopGameDisplay();
         updateHeaderInfo();
         
     } catch (error) {
         console.error('Error loading history from DB:', error);
-        // Если ошибка, используем локальные данные
         gameState.roundId = 0;
         gameState.history = [];
         gameState.topGame = null;
@@ -180,7 +173,6 @@ async function saveRoundToDB(roundId, winnerName, prize, multiplier, playersCoun
 
 async function updatePlayerStats(userId, username, firstName, totalBets, totalWins, totalPrize) {
     try {
-        // Проверяем, существует ли игрок
         const { data: existing, error: checkError } = await supabaseClient
             .from('pvp_players')
             .select('id')
@@ -193,7 +185,6 @@ async function updatePlayerStats(userId, username, firstName, totalBets, totalWi
         }
         
         if (existing) {
-            // Обновляем существующего игрока
             const { error: updateError } = await supabaseClient
                 .from('pvp_players')
                 .update({
@@ -210,7 +201,6 @@ async function updatePlayerStats(userId, username, firstName, totalBets, totalWi
                 console.error('Error updating player:', updateError);
             }
         } else {
-            // Создаем нового игрока
             const { error: insertError } = await supabaseClient
                 .from('pvp_players')
                 .insert({
@@ -253,7 +243,7 @@ async function loadPlayerStats(userId) {
 }
 
 // ============================================================
-// ПОЛЬЗОВАТЕЛЬ (ОСТРОВКИ)
+// ПОЛЬЗОВАТЕЛЬ
 // ============================================================
 
 function initializePvPUser() {
@@ -295,7 +285,6 @@ function initializePvPUser() {
             }
         }
         
-        // Загружаем статистику игрока
         loadPlayerStats(user.id);
     } else {
         if (userNameDisplay) {
@@ -555,11 +544,6 @@ function updateTimerUI() {
         } else {
             timerText.classList.remove('warning');
         }
-    }
-    
-    const roundTime = document.getElementById('roundNumber');
-    if (roundTime) {
-        roundTime.textContent = `#${gameState.roundId}`;
     }
 }
 
@@ -921,7 +905,6 @@ async function showWinner(winner) {
     if (prizeEl) prizeEl.innerHTML = `${totalInTon.toFixed(2)} <img src="assets/ton.png" alt="TON" class="winner-modal-icon-small">`;
     if (multiEl) multiEl.textContent = `×${multiplier.toFixed(1)}`;
     
-    // Сохраняем в БД
     const playerDetails = getActivePlayers().map(p => ({
         name: p.firstName,
         bets: p.bets,
@@ -938,7 +921,6 @@ async function showWinner(winner) {
     );
     
     if (savedRound) {
-        // Обновляем локальную историю
         gameState.history.unshift({
             roundId: gameState.roundId,
             winner: winner.firstName,
@@ -948,7 +930,6 @@ async function showWinner(winner) {
             timestamp: Date.now()
         });
         
-        // Обновляем топ игру
         if (!gameState.topGame || totalInTon > gameState.topGame.prize) {
             gameState.topGame = {
                 winner: winner.firstName,
@@ -957,7 +938,6 @@ async function showWinner(winner) {
             };
         }
         
-        // Обновляем статистику игрока
         const user = tg.initDataUnsafe?.user;
         if (user) {
             const stats = await loadPlayerStats(user.id);
@@ -1064,7 +1044,7 @@ function getRandomColor() {
 }
 
 // ============================================================
-// ЭКСПОРТ (для отладки)
+// ЭКСПОРТ
 // ============================================================
 
 window.pvpGame = {

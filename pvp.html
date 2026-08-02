@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PvP Колесо</title>
     <script src="https://telegram.org/js/telegram-web-app.js?56"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="pvp.css">
 </head>
@@ -73,7 +74,7 @@
             <div class="stat-box">
                 <div class="stat-label">Pool</div>
                 <div class="stat-value" id="poolTotal">
-                    <img src="assets/ton.png" alt="TON" class="pool-icon"> 0.00
+                    0.00 <img src="assets/ton.png" alt="TON" class="pool-icon">
                 </div>
             </div>
             <div class="stat-box">
@@ -81,8 +82,8 @@
                 <div class="stat-value" id="playersCount">0</div>
             </div>
             <div class="stat-box">
-                <div class="stat-label">Time</div>
-                <div class="stat-value" id="roundTime">Ожидание</div>
+                <div class="stat-label">Round</div>
+                <div class="stat-value" id="roundNumber">#0</div>
             </div>
         </div>
 
@@ -112,7 +113,7 @@
             <div class="winner-crown">👑</div>
             <div class="winner-announcement" id="winnerName">Игрок</div>
             <div class="winner-prize" id="winnerPrize">
-                <img src="assets/ton.png" alt="TON" class="winner-prize-icon"> 0.00
+                0.00 <img src="assets/ton.png" alt="TON" class="winner-prize-icon">
             </div>
             <button class="new-round-button" id="newRoundBtn">🔄 Новый раунд</button>
         </div>
@@ -166,7 +167,7 @@
                 <div class="winner-stat">
                     <span class="winner-stat-label">Выигрыш</span>
                     <span class="winner-stat-value winner-prize" id="winnerModalPrize">
-                        <img src="assets/ton.png" alt="TON" class="winner-modal-icon-small"> 0.00
+                        0.00 <img src="assets/ton.png" alt="TON" class="winner-modal-icon-small">
                     </span>
                 </div>
                 <div class="winner-stat">
