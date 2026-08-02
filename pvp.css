@@ -399,6 +399,81 @@ body {
 }
 
 /* ============================================================
+   ЦЕНТР КОЛЕСА - УВЕЛИЧЕННЫЙ
+   ============================================================ */
+.wheel-center-solid {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 110px;
+    height: 110px;
+    z-index: 10;
+    background: #1a1a1e;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.06);
+    box-shadow: 
+        0 0 30px rgba(0, 0, 0, 0.8),
+        inset 0 0 30px rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.hub-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.hub-timer {
+    font-size: 28px;
+    font-weight: 700;
+    color: #ffffff;
+    line-height: 1;
+    text-shadow: 0 0 20px rgba(255,255,255,0.1);
+    display: block;
+}
+
+.hub-timer.warning {
+    color: #ff453a;
+    animation: timePulse 0.8s infinite;
+}
+
+.hub-timer.hidden {
+    display: none;
+}
+
+.hub-status {
+    font-size: 14px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.6);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.hub-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(255,255,255,0.2);
+    margin-bottom: 4px;
+}
+
+.hub-player-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: #ffffff;
+    max-width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ============================================================
    ОСТАЛЬНЫЕ ЭЛЕМЕНТЫ
    ============================================================ */
 
@@ -498,74 +573,6 @@ body {
     box-shadow: 0 0 12px rgba(0, 0, 0, 0.8);
     background: #2c2c2e;
     display: block;
-}
-
-.wheel-center-solid {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 80px;
-    height: 80px;
-    z-index: 10;
-    background: #1a1a1e;
-    border-radius: 50%;
-    border: 2px solid rgba(255,255,255,0.06);
-    box-shadow: 
-        0 0 30px rgba(0, 0, 0, 0.8),
-        inset 0 0 30px rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.hub-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-}
-
-.hub-timer {
-    font-size: 28px;
-    font-weight: 700;
-    color: #ffffff;
-    line-height: 1;
-    text-shadow: 0 0 20px rgba(255,255,255,0.1);
-}
-
-.hub-timer.warning {
-    color: #ff453a;
-    animation: timePulse 0.8s infinite;
-}
-
-.hub-status {
-    font-size: 10px;
-    font-weight: 600;
-    color: rgba(255,255,255,0.4);
-    margin-top: 2px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.hub-avatar {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 2px solid rgba(255,255,255,0.2);
-    margin-bottom: 2px;
-}
-
-.hub-player-name {
-    font-size: 11px;
-    font-weight: 600;
-    color: #ffffff;
-    max-width: 60px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
 }
 
 .wheel.spinning {
@@ -1015,12 +1022,26 @@ body {
     }
     
     .wheel-center-solid {
-        width: 68px;
-        height: 68px;
+        width: 90px;
+        height: 90px;
     }
     
     .hub-timer {
         font-size: 24px;
+    }
+    
+    .hub-status {
+        font-size: 12px;
+    }
+    
+    .hub-avatar {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .hub-player-name {
+        font-size: 11px;
+        max-width: 60px;
     }
     
     .avatar-position {
@@ -1152,8 +1173,8 @@ body {
     }
     
     .wheel-center-solid {
-        width: 56px;
-        height: 56px;
+        width: 76px;
+        height: 76px;
     }
     
     .hub-timer {
@@ -1161,7 +1182,17 @@ body {
     }
     
     .hub-status {
-        font-size: 8px;
+        font-size: 10px;
+    }
+    
+    .hub-avatar {
+        width: 34px;
+        height: 34px;
+    }
+    
+    .hub-player-name {
+        font-size: 10px;
+        max-width: 50px;
     }
     
     .avatar-position {
