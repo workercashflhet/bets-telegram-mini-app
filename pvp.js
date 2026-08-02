@@ -1,5 +1,5 @@
 // ============================================================
-// PvP КОЛЕСО - НОВАЯ ЛОГИКА
+// PvP КОЛЕСО - ПОЛНАЯ ЛОГИКА
 // ============================================================
 
 const tg = window.Telegram.WebApp;
@@ -13,7 +13,7 @@ const gameState = {
     selectedCurrency: 'ton',
     balance: { ton: 0.00, stars: 0 },
     playerBets: [],
-    roundPhase: 'waiting', // waiting | spinning | finished
+    roundPhase: 'waiting', // waiting | countdown | spinning | finished
     timeLeft: 20,
     timer: null,
     isSpinning: false,
@@ -32,7 +32,10 @@ const MIN_BET_STARS = 10;
 const ROUND_DURATION = 20;
 const SPIN_DURATION = 5000;
 
-// Инициализация
+// ============================================================
+// ИНИЦИАЛИЗАЦИЯ
+// ============================================================
+
 document.addEventListener('DOMContentLoaded', () => {
     tg.expand();
     tg.ready();
@@ -46,7 +49,10 @@ document.addEventListener('DOMContentLoaded', () => {
     updateUI();
 });
 
-// Загрузка баланса
+// ============================================================
+// БАЛАНС
+// ============================================================
+
 function loadBalance() {
     const saved = localStorage.getItem('bets_data');
     if (saved) {
@@ -64,13 +70,17 @@ function saveBalance() {
     }));
 }
 
-// Обновление баланса
 function updateBalanceUI() {
-    document.getElementById('tonBalanceSmall').textContent = gameState.balance.ton.toFixed(2);
-    document.getElementById('starsBalanceSmall').textContent = Math.floor(gameState.balance.stars);
+    const tonEl = document.getElementById('tonBalanceSmall');
+    const starsEl = document.getElementById('starsBalanceSmall');
+    if (tonEl) tonEl.textContent = gameState.balance.ton.toFixed(2);
+    if (starsEl) starsEl.textContent = Math.floor(gameState.balance.stars);
 }
 
-// Настройка UI
+// ============================================================
+// НАСТРОЙКА UI
+// ============================================================
+
 function setupUI() {
     // История
     document.getElementById('historyBtn').addEventListener('click', () => {
@@ -108,6 +118,22 @@ function setupUI() {
         });
     });
     
+    // Переключение валюты в балансе
+    document.querySelectorAll('.balance-item-small').forEach(item => {
+        item.addEventListener('click', () => {
+            document.querySelectorAll('.balance-item-small').forEach(b => b.classList.remove('active-currency'));
+            item.classList.add('active-currency');
+            const currency = item.dataset.currency;
+            if (currency === 'ton' || currency === 'stars') {
+                gameState.selectedCurrency = currency;
+                document.querySelectorAll('.currency-tab').forEach(b => {
+                    b.classList.toggle('active', b.dataset.currency === currency);
+                });
+                updateBetUI();
+            }
+        });
+    });
+    
     // Регулировка ставки
     document.getElementById('betDec').addEventListener('click', () => {
         const step = gameState.selectedCurrency === 'ton' ? 0.1 : 1;
@@ -140,11 +166,25 @@ function setupUI() {
         document.getElementById('winnerModal').classList.remove('show');
         startNewRound();
     });
+    
+    // Кнопка нового раунда (старая версия для обратной совместимости)
+    const newRoundBtn = document.getElementById('newRoundBtn');
+    if (newRoundBtn) {
+        newRoundBtn.addEventListener('click', () => {
+            document.getElementById('winnerSection').style.display = 'none';
+            startNewRound();
+        });
+    }
 }
 
-// Обновление UI ставки
+// ============================================================
+// UI ОБНОВЛЕНИЯ
+// ============================================================
+
 function updateBetUI() {
     const input = document.getElementById('betInput');
+    if (!input) return;
+    
     const display = gameState.selectedCurrency === 'ton' ? 
         gameState.betAmount.toFixed(1) : 
         Math.floor(gameState.betAmount);
@@ -153,10 +193,134 @@ function updateBetUI() {
     const max = gameState.selectedCurrency === 'ton' ? gameState.balance.ton : gameState.balance.stars;
     const min = gameState.selectedCurrency === 'ton' ? MIN_BET_TON : MIN_BET_STARS;
     const btn = document.getElementById('placeBetBtn');
-    btn.disabled = gameState.betAmount > max || gameState.betAmount < min || gameState.isSpinning || gameState.roundPhase === 'finished';
+    if (btn) {
+        btn.disabled = gameState.betAmount > max || gameState.betAmount < min || gameState.isSpinning || gameState.roundPhase === 'finished';
+    }
 }
 
-// Добавление демо-игроков
+function updateHub(type, data) {
+    const hubContent = document.getElementById('hubContent');
+    const timerEl = document.querySelector('.hub-timer');
+    const statusEl = document.querySelector('.hub-status');
+    
+    if (type === 'timer') {
+        if (timerEl) {
+            timerEl.textContent = data;
+            if (data <= 5) {
+                timerEl.classList.add('warning');
+            } else {
+                timerEl.classList.remove('warning');
+            }
+        }
+    } else if (type === 'status') {
+        if (statusEl) statusEl.textContent = data;
+    } else if (type === 'avatar') {
+        if (hubContent) {
+            hubContent.innerHTML = `
+                <img src="${getAvatarUrl(data)}" alt="${data.firstName}" class="hub-avatar">
+                <div class="hub-player-name">${data.firstName}</div>
+            `;
+        }
+    }
+}
+
+function updateUI() {
+    // Общий банк
+    const totalInTon = gameState.totalPoolTon + (gameState.totalPoolStars / TON_TO_STARS_RATE);
+    const poolEl = document.getElementById('poolTotal');
+    if (poolEl) poolEl.textContent = `${totalInTon.toFixed(2)} TON`;
+    
+    // Количество игроков
+    const activePlayers = getActivePlayers();
+    const playersCountEl = document.getElementById('playersCount');
+    const playersCountCompactEl = document.getElementById('playersCountCompact');
+    if (playersCountEl) playersCountEl.textContent = activePlayers.length;
+    if (playersCountCompactEl) playersCountCompactEl.textContent = activePlayers.length;
+    
+    // Список игроков
+    const list = document.getElementById('playersListCompact');
+    if (list) {
+        if (activePlayers.length === 0) {
+            list.innerHTML = '<div class="no-players-compact">Нет игроков</div>';
+        } else {
+            list.innerHTML = activePlayers.map(player => {
+                const isWinner = gameState.winner && gameState.winner.userId === player.userId;
+                const betText = formatPlayerBets(player);
+                const share = calculateWinChance(player);
+                
+                return `
+                    <div class="player-row ${isWinner ? 'winner-row' : ''}">
+                        <div class="player-row-color" style="background-color: ${player.color}"></div>
+                        <img src="${getAvatarUrl(player)}" alt="${player.firstName}" class="player-row-avatar">
+                        <span class="player-row-name">${player.firstName}${isWinner ? ' 👑' : ''}</span>
+                        <span class="player-row-bet">${betText}</span>
+                        <span class="player-row-share">${share}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+    }
+    
+    // Обновляем информацию в хедере
+    updateHeaderInfo();
+}
+
+function updateHeaderInfo() {
+    // Предыдущая игра
+    const prevGameText = document.getElementById('prevGameText');
+    if (prevGameText) {
+        if (gameState.history.length > 0) {
+            const last = gameState.history[gameState.history.length - 1];
+            prevGameText.textContent = `${last.winner} +${last.prize}`;
+            prevGameText.className = 'info-value win';
+        } else {
+            prevGameText.textContent = '—';
+            prevGameText.className = 'info-value';
+        }
+    }
+    
+    // Топ игра
+    const topGameText = document.getElementById('topGameText');
+    if (topGameText) {
+        if (gameState.topGame) {
+            topGameText.textContent = `${gameState.topGame.winner} +${gameState.topGame.prize}`;
+            topGameText.className = 'info-value win';
+        } else {
+            topGameText.textContent = '—';
+            topGameText.className = 'info-value';
+        }
+    }
+}
+
+function updateTimerUI() {
+    const timerText = document.getElementById('hubTimer');
+    if (timerText) {
+        timerText.textContent = gameState.timeLeft;
+        if (gameState.timeLeft <= 5) {
+            timerText.classList.add('warning');
+        } else {
+            timerText.classList.remove('warning');
+        }
+    }
+    
+    const roundTime = document.getElementById('roundTime');
+    if (roundTime) {
+        if (gameState.roundPhase === 'waiting' && getActivePlayers().length < MIN_PLAYERS) {
+            roundTime.textContent = 'Ожидание';
+        } else {
+            roundTime.textContent = `${gameState.timeLeft}s`;
+        }
+    }
+}
+
+// ============================================================
+// ИГРОВАЯ ЛОГИКА
+// ============================================================
+
+function getActivePlayers() {
+    return gameState.players.filter(p => p.bets && p.bets.length > 0);
+}
+
 function addDemoPlayers() {
     const user = tg.initDataUnsafe?.user;
     
@@ -190,7 +354,10 @@ function addDemoPlayers() {
     gameState.players = demoPlayers;
 }
 
-// Фаза ожидания
+// ============================================================
+// ФАЗЫ ИГРЫ
+// ============================================================
+
 function startWaitingPhase() {
     gameState.roundPhase = 'waiting';
     gameState.timeLeft = ROUND_DURATION;
@@ -201,14 +368,26 @@ function startWaitingPhase() {
     updateHub('timer', ROUND_DURATION);
     updateHub('status', 'Ожидание');
     
-    document.getElementById('placeBetBtn').disabled = false;
-    document.getElementById('winnerModal').classList.remove('show');
+    const placeBtn = document.getElementById('placeBetBtn');
+    if (placeBtn) placeBtn.disabled = false;
+    
+    const winnerModal = document.getElementById('winnerModal');
+    if (winnerModal) winnerModal.classList.remove('show');
+    
+    const winnerSection = document.getElementById('winnerSection');
+    if (winnerSection) winnerSection.style.display = 'none';
+    
+    const spinningStatus = document.getElementById('spinningStatus');
+    if (spinningStatus) spinningStatus.style.display = 'none';
+    
+    const betSection = document.getElementById('betSection');
+    if (betSection) betSection.style.display = 'block';
     
     updateUI();
     updateBetUI();
+    updateTimerUI();
 }
 
-// Фаза обратного отсчета
 function startCountdown() {
     const activePlayers = getActivePlayers();
     if (activePlayers.length < MIN_PLAYERS) {
@@ -216,21 +395,21 @@ function startCountdown() {
         return;
     }
     
-    gameState.roundPhase = 'waiting';
+    gameState.roundPhase = 'countdown';
     gameState.timeLeft = ROUND_DURATION;
     
     if (gameState.timer) clearInterval(gameState.timer);
     
     updateHub('timer', ROUND_DURATION);
-    updateHub('status', 'Ожидание');
+    updateHub('status', 'До вращения');
+    
+    const placeBtn = document.getElementById('placeBetBtn');
+    if (placeBtn) placeBtn.disabled = false;
     
     gameState.timer = setInterval(() => {
         gameState.timeLeft--;
+        updateTimerUI();
         updateHub('timer', gameState.timeLeft);
-        
-        if (gameState.timeLeft <= 5) {
-            document.querySelector('.hub-timer').classList.add('warning');
-        }
         
         if (gameState.timeLeft <= 0) {
             clearInterval(gameState.timer);
@@ -241,12 +420,10 @@ function startCountdown() {
     updateUI();
 }
 
-// Получение активных игроков
-function getActivePlayers() {
-    return gameState.players.filter(p => p.bets.length > 0);
-}
+// ============================================================
+// СТАВКИ
+// ============================================================
 
-// Размещение ставки
 function placeBet() {
     const user = tg.initDataUnsafe?.user;
     if (!user) {
@@ -308,17 +485,21 @@ function placeBet() {
     
     // Проверяем количество игроков для запуска таймера
     const activePlayers = getActivePlayers();
-    if (activePlayers.length >= MIN_PLAYERS && gameState.roundPhase === 'waiting') {
+    if (activePlayers.length >= MIN_PLAYERS && (gameState.roundPhase === 'waiting' || gameState.roundPhase === 'countdown')) {
         startCountdown();
     }
     
     updateUI();
     updateBetUI();
+    updateTimerUI();
     
     tg.showAlert(`✅ Ставка ${amount} ${currency === 'ton' ? 'TON' : 'Stars'} принята!`);
 }
 
-// Запуск вращения
+// ============================================================
+// ВРАЩЕНИЕ КОЛЕСА
+// ============================================================
+
 function startSpin() {
     const activePlayers = getActivePlayers();
     if (activePlayers.length < MIN_PLAYERS) {
@@ -331,7 +512,15 @@ function startSpin() {
     gameState.isSpinning = true;
     gameState.roundId++;
     
-    document.getElementById('placeBetBtn').disabled = true;
+    const placeBtn = document.getElementById('placeBetBtn');
+    if (placeBtn) placeBtn.disabled = true;
+    
+    const betSection = document.getElementById('betSection');
+    if (betSection) betSection.style.display = 'none';
+    
+    const spinningStatus = document.getElementById('spinningStatus');
+    if (spinningStatus) spinningStatus.style.display = 'block';
+    
     updateHub('status', 'ИГРА');
     
     // Создаем сегменты
@@ -347,49 +536,35 @@ function startSpin() {
     gameState.rotationAngle += targetAngle;
     
     const wheel = document.getElementById('wheel');
-    wheel.style.transform = `rotate(${gameState.rotationAngle}deg)`;
-    wheel.classList.add('spinning');
+    if (wheel) {
+        wheel.style.transform = `rotate(${gameState.rotationAngle}deg)`;
+        wheel.classList.add('spinning');
+    }
     
     // Показываем в центре аватар победителя во время вращения
     updateHub('avatar', winner);
     
     gameState.spinTimer = setTimeout(() => {
-        wheel.classList.remove('spinning');
+        if (wheel) wheel.classList.remove('spinning');
         gameState.isSpinning = false;
         gameState.roundPhase = 'finished';
+        
+        if (spinningStatus) spinningStatus.style.display = 'none';
         
         showWinner(winner);
         updateUI();
     }, SPIN_DURATION);
 }
 
-// Обновление центрального дисплея
-function updateHub(type, data) {
-    const hubContent = document.getElementById('hubContent');
-    const timerEl = document.querySelector('.hub-timer');
-    const statusEl = document.querySelector('.hub-status');
-    
-    if (type === 'timer') {
-        timerEl.textContent = data;
-        if (data <= 5) {
-            timerEl.classList.add('warning');
-        } else {
-            timerEl.classList.remove('warning');
-        }
-    } else if (type === 'status') {
-        statusEl.textContent = data;
-    } else if (type === 'avatar') {
-        hubContent.innerHTML = `
-            <img src="${getAvatarUrl(data)}" alt="${data.firstName}" class="hub-avatar">
-            <div class="hub-player-name">${data.firstName}</div>
-        `;
-    }
-}
+// ============================================================
+// КОЛЕСО - СЕГМЕНТЫ
+// ============================================================
 
-// Создание сегментов колеса
 function createWheelSegments() {
     const wheel = document.getElementById('wheel');
     const activePlayers = getActivePlayers();
+    
+    if (!wheel) return;
     
     if (activePlayers.length === 0) {
         wheel.innerHTML = '<div style="width:100%;height:100%;border-radius:50%;background:#1a1a2e;"></div>';
@@ -403,7 +578,7 @@ function createWheelSegments() {
     activePlayers.forEach((player) => {
         const playerValue = (player.bets.filter(b => b.currency === 'ton').reduce((s, b) => s + b.amount, 0) * TON_TO_STARS_RATE) +
                           player.bets.filter(b => b.currency === 'stars').reduce((s, b) => s + b.amount, 0);
-        const angle = (playerValue / totalValue) * 360;
+        const angle = totalValue > 0 ? (playerValue / totalValue) * 360 : 360 / activePlayers.length;
         const midAngle = startAngle + angle / 2;
         
         segmentsHTML += `
@@ -420,7 +595,7 @@ function createWheelSegments() {
     const gradientColors = activePlayers.map((player, index) => {
         const playerValue = (player.bets.filter(b => b.currency === 'ton').reduce((s, b) => s + b.amount, 0) * TON_TO_STARS_RATE) +
                           player.bets.filter(b => b.currency === 'stars').reduce((s, b) => s + b.amount, 0);
-        const angle = (playerValue / totalValue) * 360;
+        const angle = totalValue > 0 ? (playerValue / totalValue) * 360 : 360 / activePlayers.length;
         const startPercent = (index / activePlayers.length) * 100;
         const endPercent = ((index + 1) / activePlayers.length) * 100;
         return `${player.color} ${startPercent}% ${endPercent}%`;
@@ -435,10 +610,17 @@ function createWheelSegments() {
     `;
 }
 
-// Выбор победителя
+// ============================================================
+// ПОБЕДИТЕЛЬ
+// ============================================================
+
 function selectWinner() {
     const activePlayers = getActivePlayers();
     const totalValue = (gameState.totalPoolTon * TON_TO_STARS_RATE) + gameState.totalPoolStars;
+    
+    if (totalValue === 0) {
+        return activePlayers[Math.floor(Math.random() * activePlayers.length)];
+    }
     
     let random = Math.random() * totalValue;
     let cumulative = 0;
@@ -455,23 +637,33 @@ function selectWinner() {
     return activePlayers[0];
 }
 
-// Показ победителя
 function showWinner(winner) {
+    const modal = document.getElementById('winnerModal');
+    if (!modal) return;
+    
     const totalInTon = gameState.totalPoolTon + (gameState.totalPoolStars / TON_TO_STARS_RATE);
     const playerValue = (winner.bets.filter(b => b.currency === 'ton').reduce((s, b) => s + b.amount, 0) * TON_TO_STARS_RATE) +
                        winner.bets.filter(b => b.currency === 'stars').reduce((s, b) => s + b.amount, 0);
     const totalValue = (gameState.totalPoolTon * TON_TO_STARS_RATE) + gameState.totalPoolStars;
-    const multiplier = totalValue / playerValue;
+    const multiplier = totalValue > 0 && playerValue > 0 ? totalValue / playerValue : 0;
     
-    document.getElementById('winnerModalName').textContent = winner.firstName;
-    document.getElementById('winnerModalRound').textContent = `#${String(gameState.roundId).padStart(4, '0')}`;
-    document.getElementById('winnerModalPrize').textContent = `${totalInTon.toFixed(2)} TON`;
-    document.getElementById('winnerModalMultiplier').textContent = `×${multiplier.toFixed(1)}`;
+    const nameEl = document.getElementById('winnerModalName');
+    const roundEl = document.getElementById('winnerModalRound');
+    const prizeEl = document.getElementById('winnerModalPrize');
+    const multiEl = document.getElementById('winnerModalMultiplier');
     
-    document.getElementById('winnerModal').classList.add('show');
+    if (nameEl) nameEl.textContent = winner.firstName;
+    if (roundEl) roundEl.textContent = `#${String(gameState.roundId).padStart(4, '0')}`;
+    if (prizeEl) prizeEl.textContent = `${totalInTon.toFixed(2)} TON`;
+    if (multiEl) multiEl.textContent = `×${multiplier.toFixed(1)}`;
+    
+    modal.classList.add('show');
 }
 
-// Начало нового раунда
+// ============================================================
+// НОВЫЙ РАУНД
+// ============================================================
+
 function startNewRound() {
     if (gameState.timer) clearInterval(gameState.timer);
     if (gameState.spinTimer) clearTimeout(gameState.spinTimer);
@@ -485,59 +677,42 @@ function startNewRound() {
     
     // Восстанавливаем центр
     const hubContent = document.getElementById('hubContent');
-    hubContent.innerHTML = `
-        <div class="hub-timer" id="hubTimer">20</div>
-        <div class="hub-status" id="hubStatus">Ожидание</div>
-    `;
+    if (hubContent) {
+        hubContent.innerHTML = `
+            <div class="hub-timer" id="hubTimer">20</div>
+            <div class="hub-status" id="hubStatus">Ожидание</div>
+        `;
+    }
     
-    document.getElementById('winnerModal').classList.remove('show');
-    document.getElementById('placeBetBtn').disabled = false;
+    const winnerModal = document.getElementById('winnerModal');
+    if (winnerModal) winnerModal.classList.remove('show');
+    
+    const winnerSection = document.getElementById('winnerSection');
+    if (winnerSection) winnerSection.style.display = 'none';
+    
+    const spinningStatus = document.getElementById('spinningStatus');
+    if (spinningStatus) spinningStatus.style.display = 'none';
+    
+    const betSection = document.getElementById('betSection');
+    if (betSection) betSection.style.display = 'block';
+    
+    const placeBtn = document.getElementById('placeBetBtn');
+    if (placeBtn) placeBtn.disabled = false;
     
     startWaitingPhase();
     updateUI();
     updateBetUI();
+    updateTimerUI();
     
     tg.showAlert('🔄 Новый раунд начался! Делайте ставки!');
 }
 
-// Обновление UI
-function updateUI() {
-    // Общий банк
-    const totalInTon = gameState.totalPoolTon + (gameState.totalPoolStars / TON_TO_STARS_RATE);
-    document.getElementById('totalPotValue').textContent = `${totalInTon.toFixed(2)} TON`;
-    
-    // Количество игроков
-    const activePlayers = getActivePlayers();
-    document.getElementById('playersCountCompact').textContent = activePlayers.length;
-    
-    // Список игроков
-    const list = document.getElementById('playersListCompact');
-    if (activePlayers.length === 0) {
-        list.innerHTML = '<div class="no-players-compact">Нет игроков</div>';
-    } else {
-        list.innerHTML = activePlayers.map(player => {
-            const isWinner = gameState.winner && gameState.winner.userId === player.userId;
-            const betText = formatPlayerBets(player);
-            const share = calculateWinChance(player);
-            
-            return `
-                <div class="player-row ${isWinner ? 'winner-row' : ''}">
-                    <div class="player-row-color" style="background-color: ${player.color}"></div>
-                    <img src="${getAvatarUrl(player)}" alt="${player.firstName}" class="player-row-avatar">
-                    <span class="player-row-name">${player.firstName}${isWinner ? ' 👑' : ''}</span>
-                    <span class="player-row-bet">${betText}</span>
-                    <span class="player-row-share">${share}</span>
-                </div>
-            `;
-        }).join('');
-    }
-    
-    // Обновляем информацию в хедере
-    updateHeaderInfo();
-}
+// ============================================================
+// ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
+// ============================================================
 
-// Форматирование ставок
 function formatPlayerBets(player) {
+    if (!player || !player.bets) return '0';
     const tonTotal = player.bets.filter(b => b.currency === 'ton').reduce((s, b) => s + b.amount, 0);
     const starsTotal = player.bets.filter(b => b.currency === 'stars').reduce((s, b) => s + b.amount, 0);
     const parts = [];
@@ -546,8 +721,8 @@ function formatPlayerBets(player) {
     return parts.join(' + ') || '0';
 }
 
-// Расчет шанса
 function calculateWinChance(player) {
+    if (!player || !player.bets) return '0%';
     const tonBets = player.bets.filter(b => b.currency === 'ton').reduce((s, b) => s + b.amount, 0);
     const starsBets = player.bets.filter(b => b.currency === 'stars').reduce((s, b) => s + b.amount, 0);
     const playerValue = (tonBets * TON_TO_STARS_RATE) + starsBets;
@@ -556,40 +731,25 @@ function calculateWinChance(player) {
     return `${((playerValue / totalValue) * 100).toFixed(1)}%`;
 }
 
-// Обновление информации в хедере
-function updateHeaderInfo() {
-    const activePlayers = getActivePlayers();
-    
-    // Предыдущая игра
-    const prevGameText = document.getElementById('prevGameText');
-    if (gameState.history.length > 0) {
-        const last = gameState.history[gameState.history.length - 1];
-        prevGameText.textContent = `${last.winner} +${last.prize}`;
-        prevGameText.className = 'info-value win';
-    } else {
-        prevGameText.textContent = '—';
-        prevGameText.className = 'info-value';
-    }
-    
-    // Топ игра
-    const topGameText = document.getElementById('topGameText');
-    if (gameState.topGame) {
-        topGameText.textContent = `${gameState.topGame.winner} +${gameState.topGame.prize}`;
-        topGameText.className = 'info-value win';
-    } else {
-        topGameText.textContent = '—';
-        topGameText.className = 'info-value';
-    }
-}
-
-// Получение URL аватарки
 function getAvatarUrl(player) {
+    if (!player) return '';
     if (player.avatar) return player.avatar;
     return `https://api.dicebear.com/7.x/avataaars/svg?seed=${player.userId}`;
 }
 
-// Случайный цвет
 function getRandomColor() {
     const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#a29bfe', '#fd79a8', '#fdcb6e', '#e17055', '#00cec9'];
     return colors[Math.floor(Math.random() * colors.length)];
 }
+
+// ============================================================
+// ЭКСПОРТ (для отладки)
+// ============================================================
+
+window.pvpGame = {
+    state: gameState,
+    placeBet,
+    startNewRound,
+    getActivePlayers,
+    updateUI
+};

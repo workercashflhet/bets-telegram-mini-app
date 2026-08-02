@@ -10,11 +10,30 @@
 </head>
 <body class="fullscreen-mode">
     <div id="app">
-        <!-- Назад -->
-        <div class="pvp-back" onclick="window.history.back()">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
-                <path d="M19 12H5M12 19l-7-7 7-7"/>
-            </svg>
+        <!-- Верхний бар (Header) -->
+        <div class="pvp-header-bar">
+            <div class="header-left">
+                <button class="header-btn" id="historyBtn" title="История">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                        <path d="M12 8v4l3 3M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z"/>
+                    </svg>
+                </button>
+                <div class="info-block" id="prevGameInfo">
+                    <span class="info-label">ПРЕД. ИГРА</span>
+                    <span class="info-value" id="prevGameText">—</span>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="info-block" id="topGameInfo">
+                    <span class="info-label">ТОП ИГРА</span>
+                    <span class="info-value" id="topGameText">—</span>
+                </div>
+                <button class="header-btn" id="chatBtn" title="Чат">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
+                </button>
+            </div>
         </div>
 
         <!-- Заголовок -->
@@ -27,27 +46,14 @@
         <div class="player-balance-bar">
             <div class="balance-item-small active-currency" data-currency="ton">
                 <img src="assets/ton.png" alt="TON" class="balance-icon-small">
-                <span class="balance-value-small" id="tonBalance">0.00</span>
+                <span class="balance-value-small" id="tonBalanceSmall">0.00</span>
             </div>
             <div class="balance-item-small" data-currency="stars">
                 <img src="assets/stars.png" alt="Stars" class="balance-icon-small">
-                <span class="balance-value-small" id="starsBalance">0</span>
+                <span class="balance-value-small" id="starsBalanceSmall">0</span>
             </div>
-            <button class="deposit-nav-button" id="depositBtn">+</button>
+            <button class="deposit-nav-button" id="depositBtnSmall">+</button>
         </div>
-
-        <!-- Кнопки с title -->
-        <button class="header-btn" id="historyBtn" title="История">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
-                <path d="M12 8v4l3 3M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z"/>
-            </svg>
-        </button>
-
-        <button class="header-btn" id="chatBtn" title="Чат">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-            </svg>
-        </button>
 
         <!-- Мои ставки -->
         <div class="my-bets-bar" id="myBetsBar" style="display: none;">
@@ -67,7 +73,7 @@
             </div>
             <div class="stat-box">
                 <div class="stat-label">Time</div>
-                <div class="stat-value" id="roundTime">30s</div>
+                <div class="stat-value" id="roundTime">Ожидание</div>
             </div>
         </div>
 
@@ -77,14 +83,11 @@
                 <div class="wheel" id="wheel">
                     <!-- Сегменты будут добавлены динамически -->
                 </div>
-                <div class="wheel-center-solid">
-                    <svg class="timer-circle-svg" viewBox="0 0 100 100">
-                        <circle cx="50" cy="50" r="42" fill="#000000" stroke="rgba(255,255,255,0.3)" stroke-width="3"/>
-                        <circle cx="50" cy="50" r="42" fill="none" stroke="#0ceb0f" stroke-width="3"
-                            stroke-dasharray="264 264" stroke-linecap="round"
-                            style="transition: stroke-dasharray 1s linear;" id="timerCircle"/>
-                    </svg>
-                    <div class="timer-text" id="timerText">30</div>
+                <div class="wheel-center-solid" id="wheelHub">
+                    <div class="hub-content" id="hubContent">
+                        <div class="hub-timer" id="hubTimer">20</div>
+                        <div class="hub-status" id="hubStatus">Ожидание</div>
+                    </div>
                 </div>
                 <div class="wheel-pointer">▼</div>
             </div>
@@ -118,7 +121,7 @@
 
             <div class="bet-input-group">
                 <button class="bet-adjust" id="betDec">−</button>
-                <input type="number" class="bet-input" id="betInput" value="1" min="1">
+                <input type="number" class="bet-input" id="betInput" value="1" min="1" placeholder="Сумма">
                 <button class="bet-adjust" id="betInc">+</button>
             </div>
 
@@ -127,14 +130,38 @@
         </div>
 
         <!-- Список игроков -->
-        <div class="players-list">
-            <h3>🎮 Игроки в пуле</h3>
-            <div id="playersList">
-                <div class="no-players">
-                    <p>Пока нет игроков</p>
-                    <p class="no-players-sub">Будь первым!</p>
+        <div class="players-compact">
+            <div class="players-header">
+                <span>👥 Игроки</span>
+                <span id="playersCountCompact">0</span>
+            </div>
+            <div class="players-list-compact" id="playersListCompact">
+                <div class="no-players-compact">Нет игроков</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно победителя -->
+    <div class="winner-modal" id="winnerModal">
+        <div class="winner-modal-content">
+            <div class="winner-modal-icon">🏆</div>
+            <div class="winner-modal-title">ПОБЕДИТЕЛЬ</div>
+            <div class="winner-modal-name" id="winnerModalName">Игрок</div>
+            <div class="winner-modal-stats">
+                <div class="winner-stat">
+                    <span class="winner-stat-label">Раунд</span>
+                    <span class="winner-stat-value" id="winnerModalRound">#0000</span>
+                </div>
+                <div class="winner-stat">
+                    <span class="winner-stat-label">Выигрыш</span>
+                    <span class="winner-stat-value winner-prize" id="winnerModalPrize">0 TON</span>
+                </div>
+                <div class="winner-stat">
+                    <span class="winner-stat-label">Множитель</span>
+                    <span class="winner-stat-value winner-multiplier" id="winnerModalMultiplier">×0.0</span>
                 </div>
             </div>
+            <button class="winner-modal-btn" id="winnerModalBtn">🔄 Новый раунд</button>
         </div>
     </div>
 
