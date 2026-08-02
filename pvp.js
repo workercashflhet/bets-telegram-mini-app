@@ -7,8 +7,8 @@ const tg = window.Telegram.WebApp;
 // ============================================================
 // SUPABASE КОНФИГУРАЦИЯ
 // ============================================================
-const SUPABASE_URL = 'https://siibxynvgrrsktyihuby.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNpaWJ4eW52Z3Jyc2t0eWlodWJ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU3MDE0MzUsImV4cCI6MjEwMTI3NzQzNX0.k8bdNQPeB8lDkw_1XKVtFB-u3NjyHmyr2L7zE4mhN6I';
+const SUPABASE_URL = 'https://ваш-проект.supabase.co';
+const SUPABASE_KEY = 'ваш-public-anon-key';
 
 // Инициализация Supabase клиента
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -43,6 +43,8 @@ const MIN_BET_TON = 0.1;
 const MIN_BET_STARS = 10;
 const ROUND_DURATION = 20;
 const SPIN_DURATION = 5000;
+
+let waitingSpinInterval = null;
 
 // ============================================================
 // ИНИЦИАЛИЗАЦИЯ
@@ -572,6 +574,36 @@ function updateTopGameDisplay() {
 }
 
 // ============================================================
+// РЕЖИМ ОЖИДАНИЯ - ВРАЩЕНИЕ КОЛЕСА
+// ============================================================
+
+function startWaitingSpin() {
+    const wheel = document.getElementById('wheel');
+    if (!wheel) return;
+    
+    // Добавляем класс для полосатого узора
+    wheel.classList.add('waiting-pattern');
+    
+    // Добавляем класс для вращения
+    wheel.classList.add('waiting-spin');
+    
+    // Убираем стандартный transition для плавного вращения
+    wheel.style.transition = 'none';
+}
+
+function stopWaitingSpin() {
+    const wheel = document.getElementById('wheel');
+    if (!wheel) return;
+    
+    // Убираем классы
+    wheel.classList.remove('waiting-pattern');
+    wheel.classList.remove('waiting-spin');
+    
+    // Возвращаем transition
+    wheel.style.transition = 'transform 5s cubic-bezier(0.17, 0.67, 0.12, 0.99)';
+}
+
+// ============================================================
 // ИГРОВАЯ ЛОГИКА
 // ============================================================
 
@@ -623,6 +655,9 @@ function startWaitingPhase() {
     
     if (gameState.timer) clearInterval(gameState.timer);
     
+    // Запускаем вращение колеса в режиме ожидания
+    startWaitingSpin();
+    
     updateHub('timer', ROUND_DURATION);
     updateHub('status', 'Ожидание');
     
@@ -652,6 +687,9 @@ function startCountdown() {
         startWaitingPhase();
         return;
     }
+    
+    // Останавливаем вращение в режиме ожидания
+    stopWaitingSpin();
     
     gameState.roundPhase = 'countdown';
     gameState.timeLeft = ROUND_DURATION;
@@ -983,6 +1021,7 @@ function startNewRound() {
     gameState.winner = null;
     gameState.isSpinning = false;
     
+    // Восстанавливаем центр
     const hubContent = document.getElementById('hubContent');
     if (hubContent) {
         hubContent.innerHTML = `

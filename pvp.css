@@ -474,6 +474,43 @@ body {
 }
 
 /* ============================================================
+   КОЛЕСО - АНИМАЦИЯ ВРАЩЕНИЯ В РЕЖИМЕ ОЖИДАНИЯ
+   ============================================================ */
+.wheel.waiting-spin {
+    animation: waitingSpin 4s linear infinite;
+}
+
+@keyframes waitingSpin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ============================================================
+   КОЛЕСО - ПОЛОСАТЫЙ УЗОР (КОНУС)
+   ============================================================ */
+.wheel.waiting-pattern {
+    background: conic-gradient(
+        from 0deg,
+        #03fc03 0deg 30deg,
+        #000000 30deg 60deg,
+        #03fc03 60deg 90deg,
+        #000000 90deg 120deg,
+        #03fc03 120deg 150deg,
+        #000000 150deg 180deg,
+        #03fc03 180deg 210deg,
+        #000000 210deg 240deg,
+        #03fc03 240deg 270deg,
+        #000000 270deg 300deg,
+        #03fc03 300deg 330deg,
+        #000000 330deg 360deg
+    ) !important;
+}
+
+/* ============================================================
    ОСТАЛЬНЫЕ ЭЛЕМЕНТЫ
    ============================================================ */
 
@@ -547,6 +584,7 @@ body {
         0 0 60px rgba(0, 0, 0, 0.6),
         inset 0 0 60px rgba(0, 0, 0, 0.3);
     transition: transform 5s cubic-bezier(0.17, 0.67, 0.12, 0.99);
+    overflow: hidden;
 }
 
 .wheel-avatar-container {
