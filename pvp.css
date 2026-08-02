@@ -1,0 +1,592 @@
+/* ============================================================
+   PvP СТИЛИ - АДАПТИРОВАНЫ ПОД ОСНОВНОЕ ПРИЛОЖЕНИЕ
+   ============================================================ */
+
+/* Назад */
+.pvp-back {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    z-index: 20;
+    width: 36px;
+    height: 36px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(255,255,255,0.05);
+}
+
+.pvp-back:active {
+    transform: scale(0.9);
+}
+
+.pvp-back svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* Заголовок */
+.pvp-header {
+    text-align: center;
+    padding: 20px 0 12px;
+    margin-top: 40px;
+}
+
+.pvp-title {
+    font-size: 26px;
+    font-weight: 700;
+    color: #ffffff;
+    margin: 0 0 4px;
+}
+
+.pvp-subtitle {
+    font-size: 14px;
+    color: #888888;
+    margin: 0;
+}
+
+/* Баланс */
+.player-balance-bar {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 16px;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+}
+
+.balance-item-small {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #111111;
+    padding: 6px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+}
+
+.balance-item-small.active-currency {
+    border-color: #0ceb0f;
+}
+
+.balance-icon-small {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+}
+
+.balance-value-small {
+    font-size: 14px;
+    font-weight: 600;
+    color: #ffffff;
+}
+
+.deposit-nav-button {
+    padding: 8px 16px;
+    background: #0ceb0f;
+    color: #000000;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+}
+
+.deposit-nav-button:active {
+    transform: scale(0.95);
+}
+
+/* Мои ставки */
+.my-bets-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 16px;
+    background: rgba(12, 235, 15, 0.08);
+    border: 1px solid rgba(12, 235, 15, 0.15);
+    border-radius: 10px;
+    margin-bottom: 12px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #ffffff;
+}
+
+.bets-count {
+    font-size: 14px;
+    font-weight: 700;
+    color: #0ceb0f;
+}
+
+/* Статистика */
+.pvp-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.stat-box {
+    background: #111111;
+    border-radius: 12px;
+    padding: 12px;
+    text-align: center;
+    border: 1px solid #222222;
+}
+
+.stat-label {
+    font-size: 11px;
+    color: #888888;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+}
+
+.stat-value {
+    font-size: 16px;
+    font-weight: 700;
+    color: #ffffff;
+}
+
+/* Колесо */
+.wheel-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 10px 0;
+}
+
+.wheel-container {
+    position: relative;
+    width: 300px;
+    height: 300px;
+}
+
+.wheel {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    position: relative;
+    border: none;
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.6);
+}
+
+.wheel-center-solid {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90px;
+    height: 90px;
+    z-index: 5;
+}
+
+.timer-circle-svg {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.timer-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 22px;
+    font-weight: 700;
+    color: white;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+    z-index: 1;
+}
+
+.wheel-pointer {
+    position: absolute;
+    top: -18px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 30px;
+    color: #FFD700;
+    filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.6));
+    z-index: 10;
+}
+
+.wheel-avatar-container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    transform-origin: 0 0;
+    z-index: 2;
+}
+
+.avatar-position {
+    position: absolute;
+    transform: translate(-50%, -50%) translateY(-85px);
+}
+
+.wheel-player-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(255, 255, 255, 0.9);
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.7);
+    background: #2c2c2e;
+    display: block;
+}
+
+.spinning {
+    animation: wheelGlow 0.5s ease-in-out infinite alternate;
+}
+
+@keyframes wheelGlow {
+    from { box-shadow: 0 0 40px rgba(0, 0, 0, 0.6); }
+    to { box-shadow: 0 0 60px rgba(255, 215, 0, 0.4); }
+}
+
+/* Статус спиннинга */
+.spinning-status {
+    text-align: center;
+    padding: 12px;
+    background: rgba(255, 215, 0, 0.08);
+    border-radius: 12px;
+    margin-bottom: 16px;
+}
+
+.spinning-text {
+    font-size: 16px;
+    font-weight: 600;
+    color: #FFD700;
+    animation: spinPulse 0.5s infinite;
+}
+
+@keyframes spinPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+/* Победитель */
+.winner-section {
+    text-align: center;
+    padding: 16px;
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.08), rgba(255, 165, 0, 0.08));
+    border-radius: 16px;
+    margin-bottom: 16px;
+    border: 1px solid rgba(255, 215, 0, 0.1);
+}
+
+.winner-crown {
+    font-size: 36px;
+    margin-bottom: 4px;
+}
+
+.winner-announcement {
+    font-size: 18px;
+    font-weight: 700;
+    color: #FFD700;
+    margin-bottom: 4px;
+}
+
+.winner-prize {
+    font-size: 16px;
+    font-weight: 700;
+    color: #FFD700;
+    margin-bottom: 12px;
+}
+
+.new-round-button {
+    padding: 10px 24px;
+    background: #0ceb0f;
+    color: #000000;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.new-round-button:active {
+    transform: scale(0.95);
+}
+
+/* Секция ставок */
+.bet-section {
+    background: #111111;
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 16px;
+    border: 1px solid #222222;
+}
+
+.currency-toggle {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.currency-btn {
+    flex: 1;
+    padding: 10px;
+    border: 2px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    background: #0a0a0a;
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.currency-icon {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.currency-btn.active {
+    border-color: #0ceb0f;
+    background: rgba(12, 235, 15, 0.08);
+}
+
+.bet-input-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.bet-adjust {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: #0a0a0a;
+    color: #ffffff;
+    font-size: 20px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.bet-adjust:active {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.bet-input {
+    flex: 1;
+    height: 40px;
+    background: #0a0a0a;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    color: #ffffff;
+    text-align: center;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.bet-input:focus {
+    outline: none;
+    border-color: #0ceb0f;
+}
+
+.place-bet-button {
+    width: 100%;
+    padding: 14px;
+    background: #0ceb0f;
+    color: #000000;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.place-bet-button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.place-bet-button:active:not(:disabled) {
+    transform: scale(0.97);
+}
+
+.color-auto-text {
+    text-align: center;
+    font-size: 11px;
+    color: #888888;
+    margin-top: 8px;
+}
+
+/* Список игроков */
+.players-list {
+    background: #111111;
+    border-radius: 16px;
+    padding: 16px;
+    border: 1px solid #222222;
+    margin-bottom: 80px;
+}
+
+.players-list h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #ffffff;
+    margin-bottom: 12px;
+}
+
+.player-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    background: #0a0a0a;
+    border-radius: 10px;
+    margin-bottom: 6px;
+}
+
+.player-item:last-child {
+    margin-bottom: 0;
+}
+
+.winner-player {
+    background: rgba(255, 215, 0, 0.08) !important;
+    border: 1px solid rgba(255, 215, 0, 0.15) !important;
+}
+
+.player-color {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.player-avatar-small {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.player-info {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+}
+
+.player-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: #ffffff;
+}
+
+.player-username {
+    font-size: 11px;
+    color: #888888;
+}
+
+.player-stats {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    flex-shrink: 0;
+}
+
+.player-bet {
+    font-size: 13px;
+    font-weight: 600;
+    color: #ffffff;
+}
+
+.player-share {
+    font-size: 13px;
+    font-weight: 700;
+    color: #0ceb0f;
+}
+
+.no-players {
+    text-align: center;
+    padding: 16px;
+}
+
+.no-players p {
+    color: #888888;
+    margin: 4px 0;
+}
+
+.no-players-sub {
+    font-size: 12px;
+    opacity: 0.7;
+}
+
+/* Адаптив */
+@media (max-width: 420px) {
+    .wheel-container {
+        width: 260px;
+        height: 260px;
+    }
+    
+    .wheel-center-solid {
+        width: 76px;
+        height: 76px;
+    }
+    
+    .timer-text {
+        font-size: 18px;
+    }
+    
+    .avatar-position {
+        transform: translate(-50%, -50%) translateY(-74px);
+    }
+    
+    .wheel-player-avatar {
+        width: 24px;
+        height: 24px;
+    }
+    
+    .pvp-title {
+        font-size: 22px;
+    }
+}
+
+@media (max-width: 360px) {
+    .wheel-container {
+        width: 220px;
+        height: 220px;
+    }
+    
+    .wheel-center-solid {
+        width: 64px;
+        height: 64px;
+    }
+    
+    .timer-text {
+        font-size: 16px;
+    }
+    
+    .avatar-position {
+        transform: translate(-50%, -50%) translateY(-62px);
+    }
+    
+    .wheel-player-avatar {
+        width: 20px;
+        height: 20px;
+    }
+}

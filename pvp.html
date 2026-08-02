@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PvP Колесо</title>
+    <script src="https://telegram.org/js/telegram-web-app.js?56"></script>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="pvp.css">
+</head>
+<body class="fullscreen-mode">
+    <div id="app">
+        <!-- Назад -->
+        <div class="pvp-back" onclick="window.history.back()">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+        </div>
+
+        <!-- Заголовок -->
+        <div class="pvp-header">
+            <h1 class="pvp-title">🎰 PvP Колесо</h1>
+            <p class="pvp-subtitle">Сделай ставку и крути колесо!</p>
+        </div>
+
+        <!-- Баланс -->
+        <div class="player-balance-bar">
+            <div class="balance-item-small active-currency" data-currency="ton">
+                <img src="assets/ton.png" alt="TON" class="balance-icon-small">
+                <span class="balance-value-small" id="tonBalance">0.00</span>
+            </div>
+            <div class="balance-item-small" data-currency="stars">
+                <img src="assets/stars.png" alt="Stars" class="balance-icon-small">
+                <span class="balance-value-small" id="starsBalance">0</span>
+            </div>
+            <button class="deposit-nav-button" id="depositBtn">+</button>
+        </div>
+
+        <!-- Мои ставки -->
+        <div class="my-bets-bar" id="myBetsBar" style="display: none;">
+            <span id="myBetsText">My bets: 0 TON + 0 Stars</span>
+            <span class="bets-count" id="winChance">0%</span>
+        </div>
+
+        <!-- Статистика -->
+        <div class="pvp-stats">
+            <div class="stat-box">
+                <div class="stat-label">Pool</div>
+                <div class="stat-value" id="poolTotal">0 TON</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Players</div>
+                <div class="stat-value" id="playersCount">0</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Time</div>
+                <div class="stat-value" id="roundTime">30s</div>
+            </div>
+        </div>
+
+        <!-- Колесо -->
+        <div class="wheel-wrapper" id="wheelWrapper">
+            <div class="wheel-container">
+                <div class="wheel" id="wheel">
+                    <!-- Сегменты будут добавлены динамически -->
+                </div>
+                <div class="wheel-center-solid">
+                    <svg class="timer-circle-svg" viewBox="0 0 100 100">
+                        <circle cx="50" cy="50" r="42" fill="#000000" stroke="rgba(255,255,255,0.3)" stroke-width="3"/>
+                        <circle cx="50" cy="50" r="42" fill="none" stroke="#0ceb0f" stroke-width="3"
+                            stroke-dasharray="264 264" stroke-linecap="round"
+                            style="transition: stroke-dasharray 1s linear;" id="timerCircle"/>
+                    </svg>
+                    <div class="timer-text" id="timerText">30</div>
+                </div>
+                <div class="wheel-pointer">▼</div>
+            </div>
+        </div>
+
+        <!-- Статус спиннинга -->
+        <div class="spinning-status" id="spinningStatus" style="display: none;">
+            <div class="spinning-text">🎡 Колесо крутится...</div>
+        </div>
+
+        <!-- Победитель -->
+        <div class="winner-section" id="winnerSection" style="display: none;">
+            <div class="winner-crown">👑</div>
+            <div class="winner-announcement" id="winnerName">Игрок</div>
+            <div class="winner-prize" id="winnerPrize">0 TON</div>
+            <button class="new-round-button" id="newRoundBtn">🔄 Новый раунд</button>
+        </div>
+
+        <!-- Секция ставок -->
+        <div class="bet-section" id="betSection">
+            <div class="currency-toggle">
+                <button class="currency-btn active" data-currency="ton">
+                    <img src="assets/ton.png" alt="TON" class="currency-icon">
+                    TON
+                </button>
+                <button class="currency-btn" data-currency="stars">
+                    <img src="assets/stars.png" alt="Stars" class="currency-icon">
+                    Stars
+                </button>
+            </div>
+
+            <div class="bet-input-group">
+                <button class="bet-adjust" id="betDec">−</button>
+                <input type="number" class="bet-input" id="betInput" value="1" min="1">
+                <button class="bet-adjust" id="betInc">+</button>
+            </div>
+
+            <button class="place-bet-button" id="placeBetBtn">Сделать ставку</button>
+            <p class="color-auto-text">🎯 Удачи! Вы лучший!</p>
+        </div>
+
+        <!-- Список игроков -->
+        <div class="players-list">
+            <h3>🎮 Игроки в пуле</h3>
+            <div id="playersList">
+                <div class="no-players">
+                    <p>Пока нет игроков</p>
+                    <p class="no-players-sub">Будь первым!</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="pvp.js"></script>
+</body>
+</html>
