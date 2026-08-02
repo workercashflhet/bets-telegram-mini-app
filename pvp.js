@@ -314,7 +314,7 @@ function updateUI() {
     const totalInTon = gameState.totalPoolTon + (gameState.totalPoolStars / TON_TO_STARS_RATE);
     const poolEl = document.getElementById('poolTotal');
     if (poolEl) {
-        poolEl.innerHTML = `<img src="assets/ton.png" alt="TON" class="pool-icon"> ${totalInTon.toFixed(2)}`;
+        poolEl.innerHTML = `${totalInTon.toFixed(2)} <img src="assets/ton.png" alt="TON" class="pool-icon">`;
     }
     
     // Количество игроков

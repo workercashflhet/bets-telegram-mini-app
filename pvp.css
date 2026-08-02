@@ -299,14 +299,14 @@ body {
 }
 
 /* ============================================================
-   СТАТИСТИКА - ИКОНКА В POOL (СЛЕВА ОТ СУММЫ)
+   СТАТИСТИКА - ИКОНКА В POOL (СПРАВА ОТ СУММЫ)
    ============================================================ */
 .pool-icon {
     width: 18px;
     height: 18px;
     vertical-align: middle;
     display: inline-block;
-    margin-right: 2px;
+    margin-left: 2px;
     transform: translateY(-1px);
 }
 
@@ -321,19 +321,20 @@ body {
 }
 
 .stat-value .pool-icon {
-    order: 0;
-    margin-right: 2px;
+    order: 1;
+    margin-left: 2px;
+    margin-right: 0;
 }
 
 /* ============================================================
-   ПОБЕДИТЕЛЬ - ИКОНКА В ПРИЗЕ
+   ПОБЕДИТЕЛЬ - ИКОНКА В ПРИЗЕ (СПРАВА ОТ СУММЫ)
    ============================================================ */
 .winner-prize-icon {
     width: 18px;
     height: 18px;
     vertical-align: middle;
     display: inline-block;
-    margin-right: 2px;
+    margin-left: 2px;
     transform: translateY(-1px);
 }
 
@@ -342,7 +343,7 @@ body {
     height: 16px;
     vertical-align: middle;
     display: inline-block;
-    margin-right: 2px;
+    margin-left: 2px;
     transform: translateY(-1px);
 }
 
@@ -354,7 +355,13 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 4px;
+    gap: 2px;
+}
+
+.winner-prize .winner-prize-icon {
+    order: 1;
+    margin-left: 2px;
+    margin-right: 0;
 }
 
 .winner-stat-value {
@@ -365,6 +372,12 @@ body {
     align-items: center;
     justify-content: center;
     gap: 2px;
+}
+
+.winner-stat-value .winner-modal-icon-small {
+    order: 1;
+    margin-left: 2px;
+    margin-right: 0;
 }
 
 /* ============================================================
