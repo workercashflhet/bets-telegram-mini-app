@@ -43,7 +43,7 @@ body {
     pointer-events: auto;
 }
 
-/* Левый островок с профилем (УВЕЛИЧЕН, БЕЗ ОБВОДКИ) */
+/* Левый островок с профилем (БЕЗ ОБВОДКИ) */
 .user-island {
     display: flex;
     align-items: center;
@@ -53,7 +53,7 @@ body {
     background: rgba(0, 0, 0, 0.6);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     backdrop-filter: blur(20px) saturate(180%);
-    border: 1px solid rgba(12, 235, 15, 0.15);
+    border: none;
     border-radius: 16px;
     box-shadow: 
         0 4px 20px rgba(0, 0, 0, 0.4),
@@ -111,14 +111,14 @@ body {
     flex-shrink: 0;
 }
 
-/* Правый островок с балансом */
+/* Правый островок с балансом (ФОН #131313) */
 .balance-island {
     display: flex;
     align-items: center;
     justify-content: flex-end;
     gap: 0px;
     padding: 4px 10px 4px 10px;
-    background: rgba(0, 0, 0, 0.6);
+    background: #131313;
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     backdrop-filter: blur(20px) saturate(180%);
     border: 1px solid rgba(12, 235, 15, 0.15);
