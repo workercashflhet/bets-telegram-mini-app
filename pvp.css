@@ -1,5 +1,5 @@
 /* ============================================================
-   PvP КОЛЕСО - ПОЛНЫЙ СТИЛЬ (СДВИНУТ НА 80px ВНИЗ)
+   PvP КОЛЕСО - ПОЛНЫЙ СТИЛЬ (ОСТРОВКИ НА 60px ОТ ВЕРХА)
    ============================================================ */
 
 /* Основной фон */
@@ -14,16 +14,17 @@ body {
     padding: 0 12px 80px;
     min-height: 100vh;
     position: relative;
+    overflow: visible !important;
 }
 
 /* ============================================================
-   ОСТРОВКИ - НАД ХЭДЕРОМ С ОТСТУПОМ 10px
+   ОСТРОВКИ - НАД ХЭДЕРОМ С ОТСТУПОМ 10px (top: 60px)
    ============================================================ */
 
-/* Контейнер для островков - над хэдером */
+/* Контейнер для островков - фиксированный */
 .islands-container {
-    position: absolute;
-    top: -42px; /* 32px (высота островков) + 10px (отступ) */
+    position: fixed;
+    top: 60px; /* Отступ от верха экрана */
     left: 0;
     right: 0;
     max-width: 480px;
@@ -32,7 +33,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    z-index: 100;
+    z-index: 1000;
     pointer-events: none;
     height: auto;
     box-sizing: border-box;
@@ -217,12 +218,13 @@ body {
 }
 
 /* ============================================================
-   ВЕРХНИЙ БАР (HEADER) - ДОБАВЛЕНО ЕЩЕ 40px ПРОСТРАНСТВА
+   ВЕРХНИЙ БАР (HEADER) - С ОТСТУПОМ 10px ОТ ОСТРОВКОВ
    ============================================================ */
 .pvp-header-wrapper {
     position: relative;
-    margin-top: 90px; /* Было 50px, стало 90px (+40px) */
-    padding-top: 52px; /* 32px (высота островков) + 10px (отступ) + 10px (доп. отступ) */
+    margin-top: 102px; /* 60px + 32px + 10px */
+    padding-top: 0;
+    overflow: visible !important;
 }
 
 .pvp-header-bar {
@@ -874,7 +876,7 @@ body {
    ============================================================ */
 @media (max-width: 430px) {
     .islands-container {
-        top: -38px; /* 28px (высота островков) + 10px (отступ) */
+        top: 50px;
     }
     
     .user-island {
@@ -937,8 +939,7 @@ body {
     }
     
     .pvp-header-wrapper {
-        margin-top: 80px; /* Было 42px, стало 80px (+38px) */
-        padding-top: 44px; /* 28px + 10px + 6px */
+        margin-top: 88px; /* 50px + 28px + 10px */
     }
     
     .wheel-container {
@@ -988,7 +989,7 @@ body {
 
 @media (max-width: 375px) {
     .islands-container {
-        top: -34px; /* 24px (высота островков) + 10px (отступ) */
+        top: 44px;
     }
     
     .user-island {
@@ -1051,8 +1052,7 @@ body {
     }
     
     .pvp-header-wrapper {
-        margin-top: 72px; /* Было 38px, стало 72px (+34px) */
-        padding-top: 38px; /* 24px + 10px + 4px */
+        margin-top: 78px; /* 44px + 24px + 10px */
     }
     
     .wheel-container {
