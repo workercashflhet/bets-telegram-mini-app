@@ -1,14 +1,14 @@
 /* ============================================================
-   PvP КОЛЕСО - ПОЛНЫЙ СТИЛЬ (ОСТРОВКИ НА 110px ОТ ВЕРХА)
+   PvP КОЛЕСО - ПОЛНЫЙ СТИЛЬ (ФОН КАК В ГЛАВНОМ МЕНЮ)
    ============================================================ */
 
-/* Основной фон */
+/* Основной фон - как в главном меню */
 body {
-    background: #121216 !important;
+    background: #000000 !important;
 }
 
 #app {
-    background: #121216 !important;
+    background: #000000 !important;
     max-width: 480px;
     margin: 0 auto;
     padding: 0 12px 80px;
@@ -18,13 +18,13 @@ body {
 }
 
 /* ============================================================
-   ОСТРОВКИ - НА 110px ОТ ВЕРХА
+   ОСТРОВКИ - НА 120px ОТ ВЕРХА
    ============================================================ */
 
 /* Контейнер для островков - фиксированный */
 .islands-container {
     position: fixed;
-    top: 110px; /* Было 100px, стало 110px (+10px) */
+    top: 120px;
     left: 0;
     right: 0;
     max-width: 480px;
@@ -222,7 +222,7 @@ body {
    ============================================================ */
 .pvp-header-wrapper {
     position: relative;
-    margin-top: 152px; /* 110px + 32px + 10px */
+    margin-top: 162px; /* 120px + 32px + 10px */
     padding-top: 0;
     overflow: visible !important;
 }
@@ -876,7 +876,7 @@ body {
    ============================================================ */
 @media (max-width: 430px) {
     .islands-container {
-        top: 88px; /* Было 80px, стало 88px (+8px) */
+        top: 96px;
     }
     
     .user-island {
@@ -939,7 +939,7 @@ body {
     }
     
     .pvp-header-wrapper {
-        margin-top: 126px; /* 88px + 28px + 10px */
+        margin-top: 134px;
     }
     
     .wheel-container {
@@ -989,7 +989,7 @@ body {
 
 @media (max-width: 375px) {
     .islands-container {
-        top: 76px; /* Было 70px, стало 76px (+6px) */
+        top: 82px;
     }
     
     .user-island {
@@ -1052,7 +1052,7 @@ body {
     }
     
     .pvp-header-wrapper {
-        margin-top: 110px; /* 76px + 24px + 10px */
+        margin-top: 116px;
     }
     
     .wheel-container {
