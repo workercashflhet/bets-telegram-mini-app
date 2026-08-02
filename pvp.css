@@ -1,5 +1,5 @@
 /* ============================================================
-   PvP КОЛЕСО - ПОЛНЫЙ СТИЛЬ
+   PvP КОЛЕСО - ПОЛНЫЙ СТИЛЬ (БЕЗ ЗАГОЛОВКА)
    ============================================================ */
 
 /* Основной фон */
@@ -255,7 +255,7 @@ body {
     justify-content: space-between;
     align-items: center;
     padding: 12px 0 16px;
-    margin-top: 40px;
+    margin-top: 4px;
     border-bottom: 1px solid rgba(255,255,255,0.05);
 }
 
@@ -323,27 +323,6 @@ body {
 
 .info-value.loss {
     color: #ff453a;
-}
-
-/* ============================================================
-   ЗАГОЛОВОК
-   ============================================================ */
-.pvp-header {
-    text-align: center;
-    padding: 12px 0 8px;
-}
-
-.pvp-title {
-    font-size: 24px;
-    font-weight: 700;
-    color: #ffffff;
-    margin: 0 0 4px;
-}
-
-.pvp-subtitle {
-    font-size: 14px;
-    color: #888888;
-    margin: 0;
 }
 
 /* ============================================================
@@ -1008,7 +987,7 @@ body {
     }
     
     .pvp-header-bar {
-        margin-top: 32px;
+        margin-top: 0px;
     }
     
     .wheel-container {
@@ -1131,10 +1110,6 @@ body {
     .pvp-back svg {
         width: 14px;
         height: 14px;
-    }
-    
-    .pvp-header-bar {
-        margin-top: 28px;
     }
     
     .wheel-container {
