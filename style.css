@@ -204,14 +204,14 @@ body.fullscreen-mode {
 }
 
 /* ============================================================
-   ЛЕВЫЙ ОСТРОВОК (БЕЗ ФОНА, БЕЗ ОБВОДКИ, БЕЗ ПОДСВЕТКИ)
+   ЛЕВЫЙ ОСТРОВОК (БОЛЬШОЙ, БЕЗ ФОНА, БЕЗ ОБВОДКИ, БЕЗ ПОДСВЕТКИ)
    ============================================================ */
 .user-island {
     display: flex;
     align-items: center;
     justify-content: flex-start;
-    gap: 10px;
-    padding: 6px 16px 6px 10px;
+    gap: 14px;
+    padding: 8px 20px 8px 12px;
     background: transparent;
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
@@ -219,16 +219,16 @@ body.fullscreen-mode {
     border-radius: 0;
     box-shadow: none;
     animation: none;
-    height: 44px;
-    min-height: 44px;
+    height: 56px;
+    min-height: 56px;
     box-sizing: border-box;
     width: auto;
     flex-shrink: 0;
 }
 
 .user-avatar {
-    width: 34px;
-    height: 34px;
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
     object-fit: cover;
     border: none;
@@ -236,27 +236,27 @@ body.fullscreen-mode {
 }
 
 .user-avatar-fallback {
-    width: 34px;
-    height: 34px;
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     background: var(--accent);
     color: var(--bg-primary);
-    font-size: 16px;
+    font-size: 20px;
     font-weight: 700;
     flex-shrink: 0;
     border: none;
 }
 
 .user-name {
-    font-size: 16px;
+    font-size: 20px;
     font-weight: 600;
     color: var(--text-primary);
     letter-spacing: 0.3px;
     white-space: nowrap;
-    max-width: 120px;
+    max-width: 150px;
     overflow: hidden;
     text-overflow: ellipsis;
 }
@@ -879,28 +879,28 @@ body.fullscreen-mode {
     }
     
     .user-island {
-        padding: 5px 12px 5px 8px;
-        gap: 8px;
-        height: 36px;
-        min-height: 36px;
+        padding: 6px 14px 6px 10px;
+        gap: 10px;
+        height: 44px;
+        min-height: 44px;
     }
     
     .user-avatar {
-        width: 26px;
-        height: 26px;
+        width: 34px;
+        height: 34px;
         border: none;
     }
     
     .user-avatar-fallback {
-        width: 26px;
-        height: 26px;
-        font-size: 13px;
+        width: 34px;
+        height: 34px;
+        font-size: 16px;
         border: none;
     }
     
     .user-name {
-        font-size: 14px;
-        max-width: 80px;
+        font-size: 16px;
+        max-width: 100px;
     }
     
     .balance-wrapper {
@@ -1043,29 +1043,28 @@ body.fullscreen-mode {
     }
     
     .user-island {
-        padding: 4px 10px 4px 6px;
-        gap: 6px;
-        height: 30px;
-        min-height: 30px;
-        border-radius: 0;
+        padding: 4px 10px 4px 8px;
+        gap: 8px;
+        height: 36px;
+        min-height: 36px;
     }
     
     .user-avatar {
-        width: 20px;
-        height: 20px;
+        width: 26px;
+        height: 26px;
         border: none;
     }
     
     .user-avatar-fallback {
-        width: 20px;
-        height: 20px;
-        font-size: 10px;
+        width: 26px;
+        height: 26px;
+        font-size: 13px;
         border: none;
     }
     
     .user-name {
-        font-size: 12px;
-        max-width: 60px;
+        font-size: 14px;
+        max-width: 80px;
     }
     
     .balance-wrapper {
