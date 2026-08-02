@@ -474,10 +474,10 @@ body {
 }
 
 /* ============================================================
-   КОЛЕСО - АНИМАЦИЯ ВРАЩЕНИЯ В РЕЖИМЕ ОЖИДАНИЯ
+   КОЛЕСО - АНИМАЦИЯ ВРАЩЕНИЯ В РЕЖИМЕ ОЖИДАНИЯ (8 СЕКУНД)
    ============================================================ */
 .wheel.waiting-spin {
-    animation: waitingSpin 4s linear infinite;
+    animation: waitingSpin 8s linear infinite;
 }
 
 @keyframes waitingSpin {
@@ -559,7 +559,7 @@ body {
     margin-bottom: 4px;
 }
 
-/* Колесо */
+/* Колесо - БЕЗ БОРДЕРА */
 .wheel-wrapper {
     display: flex;
     justify-content: center;
@@ -579,7 +579,7 @@ body {
     height: 100%;
     border-radius: 50%;
     position: relative;
-    border: 2px solid rgba(255,255,255,0.06);
+    border: none;
     box-shadow: 
         0 0 60px rgba(0, 0, 0, 0.6),
         inset 0 0 60px rgba(0, 0, 0, 0.3);
