@@ -381,6 +381,24 @@ body {
 }
 
 /* ============================================================
+   ТРЕУГОЛЬНИК УКАЗАТЕЛЬ (РАВНОСТОРОННИЙ)
+   ============================================================ */
+.wheel-pointer {
+    position: absolute;
+    top: -24px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 15;
+    width: 0;
+    height: 0;
+    border-left: 16px solid transparent;
+    border-right: 16px solid transparent;
+    border-top: 28px solid #ffffff;
+    filter: drop-shadow(0 0 10px rgba(255,255,255,0.4));
+    text-shadow: 0 0 20px rgba(255,255,255,0.1);
+}
+
+/* ============================================================
    ОСТАЛЬНЫЕ ЭЛЕМЕНТЫ
    ============================================================ */
 
@@ -442,18 +460,6 @@ body {
     position: relative;
     width: 300px;
     height: 300px;
-}
-
-.wheel-pointer {
-    position: absolute;
-    top: -18px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 28px;
-    color: #ffffff;
-    filter: drop-shadow(0 0 10px rgba(255,255,255,0.3));
-    z-index: 15;
-    text-shadow: 0 0 20px rgba(255,255,255,0.1);
 }
 
 .wheel {
@@ -1061,6 +1067,13 @@ body {
         width: 14px;
         height: 14px;
     }
+    
+    .wheel-pointer {
+        border-left: 12px solid transparent;
+        border-right: 12px solid transparent;
+        border-top: 22px solid #ffffff;
+        top: -18px;
+    }
 }
 
 @media (max-width: 375px) {
@@ -1182,5 +1195,12 @@ body {
     .winner-modal-icon-small {
         width: 12px;
         height: 12px;
+    }
+    
+    .wheel-pointer {
+        border-left: 10px solid transparent;
+        border-right: 10px solid transparent;
+        border-top: 18px solid #ffffff;
+        top: -14px;
     }
 }
