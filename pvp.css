@@ -219,7 +219,7 @@ body {
    ============================================================ */
 .pvp-header-wrapper {
     position: relative;
-    margin-top: 162px; /* 120px + 32px + 10px */
+    margin-top: 162px;
     padding-top: 0;
     overflow: visible !important;
 }
@@ -381,7 +381,7 @@ body {
 }
 
 /* ============================================================
-   ТРЕУГОЛЬНИК УКАЗАТЕЛЬ (РАВНОСТОРОННИЙ)
+   ТРЕУГОЛЬНИК УКАЗАТЕЛЬ (РАВНОСТОРОННИЙ, ОДИН)
    ============================================================ */
 .wheel-pointer {
     position: absolute;
@@ -395,7 +395,6 @@ body {
     border-right: 16px solid transparent;
     border-top: 28px solid #ffffff;
     filter: drop-shadow(0 0 10px rgba(255,255,255,0.4));
-    text-shadow: 0 0 20px rgba(255,255,255,0.1);
 }
 
 /* ============================================================
