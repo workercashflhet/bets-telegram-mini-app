@@ -474,6 +474,29 @@ body {
 }
 
 /* ============================================================
+   КОЛЕСО - УВЕЛИЧЕННОЕ (380px)
+   ============================================================ */
+.wheel-container {
+    position: relative;
+    width: 380px;
+    height: 380px;
+    margin: 0 auto;
+}
+
+.wheel {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    position: relative;
+    border: none;
+    box-shadow: 
+        0 0 60px rgba(0, 0, 0, 0.6),
+        inset 0 0 60px rgba(0, 0, 0, 0.3);
+    transition: transform 5s cubic-bezier(0.17, 0.67, 0.12, 0.99);
+    overflow: hidden;
+}
+
+/* ============================================================
    КОЛЕСО - АНИМАЦИЯ ВРАЩЕНИЯ В РЕЖИМЕ ОЖИДАНИЯ (8 СЕКУНД)
    ============================================================ */
 .wheel.waiting-spin {
@@ -511,7 +534,79 @@ body {
 }
 
 /* ============================================================
-   ОСТАЛЬНЫЕ ЭЛЕМЕНТЫ
+   АВАТАРКИ НА КОЛЕСЕ - АДАПТИВ ПОД УВЕЛИЧЕННОЕ КОЛЕСО
+   ============================================================ */
+.wheel-avatar-container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    transform-origin: 0 0;
+    z-index: 2;
+}
+
+.avatar-position {
+    position: absolute;
+    transform: translate(-50%, -50%) translateY(-115px);
+}
+
+.wheel-player-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(255, 255, 255, 0.9);
+    box-shadow: 0 0 12px rgba(0, 0, 0, 0.8);
+    background: #2c2c2e;
+    display: block;
+}
+
+/* ============================================================
+   ЭЛЕМЕНТЫ НИЖЕ КОЛЕСА - СДВИНУТЫ ВНИЗ
+   ============================================================ */
+
+/* Статус спиннинга */
+.spinning-status {
+    text-align: center;
+    padding: 12px;
+    background: rgba(255, 215, 0, 0.06);
+    border-radius: 12px;
+    margin-top: 20px;
+    margin-bottom: 12px;
+}
+
+/* Победитель */
+.winner-section {
+    text-align: center;
+    padding: 16px;
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.06), rgba(255, 165, 0, 0.06));
+    border-radius: 16px;
+    margin-top: 20px;
+    margin-bottom: 12px;
+    border: 1px solid rgba(255, 215, 0, 0.08);
+}
+
+/* Секция ставок */
+.bet-section {
+    background: rgba(255,255,255,0.02);
+    border-radius: 16px;
+    padding: 14px 16px;
+    margin-top: 16px;
+    border: 1px solid rgba(255,255,255,0.04);
+}
+
+/* Список игроков */
+.players-compact {
+    margin-top: 16px;
+    background: rgba(255,255,255,0.02);
+    border-radius: 12px;
+    padding: 10px 14px;
+    border: 1px solid rgba(255,255,255,0.04);
+}
+
+/* ============================================================
+   ОСТАЛЬНЫЕ ЭЛЕМЕНТЫ (БЕЗ ИЗМЕНЕНИЙ)
    ============================================================ */
 
 /* Мои ставки */
@@ -559,58 +654,14 @@ body {
     margin-bottom: 4px;
 }
 
-/* Колесо - БЕЗ БОРДЕРА */
+/* Колесо - обертка */
 .wheel-wrapper {
     display: flex;
     justify-content: center;
     align-items: center;
     padding: 0;
     position: relative;
-}
-
-.wheel-container {
-    position: relative;
-    width: 300px;
-    height: 300px;
-}
-
-.wheel {
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    position: relative;
-    border: none;
-    box-shadow: 
-        0 0 60px rgba(0, 0, 0, 0.6),
-        inset 0 0 60px rgba(0, 0, 0, 0.3);
-    transition: transform 5s cubic-bezier(0.17, 0.67, 0.12, 0.99);
-    overflow: hidden;
-}
-
-.wheel-avatar-container {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 0;
-    height: 0;
-    transform-origin: 0 0;
-    z-index: 2;
-}
-
-.avatar-position {
-    position: absolute;
-    transform: translate(-50%, -50%) translateY(-88px);
-}
-
-.wheel-player-avatar {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 2px solid rgba(255, 255, 255, 0.9);
-    box-shadow: 0 0 12px rgba(0, 0, 0, 0.8);
-    background: #2c2c2e;
-    display: block;
+    margin-top: 0;
 }
 
 .wheel.spinning {
@@ -627,15 +678,6 @@ body {
     50% { opacity: 0.5; transform: scale(0.95); }
 }
 
-/* Статус спиннинга */
-.spinning-status {
-    text-align: center;
-    padding: 12px;
-    background: rgba(255, 215, 0, 0.06);
-    border-radius: 12px;
-    margin-bottom: 12px;
-}
-
 .spinning-text {
     font-size: 16px;
     font-weight: 600;
@@ -646,16 +688,6 @@ body {
 @keyframes spinPulse {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.6; }
-}
-
-/* Победитель */
-.winner-section {
-    text-align: center;
-    padding: 16px;
-    background: linear-gradient(135deg, rgba(255, 215, 0, 0.06), rgba(255, 165, 0, 0.06));
-    border-radius: 16px;
-    margin-bottom: 12px;
-    border: 1px solid rgba(255, 215, 0, 0.08);
 }
 
 .winner-crown {
@@ -684,15 +716,6 @@ body {
 
 .new-round-button:active {
     transform: scale(0.95);
-}
-
-/* Секция ставок */
-.bet-section {
-    background: rgba(255,255,255,0.02);
-    border-radius: 16px;
-    padding: 14px 16px;
-    margin-top: 4px;
-    border: 1px solid rgba(255,255,255,0.04);
 }
 
 .currency-toggle {
@@ -802,15 +825,6 @@ body {
     color: rgba(255,255,255,0.15);
     text-align: center;
     margin-top: 6px;
-}
-
-/* Список игроков */
-.players-compact {
-    margin-top: 10px;
-    background: rgba(255,255,255,0.02);
-    border-radius: 12px;
-    padding: 10px 14px;
-    border: 1px solid rgba(255,255,255,0.04);
 }
 
 .players-header {
@@ -1054,9 +1068,10 @@ body {
         margin-top: 134px;
     }
     
+    /* Увеличенное колесо на 430px */
     .wheel-container {
-        width: 260px;
-        height: 260px;
+        width: 320px;
+        height: 320px;
     }
     
     .wheel-center-solid {
@@ -1083,12 +1098,29 @@ body {
     }
     
     .avatar-position {
-        transform: translate(-50%, -50%) translateY(-76px);
+        transform: translate(-50%, -50%) translateY(-96px);
     }
     
     .wheel-player-avatar {
-        width: 26px;
-        height: 26px;
+        width: 32px;
+        height: 32px;
+    }
+    
+    /* Сдвиг элементов ниже колеса */
+    .spinning-status {
+        margin-top: 16px;
+    }
+    
+    .winner-section {
+        margin-top: 16px;
+    }
+    
+    .bet-section {
+        margin-top: 14px;
+    }
+    
+    .players-compact {
+        margin-top: 14px;
     }
     
     .info-value {
@@ -1205,9 +1237,10 @@ body {
         margin-top: 116px;
     }
     
+    /* Увеличенное колесо на 375px */
     .wheel-container {
-        width: 220px;
-        height: 220px;
+        width: 270px;
+        height: 270px;
     }
     
     .wheel-center-solid {
@@ -1234,12 +1267,29 @@ body {
     }
     
     .avatar-position {
-        transform: translate(-50%, -50%) translateY(-64px);
+        transform: translate(-50%, -50%) translateY(-80px);
     }
     
     .wheel-player-avatar {
-        width: 22px;
-        height: 22px;
+        width: 28px;
+        height: 28px;
+    }
+    
+    /* Сдвиг элементов ниже колеса */
+    .spinning-status {
+        margin-top: 14px;
+    }
+    
+    .winner-section {
+        margin-top: 14px;
+    }
+    
+    .bet-section {
+        margin-top: 12px;
+    }
+    
+    .players-compact {
+        margin-top: 12px;
     }
     
     .info-block {
