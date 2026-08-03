@@ -1105,7 +1105,7 @@ body {
 }
 
 /* ============================================================
-   МОДАЛЬНОЕ ОКНО ДЕПОЗИТА (В СТИЛИСТИКЕ ПРИЛОЖЕНИЯ)
+   МОДАЛЬНОЕ ОКНО ДЕПОЗИТА (ЧЕРНЫЙ ФОН)
    ============================================================ */
 .deposit-modal {
     position: fixed;
@@ -1113,9 +1113,9 @@ body {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.85);
-    -webkit-backdrop-filter: blur(20px);
-    backdrop-filter: blur(20px);
+    background: rgba(0, 0, 0, 0.95);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
     display: none;
     align-items: center;
     justify-content: center;
@@ -1128,14 +1128,14 @@ body {
 }
 
 .deposit-modal-content {
-    background: #1a1a2e;
+    background: #000000;
     border-radius: 24px;
     padding: 24px;
     width: 100%;
     max-width: 400px;
     position: relative;
-    border: 1px solid rgba(12, 235, 15, 0.15);
-    box-shadow: 0 0 60px rgba(0, 0, 0, 0.5), 0 0 40px rgba(12, 235, 15, 0.05);
+    border: 1px solid rgba(12, 235, 15, 0.12);
+    box-shadow: 0 0 60px rgba(0, 0, 0, 0.8), 0 0 40px rgba(12, 235, 15, 0.03);
 }
 
 .deposit-modal-close {
@@ -1144,7 +1144,7 @@ body {
     right: 12px;
     background: none;
     border: none;
-    color: rgba(255, 255, 255, 0.4);
+    color: rgba(255, 255, 255, 0.3);
     font-size: 20px;
     cursor: pointer;
     padding: 8px;
@@ -1153,7 +1153,7 @@ body {
 }
 
 .deposit-modal-close:hover {
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.05);
     color: #ffffff;
 }
 
@@ -1179,10 +1179,10 @@ body {
 .deposit-currency-btn {
     flex: 1;
     padding: 12px;
-    border: 2px solid rgba(255, 255, 255, 0.08);
+    border: 2px solid rgba(255, 255, 255, 0.06);
     border-radius: 12px;
-    background: rgba(255, 255, 255, 0.03);
-    color: rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.02);
+    color: rgba(255, 255, 255, 0.4);
     font-size: 15px;
     font-weight: 600;
     cursor: pointer;
@@ -1195,9 +1195,9 @@ body {
 
 .deposit-currency-btn.active {
     border-color: #0ceb0f;
-    background: rgba(12, 235, 15, 0.08);
+    background: rgba(12, 235, 15, 0.06);
     color: #ffffff;
-    box-shadow: 0 0 30px rgba(12, 235, 15, 0.05);
+    box-shadow: 0 0 30px rgba(12, 235, 15, 0.03);
 }
 
 .deposit-currency-icon {
@@ -1210,11 +1210,11 @@ body {
 /* Баланс в модалке */
 .deposit-balance-info {
     text-align: center;
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(255, 255, 255, 0.4);
     font-size: 14px;
     margin-bottom: 16px;
     padding: 8px;
-    background: rgba(255, 255, 255, 0.03);
+    background: rgba(255, 255, 255, 0.02);
     border-radius: 10px;
 }
 
@@ -1222,8 +1222,8 @@ body {
 .deposit-input {
     width: 100%;
     padding: 14px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
     border-radius: 12px;
     color: #ffffff;
     font-size: 18px;
@@ -1240,26 +1240,26 @@ body {
 
 /* Предупреждение о кошельке */
 .deposit-wallet-warning {
-    background: rgba(255, 215, 0, 0.08);
+    background: rgba(255, 215, 0, 0.06);
     color: #ffd700;
     padding: 10px 14px;
     border-radius: 10px;
     text-align: center;
     font-size: 13px;
     margin-bottom: 12px;
-    border: 1px solid rgba(255, 215, 0, 0.1);
+    border: 1px solid rgba(255, 215, 0, 0.06);
 }
 
 /* Ошибка */
 .deposit-error {
-    background: rgba(255, 69, 58, 0.12);
+    background: rgba(255, 69, 58, 0.08);
     color: #ff453a;
     padding: 10px 14px;
     border-radius: 10px;
     text-align: center;
     font-size: 13px;
     margin-bottom: 12px;
-    border: 1px solid rgba(255, 69, 58, 0.1);
+    border: 1px solid rgba(255, 69, 58, 0.06);
 }
 
 /* Кнопки */
@@ -1272,9 +1272,9 @@ body {
 .deposit-wallet-btn {
     width: 100%;
     padding: 14px;
-    background: rgba(12, 235, 15, 0.1);
+    background: rgba(12, 235, 15, 0.08);
     color: #0ceb0f;
-    border: 1px solid rgba(12, 235, 15, 0.2);
+    border: 1px solid rgba(12, 235, 15, 0.15);
     border-radius: 12px;
     font-size: 15px;
     font-weight: 600;
@@ -1283,7 +1283,7 @@ body {
 }
 
 .deposit-wallet-btn:hover {
-    background: rgba(12, 235, 15, 0.15);
+    background: rgba(12, 235, 15, 0.12);
 }
 
 .deposit-wallet-btn:active {
@@ -1304,7 +1304,7 @@ body {
 }
 
 .deposit-button:disabled {
-    opacity: 0.4;
+    opacity: 0.3;
     cursor: not-allowed;
 }
 
@@ -1320,8 +1320,8 @@ body {
     width: 100%;
     padding: 12px;
     background: transparent;
-    color: rgba(255, 255, 255, 0.4);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.06);
     border-radius: 12px;
     font-size: 14px;
     font-weight: 500;
@@ -1330,16 +1330,16 @@ body {
 }
 
 .deposit-cancel-btn:hover {
-    background: rgba(255, 255, 255, 0.05);
-    color: rgba(255, 255, 255, 0.6);
+    background: rgba(255, 255, 255, 0.03);
+    color: rgba(255, 255, 255, 0.5);
 }
 
 .deposit-close-btn {
     width: 100%;
     padding: 14px;
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.03);
     color: #ffffff;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.06);
     border-radius: 12px;
     font-size: 16px;
     font-weight: 600;
@@ -1348,7 +1348,7 @@ body {
 }
 
 .deposit-close-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.06);
 }
 
 /* Состояние отправки */
@@ -1360,7 +1360,7 @@ body {
 .deposit-spinner {
     width: 44px;
     height: 44px;
-    border: 3px solid rgba(12, 235, 15, 0.1);
+    border: 3px solid rgba(12, 235, 15, 0.08);
     border-top-color: #0ceb0f;
     border-radius: 50%;
     animation: depositSpin 1s linear infinite;
@@ -1372,7 +1372,7 @@ body {
 }
 
 .deposit-sending p {
-    color: rgba(255, 255, 255, 0.6);
+    color: rgba(255, 255, 255, 0.5);
     font-size: 14px;
 }
 
@@ -1383,7 +1383,7 @@ body {
 }
 
 .deposit-success p {
-    color: rgba(255, 255, 255, 0.8);
+    color: rgba(255, 255, 255, 0.7);
     margin: 8px 0;
     font-size: 16px;
 }
