@@ -368,6 +368,7 @@ function setupUI() {
         gameState.betAmount = parseFloat(newAmount.toFixed(2));
         updateBetUI();
         updatePlaceBetButton();
+        updateQuickBetButtons();
     });
     
     document.getElementById('betInc').addEventListener('click', () => {
@@ -378,6 +379,7 @@ function setupUI() {
         gameState.betAmount = parseFloat(newAmount.toFixed(2));
         updateBetUI();
         updatePlaceBetButton();
+        updateQuickBetButtons();
     });
     
     // Обработка ввода суммы с точкой как разделителем
@@ -401,6 +403,7 @@ function setupUI() {
                 const min = gameState.selectedCurrency === 'ton' ? MIN_BET_TON : MIN_BET_STARS;
                 gameState.betAmount = Math.min(max, Math.max(min, val));
                 updatePlaceBetButton();
+                updateQuickBetButtons();
             }
         } else if (value === '.') {
             // Если пользователь ввел только точку, показываем "0."
@@ -412,6 +415,7 @@ function setupUI() {
             gameState.betAmount = min;
             this.value = min;
             updatePlaceBetButton();
+            updateQuickBetButtons();
         }
     });
     
@@ -422,11 +426,13 @@ function setupUI() {
             gameState.betAmount = min;
             updateBetUI();
             updatePlaceBetButton();
+            updateQuickBetButtons();
         } else if (this.value.endsWith('.')) {
             this.value = this.value.slice(0, -1);
             gameState.betAmount = parseFloat(this.value) || min;
             updateBetUI();
             updatePlaceBetButton();
+            updateQuickBetButtons();
         }
     });
     
@@ -452,8 +458,12 @@ function setupUI() {
             gameState.selectedCurrency = btn.dataset.currency;
             updateBetUI();
             updatePlaceBetButton();
+            updateQuickBetButtons();
         });
     });
+    
+    // Настройка быстрых ставок
+    setupQuickBets();
 }
 
 // ============================================================
@@ -492,13 +502,16 @@ function updateBetUI() {
     
     let display;
     if (gameState.selectedCurrency === 'ton') {
-        // Округляем до 1 знака после запятой с помощью Math.round
         display = Math.round(gameState.betAmount * 10) / 10;
         display = display.toFixed(1);
     } else {
         display = Math.floor(gameState.betAmount);
     }
     input.value = display;
+    
+    // Обновляем иконки быстрых ставок при смене валюты
+    updateQuickBetIcons();
+    updateQuickBetButtons();
 }
 
 function updatePlaceBetButton() {
@@ -655,6 +668,80 @@ function stopWaitingSpin() {
     
     // Возвращаем transition
     wheel.style.transition = 'transform 5s cubic-bezier(0.17, 0.67, 0.12, 0.99)';
+}
+
+// ============================================================
+// БЫСТРЫЕ СТАВКИ
+// ============================================================
+
+function setupQuickBets() {
+    const quickBtns = document.querySelectorAll('.quick-bet-btn');
+    quickBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const amount = parseFloat(this.dataset.amount);
+            if (isNaN(amount) || amount <= 0) return;
+            
+            // Проверяем, не превышает ли баланс
+            const max = gameState.selectedCurrency === 'ton' ? gameState.balance.ton : gameState.balance.stars;
+            const min = gameState.selectedCurrency === 'ton' ? MIN_BET_TON : MIN_BET_STARS;
+            
+            let finalAmount = amount;
+            if (finalAmount > max) finalAmount = max;
+            if (finalAmount < min) finalAmount = min;
+            
+            gameState.betAmount = parseFloat(finalAmount.toFixed(2));
+            updateBetUI();
+            updatePlaceBetButton();
+            updateQuickBetButtons();
+        });
+    });
+    
+    // Обновляем иконки в кнопках быстрых ставок
+    updateQuickBetIcons();
+}
+
+function updateQuickBetIcons() {
+    const quickBtns = document.querySelectorAll('.quick-bet-btn');
+    const isTon = gameState.selectedCurrency === 'ton';
+    const iconSrc = isTon ? 'assets/ton.png' : 'assets/stars.png';
+    const iconAlt = isTon ? 'TON' : 'Stars';
+    
+    quickBtns.forEach((btn, index) => {
+        // Удаляем старую иконку
+        const oldIcon = btn.querySelector('.quick-bet-icon');
+        if (oldIcon) oldIcon.remove();
+        
+        // Создаем новую иконку
+        const icon = document.createElement('img');
+        icon.className = 'quick-bet-icon';
+        icon.src = iconSrc;
+        icon.alt = iconAlt;
+        
+        // Вставляем иконку перед текстом
+        btn.prepend(icon);
+        
+        // Обновляем значения кнопок в зависимости от валюты
+        const values = isTon ? [0.1, 0.5, 1.0] : [25, 50, 100];
+        btn.dataset.amount = values[index] || values[0];
+        
+        // Обновляем отображаемый текст
+        btn.childNodes.forEach(node => {
+            if (node.nodeType === Node.TEXT_NODE) {
+                node.textContent = values[index] || values[0];
+            }
+        });
+    });
+}
+
+function updateQuickBetButtons() {
+    const quickBtns = document.querySelectorAll('.quick-bet-btn');
+    const tolerance = gameState.selectedCurrency === 'ton' ? 0.01 : 0.5;
+    
+    quickBtns.forEach(btn => {
+        const amount = parseFloat(btn.dataset.amount);
+        const isActive = Math.abs(gameState.betAmount - amount) < tolerance;
+        btn.classList.toggle('active', isActive);
+    });
 }
 
 // ============================================================
