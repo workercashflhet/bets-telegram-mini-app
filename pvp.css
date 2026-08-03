@@ -421,8 +421,8 @@ body {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 110px;
-    height: 110px;
+    width: 120px;
+    height: 120px;
     z-index: 10;
     background: #1a1a1e;
     border-radius: 50%;
@@ -489,12 +489,12 @@ body {
 }
 
 /* ============================================================
-   КОЛЕСО - УВЕЛИЧЕННОЕ (380px)
+   КОЛЕСО - УВЕЛИЧЕННОЕ (420px)
    ============================================================ */
 .wheel-container {
     position: relative;
-    width: 380px;
-    height: 380px;
+    width: 420px;
+    height: 420px;
     margin: 0 auto;
 }
 
@@ -512,10 +512,10 @@ body {
 }
 
 /* ============================================================
-   КОЛЕСО - АНИМАЦИЯ ВРАЩЕНИЯ В РЕЖИМЕ ОЖИДАНИЯ (8 СЕКУНД)
+   КОЛЕСО - АНИМАЦИЯ ВРАЩЕНИЯ В РЕЖИМЕ ОЖИДАНИЯ (12 СЕКУНД)
    ============================================================ */
 .wheel.waiting-spin {
-    animation: waitingSpin 8s linear infinite;
+    animation: waitingSpin 12s linear infinite;
 }
 
 @keyframes waitingSpin {
@@ -563,12 +563,12 @@ body {
 
 .avatar-position {
     position: absolute;
-    transform: translate(-50%, -50%) translateY(-115px);
+    transform: translate(-50%, -50%) translateY(-128px);
 }
 
 .wheel-player-avatar {
-    width: 38px;
-    height: 38px;
+    width: 42px;
+    height: 42px;
     border-radius: 50%;
     object-fit: cover;
     border: 2px solid rgba(255, 255, 255, 0.9);
@@ -587,7 +587,7 @@ body {
     padding: 12px;
     background: rgba(255, 215, 0, 0.06);
     border-radius: 12px;
-    margin-top: 20px;
+    margin-top: 30px;
     margin-bottom: 12px;
 }
 
@@ -597,7 +597,7 @@ body {
     padding: 16px;
     background: linear-gradient(135deg, rgba(255, 215, 0, 0.06), rgba(255, 165, 0, 0.06));
     border-radius: 16px;
-    margin-top: 20px;
+    margin-top: 30px;
     margin-bottom: 12px;
     border: 1px solid rgba(255, 215, 0, 0.08);
 }
@@ -607,13 +607,13 @@ body {
     background: rgba(255,255,255,0.02);
     border-radius: 16px;
     padding: 14px 16px;
-    margin-top: 16px;
+    margin-top: 24px;
     border: 1px solid rgba(255,255,255,0.04);
 }
 
 /* Список игроков */
 .players-compact {
-    margin-top: 16px;
+    margin-top: 24px;
     background: rgba(255,255,255,0.02);
     border-radius: 12px;
     padding: 10px 14px;
@@ -1084,13 +1084,13 @@ body {
     }
     
     .wheel-container {
-        width: 320px;
-        height: 320px;
+        width: 340px;
+        height: 340px;
     }
     
     .wheel-center-solid {
-        width: 90px;
-        height: 90px;
+        width: 100px;
+        height: 100px;
     }
     
     .hub-timer {
@@ -1112,28 +1112,28 @@ body {
     }
     
     .avatar-position {
-        transform: translate(-50%, -50%) translateY(-96px);
+        transform: translate(-50%, -50%) translateY(-104px);
     }
     
     .wheel-player-avatar {
-        width: 32px;
-        height: 32px;
+        width: 34px;
+        height: 34px;
     }
     
     .spinning-status {
-        margin-top: 16px;
+        margin-top: 24px;
     }
     
     .winner-section {
-        margin-top: 16px;
+        margin-top: 24px;
     }
     
     .bet-section {
-        margin-top: 14px;
+        margin-top: 20px;
     }
     
     .players-compact {
-        margin-top: 14px;
+        margin-top: 20px;
     }
     
     .info-value {
@@ -1259,13 +1259,13 @@ body {
     }
     
     .wheel-container {
-        width: 270px;
-        height: 270px;
+        width: 280px;
+        height: 280px;
     }
     
     .wheel-center-solid {
-        width: 76px;
-        height: 76px;
+        width: 82px;
+        height: 82px;
     }
     
     .hub-timer {
@@ -1287,28 +1287,28 @@ body {
     }
     
     .avatar-position {
-        transform: translate(-50%, -50%) translateY(-80px);
+        transform: translate(-50%, -50%) translateY(-84px);
     }
     
     .wheel-player-avatar {
-        width: 28px;
-        height: 28px;
+        width: 30px;
+        height: 30px;
     }
     
     .spinning-status {
-        margin-top: 14px;
+        margin-top: 20px;
     }
     
     .winner-section {
-        margin-top: 14px;
+        margin-top: 20px;
     }
     
     .bet-section {
-        margin-top: 12px;
+        margin-top: 16px;
     }
     
     .players-compact {
-        margin-top: 12px;
+        margin-top: 16px;
     }
     
     .info-block {
