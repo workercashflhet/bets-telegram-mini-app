@@ -374,14 +374,11 @@ function setupUI() {
         updateBetUI();
     });
     
-    // Обработка ввода суммы с заменой запятой на точку
+    // Обработка ввода суммы с точкой как разделителем
     const betInput = document.getElementById('betInput');
     betInput.addEventListener('input', function(e) {
-        // Заменяем запятую на точку
-        let value = this.value.replace(',', '.');
-        
         // Удаляем все символы кроме цифр и точки
-        value = value.replace(/[^0-9.]/g, '');
+        let value = this.value.replace(/[^0-9.]/g, '');
         
         // Проверяем, что только одна точка
         const parts = value.split('.');
@@ -390,15 +387,23 @@ function setupUI() {
         }
         
         // Если значение не пустое, обновляем
-        if (value !== '') {
+        if (value !== '' && value !== '.') {
             this.value = value;
             let val = parseFloat(value);
             if (!isNaN(val) && val >= 0) {
                 const max = gameState.selectedCurrency === 'ton' ? gameState.balance.ton : gameState.balance.stars;
                 const min = gameState.selectedCurrency === 'ton' ? MIN_BET_TON : MIN_BET_STARS;
                 gameState.betAmount = Math.min(max, Math.max(min, val));
-                updateBetUI();
+                // Обновляем состояние кнопки
+                const btn = document.getElementById('placeBetBtn');
+                if (btn) {
+                    btn.disabled = gameState.betAmount > max || gameState.betAmount < min || gameState.isSpinning || gameState.roundPhase === 'finished';
+                }
             }
+        } else if (value === '.') {
+            // Если пользователь ввел только точку, показываем "0."
+            this.value = '0.';
+            gameState.betAmount = 0;
         } else {
             // Если поле пустое, устанавливаем минимальное значение
             const min = gameState.selectedCurrency === 'ton' ? MIN_BET_TON : MIN_BET_STARS;
@@ -409,10 +414,13 @@ function setupUI() {
     
     betInput.addEventListener('blur', function() {
         const min = gameState.selectedCurrency === 'ton' ? MIN_BET_TON : MIN_BET_STARS;
-        if (this.value === '' || parseFloat(this.value) < min) {
+        if (this.value === '' || this.value === '.' || parseFloat(this.value) < min) {
             this.value = min;
             gameState.betAmount = min;
             updateBetUI();
+        } else if (this.value.endsWith('.')) {
+            this.value = this.value.slice(0, -1);
+            gameState.betAmount = parseFloat(this.value) || min;
         }
     });
     

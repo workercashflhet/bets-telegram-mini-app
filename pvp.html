@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>PvP Колесо</title>
     <script src="https://telegram.org/js/telegram-web-app.js?56"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -64,7 +64,7 @@
         </div>
 
         <!-- Мои ставки -->
-        <div class="my-bets-bar" id="myBetsBar" style="display: none;">
+        <div class="my-bets-bar hidden" id="myBetsBar">
             <span id="myBetsText">My bets: 0 TON + 0 Stars</span>
             <span class="bets-count" id="winChance">0%</span>
         </div>
@@ -104,12 +104,12 @@
         </div>
 
         <!-- Статус спиннинга -->
-        <div class="spinning-status" id="spinningStatus" style="display: none;">
+        <div class="spinning-status hidden" id="spinningStatus">
             <div class="spinning-text">🎡 Колесо крутится...</div>
         </div>
 
         <!-- Победитель -->
-        <div class="winner-section" id="winnerSection" style="display: none;">
+        <div class="winner-section hidden" id="winnerSection">
             <div class="winner-crown">👑</div>
             <div class="winner-announcement" id="winnerName">Игрок</div>
             <div class="winner-prize" id="winnerPrize">
@@ -133,7 +133,7 @@
 
             <div class="bet-input-group">
                 <button class="bet-adjust" id="betDec">−</button>
-                <input type="number" class="bet-input" id="betInput" value="1" min="1" placeholder="Сумма">
+                <input type="text" class="bet-input" id="betInput" value="1.0" inputmode="decimal" placeholder="0.0">
                 <button class="bet-adjust" id="betInc">+</button>
             </div>
 

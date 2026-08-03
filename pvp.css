@@ -1352,3 +1352,69 @@ body {
         border-top: 24px solid #ffffff;
     }
 }
+
+/* ============================================================
+   СКРОЛЛ И СКРЫТИЕ СКРОЛЛБАРА
+   ============================================================ */
+
+/* Основной контейнер приложения - скролл */
+#app {
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+}
+
+/* Скрытие скроллбара для всех браузеров */
+#app::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
+}
+
+#app {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+/* Для элементов, которые могут скроллиться */
+.game-content,
+.players-list-compact,
+.tabs-content,
+.pvp-header-wrapper {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+}
+
+.game-content::-webkit-scrollbar,
+.players-list-compact::-webkit-scrollbar,
+.tabs-content::-webkit-scrollbar,
+.pvp-header-wrapper::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
+}
+
+.game-content,
+.players-list-compact,
+.tabs-content,
+.pvp-header-wrapper {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+/* Для контента игры */
+.game-content {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+    padding-bottom: 120px;
+}
+
+/* Для списка игроков */
+.players-list-compact {
+    max-height: 200px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
