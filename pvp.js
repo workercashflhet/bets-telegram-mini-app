@@ -68,6 +68,14 @@ document.addEventListener('DOMContentLoaded', () => {
     addDemoPlayers();
     startWaitingPhase();
     updateUI();
+    
+    // Скрытие клавиатуры при клике вне поля ввода
+    document.addEventListener('click', function(e) {
+        const input = document.getElementById('betInput');
+        if (input && e.target !== input) {
+            input.blur();
+        }
+    });
 });
 
 // ============================================================
