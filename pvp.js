@@ -361,7 +361,7 @@ function setupUI() {
     });
     
     document.getElementById('betDec').addEventListener('click', () => {
-        const step = gameState.selectedCurrency === 'ton' ? 0.1 : 1;
+        const step = gameState.selectedCurrency === 'ton' ? 0.1 : 25;
         const min = gameState.selectedCurrency === 'ton' ? MIN_BET_TON : MIN_BET_STARS;
         let newAmount = gameState.betAmount - step;
         if (newAmount < min) newAmount = min;
@@ -371,7 +371,7 @@ function setupUI() {
     });
     
     document.getElementById('betInc').addEventListener('click', () => {
-        const step = gameState.selectedCurrency === 'ton' ? 0.1 : 1;
+        const step = gameState.selectedCurrency === 'ton' ? 0.1 : 25;
         const max = gameState.selectedCurrency === 'ton' ? gameState.balance.ton : gameState.balance.stars;
         let newAmount = gameState.betAmount + step;
         if (newAmount > max) newAmount = max;
