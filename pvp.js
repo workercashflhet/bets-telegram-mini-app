@@ -490,9 +490,14 @@ function updateBetUI() {
     const input = document.getElementById('betInput');
     if (!input) return;
     
-    const display = gameState.selectedCurrency === 'ton' ? 
-        gameState.betAmount.toFixed(1) : 
-        Math.floor(gameState.betAmount);
+    let display;
+    if (gameState.selectedCurrency === 'ton') {
+        // Округляем до 1 знака после запятой с помощью Math.round
+        display = Math.round(gameState.betAmount * 10) / 10;
+        display = display.toFixed(1);
+    } else {
+        display = Math.floor(gameState.betAmount);
+    }
     input.value = display;
 }
 
