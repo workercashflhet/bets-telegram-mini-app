@@ -768,7 +768,8 @@ const depositState = {
     currency: 'ton',
     step: 'input', // input | sending | success
     error: null,
-    isWalletConnected: false
+    isWalletConnected: false,
+    isProcessing: false
 };
 
 // Проверка подключения кошелька
@@ -899,6 +900,9 @@ function updateDepositModalUI() {
 
 // Обработчик подтверждения депозита
 async function handleDepositConfirm() {
+    // Защита от повторного нажатия
+    if (depositState.isProcessing) return;
+    
     const amount = depositState.amount;
     const currency = depositState.currency;
     
@@ -908,6 +912,7 @@ async function handleDepositConfirm() {
         return;
     }
     
+    depositState.isProcessing = true;
     depositState.step = 'sending';
     depositState.error = null;
     updateDepositModalUI();
@@ -918,13 +923,17 @@ async function handleDepositConfirm() {
             if (!isConnected) {
                 depositState.error = 'Пожалуйста, подключите TON кошелек';
                 depositState.step = 'input';
+                depositState.isProcessing = false;
                 updateDepositModalUI();
                 return;
             }
             
+            // Здесь будет реальная транзакция через TonConnect
+            // Пока используем симуляцию
             await simulateTonTransaction(amount);
             
             depositState.step = 'success';
+            depositState.isProcessing = false;
             updateDepositModalUI();
             depositToBalance(amount, 'ton');
             
@@ -933,49 +942,53 @@ async function handleDepositConfirm() {
             if (!tg) {
                 depositState.error = 'Telegram WebApp не доступен';
                 depositState.step = 'input';
+                depositState.isProcessing = false;
                 updateDepositModalUI();
                 return;
             }
             
-            // Прямой вызов Stars через Telegram
-            try {
-                // Используем Telegram Stars API напрямую
-                const starsAmount = Math.floor(amount);
+            // Создаем инвойс через бота
+            const botUsername = 'itsrefinelifebot';
+            const starsAmount = Math.floor(amount);
+            
+            // Формируем ссылку для оплаты Stars
+            // Используем формат: https://t.me/bot_username?start=pay_amount
+            const invoiceLink = `https://t.me/${botUsername}?start=pay_${starsAmount}`;
+            
+            // Открываем инвойс
+            tg.openInvoice(invoiceLink, (status) => {
+                depositState.isProcessing = false;
                 
-                // Создаем инвойс через бота
-                const botUsername = 'itsrefinelifebot';
-                const invoiceLink = `https://t.me/${botUsername}?start=pay_${starsAmount}`;
-                
-                tg.openInvoice(invoiceLink, (status) => {
-                    if (status === 'paid') {
-                        depositState.step = 'success';
-                        updateDepositModalUI();
-                        depositToBalance(amount, 'stars');
-                    } else if (status === 'cancelled') {
-                        depositState.error = 'Оплата отменена';
-                        depositState.step = 'input';
-                        updateDepositModalUI();
-                    } else {
-                        depositState.error = 'Оплата не удалась';
-                        depositState.step = 'input';
-                        updateDepositModalUI();
-                    }
-                });
-            } catch (err) {
-                // Если ошибка, используем демо-режим
-                console.warn('Ошибка оплаты Stars, используем демо-режим:', err);
-                // Демо-режим: имитируем успешную оплату
-                setTimeout(() => {
+                if (status === 'paid') {
                     depositState.step = 'success';
                     updateDepositModalUI();
                     depositToBalance(amount, 'stars');
-                }, 1500);
-            }
+                } else if (status === 'cancelled') {
+                    depositState.error = 'Оплата отменена';
+                    depositState.step = 'input';
+                    updateDepositModalUI();
+                } else {
+                    depositState.error = 'Оплата не удалась. Попробуйте снова.';
+                    depositState.step = 'input';
+                    updateDepositModalUI();
+                }
+            });
+            
+            // Если пользователь закрыл инвойс без действия
+            setTimeout(() => {
+                if (depositState.step === 'sending') {
+                    depositState.isProcessing = false;
+                    depositState.error = 'Время ожидания истекло. Попробуйте снова.';
+                    depositState.step = 'input';
+                    updateDepositModalUI();
+                }
+            }, 60000); // 60 секунд таймаут
         }
     } catch (err) {
         console.error('Deposit error:', err);
         depositState.error = err.message || 'Транзакция не удалась';
         depositState.step = 'input';
+        depositState.isProcessing = false;
         updateDepositModalUI();
     }
 }
@@ -989,8 +1002,14 @@ async function simulateTonTransaction(amount) {
     });
 }
 
-// Функция пополнения баланса
+// Функция пополнения баланса (ТОЛЬКО ПОСЛЕ УСПЕШНОЙ ОПЛАТЫ)
 function depositToBalance(amount, currency) {
+    // Проверяем, что депозит был успешно подтвержден
+    if (depositState.step !== 'success') {
+        console.warn('Попытка пополнения без подтверждения оплаты');
+        return;
+    }
+    
     if (currency === 'ton') {
         gameState.balance.ton += amount;
     } else {
@@ -1013,6 +1032,7 @@ function openDepositModal() {
     depositState.error = null;
     depositState.amount = 0;
     depositState.currency = gameState.selectedCurrency || 'ton';
+    depositState.isProcessing = false;
     
     const modal = document.getElementById('depositModal');
     if (modal) {
@@ -1029,6 +1049,7 @@ function closeDepositModal() {
     }
     depositState.step = 'input';
     depositState.error = null;
+    depositState.isProcessing = false;
 }
 
 // ============================================================
