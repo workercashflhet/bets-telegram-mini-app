@@ -756,6 +756,7 @@ function updateQuickBetButtons() {
 }
 
 // ============================================================
+// ============================================================
 // ДЕПОЗИТЫ (АДАПТИРОВАНЫ ПОД ТЕКУЩИЙ ПРОЕКТ)
 // ============================================================
 
@@ -775,25 +776,17 @@ const depositState = {
 
 // Проверка подключения кошелька
 function checkWalletConnection() {
-    // Проверяем через глобальный объект TonConnectUI
     const ui = window.TonConnectUI;
     if (ui && ui.wallet) {
         depositState.isWalletConnected = true;
         return true;
     }
-    
-    // Проверяем через window.tonWallet (некоторые версии используют это)
-    if (window.tonWallet) {
-        depositState.isWalletConnected = true;
-        return true;
-    }
-    
     depositState.isWalletConnected = false;
     return false;
 }
 
 // ============================================================
-// ИНИЦИАЛИЗАЦИЯ TON CONNECT (ИСПРАВЛЕННАЯ)
+// ИНИЦИАЛИЗАЦИЯ TON CONNECT (УПРОЩЕННАЯ)
 // ============================================================
 
 function initTonConnect() {
@@ -803,7 +796,7 @@ function initTonConnect() {
         return;
     }
     
-    // Если уже есть кнопка или инициализация выполнена
+    // Если уже есть кнопка, просто показываем контейнер
     if (depositState.tonConnectInitialized) {
         container.style.display = 'block';
         return;
@@ -826,7 +819,6 @@ function initTonConnect() {
                 initTonConnect();
             }
         }, 500);
-        
         setTimeout(() => clearInterval(checkInterval), 10000);
         return;
     }
@@ -835,7 +827,7 @@ function initTonConnect() {
         // Очищаем контейнер
         container.innerHTML = '';
         
-        // Создаем кнопку вручную
+        // СОЗДАЕМ КНОПКУ ВРУЧНУЮ (без использования TonConnectUI)
         const btn = document.createElement('button');
         btn.className = 'ton-connect-button';
         btn.textContent = '🔗 Подключить TON кошелек';
@@ -869,7 +861,7 @@ function initTonConnect() {
         container.style.display = 'block';
         depositState.tonConnectInitialized = true;
         
-        console.log('TonConnect button rendered successfully');
+        console.log('TonConnect button rendered');
     } catch (error) {
         console.error('Error rendering TonConnect button:', error);
         container.innerHTML = `
@@ -883,7 +875,6 @@ function initTonConnect() {
 
 function connectTonWallet() {
     try {
-        // Проверяем, есть ли экземпляр TonConnectUI
         let ui = window.TonConnectUI;
         
         if (!ui && typeof TonConnectUI !== 'undefined') {
@@ -916,7 +907,7 @@ function connectTonWallet() {
 }
 
 // ============================================================
-// ФУНКЦИЯ ДЛЯ ОБНОВЛЕНИЯ UI ДЕПОЗИТА (ИСПРАВЛЕННАЯ)
+// ФУНКЦИЯ ДЛЯ ОБНОВЛЕНИЯ UI ДЕПОЗИТА
 // ============================================================
 
 function updateDepositModalUI() {
@@ -938,13 +929,11 @@ function updateDepositModalUI() {
         // Управление контейнером TonConnect
         if (tonContainer) {
             if (depositState.currency === 'ton' && !isWalletConnected) {
-                // Сразу показываем контейнер и инициализируем кнопку
                 tonContainer.style.display = 'block';
-                // Инициализируем сразу, без задержки
+                // Инициализируем кнопку
                 initTonConnect();
             } else {
                 tonContainer.style.display = 'none';
-                // Если кошелек подключен, скрываем контейнер
             }
         }
         
@@ -973,32 +962,26 @@ function updateDepositModalUI() {
             <button class="deposit-cancel-btn" id="depositCancelBtn">Отмена</button>
         `;
         
-        // Добавляем обработчики с небольшой задержкой
         setTimeout(() => {
-            // Переключение валюты
             document.querySelectorAll('.deposit-currency-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
                     depositState.currency = this.dataset.currency;
                     depositState.error = null;
-                    // Сбрасываем флаг инициализации, чтобы кнопка пересоздалась
                     depositState.tonConnectInitialized = false;
                     updateDepositModalUI();
                 });
             });
             
-            // Кнопка подтверждения
             const confirmBtn = document.getElementById('depositConfirmBtn');
             if (confirmBtn) {
                 confirmBtn.addEventListener('click', handleDepositConfirm);
             }
             
-            // Кнопка отмены
             const cancelBtn = document.getElementById('depositCancelBtn');
             if (cancelBtn) {
                 cancelBtn.addEventListener('click', closeDepositModal);
             }
             
-            // Ввод суммы
             const amountInput = document.getElementById('depositAmountInput');
             if (amountInput) {
                 amountInput.addEventListener('input', function() {
