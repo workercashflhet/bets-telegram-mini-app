@@ -7,8 +7,8 @@ const tg = window.Telegram.WebApp;
 // ============================================================
 // SUPABASE КОНФИГУРАЦИЯ
 // ============================================================
-const SUPABASE_URL = 'https://ваш-проект.supabase.co';
-const SUPABASE_KEY = 'ваш-public-anon-key';
+const SUPABASE_URL = 'https://siibxynvgrrsktyihuby.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNpaWJ4eW52Z3Jyc2t0eWlodWJ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU3MDE0MzUsImV4cCI6MjEwMTI3NzQzNX0.k8bdNQPeB8lDkw_1XKVtFB-u3NjyHmyr2L7zE4mhN6I';
 
 // Инициализация Supabase клиента
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
