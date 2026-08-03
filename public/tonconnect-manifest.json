@@ -1,5 +1,7 @@
 {
   "url": "https://bets-telegram-mini-app.vercel.app",
   "name": "Bets Mini App",
-  "iconUrl": "https://bets-telegram-mini-app.vercel.app/assets/icon.png"
+  "iconUrl": "https://bets-telegram-mini-app.vercel.app/icon.png",
+  "termsOfUseUrl": "https://bets-telegram-mini-app.vercel.app/terms",
+  "privacyPolicyUrl": "https://bets-telegram-mini-app.vercel.app/privacy"
 }

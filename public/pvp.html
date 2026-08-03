@@ -189,9 +189,14 @@
     <div class="deposit-modal" id="depositModal">
         <div class="deposit-modal-content">
             <button class="deposit-modal-close" id="depositModalClose">✕</button>
-            <h2 class="deposit-modal-title" id="depositModalTitle">💰 Deposit Funds</h2>
+            <h2 class="deposit-modal-title" id="depositModalTitle">Пополнение баланса</h2>
             <div class="deposit-modal-body" id="depositModalBody">
                 <!-- Содержимое генерируется динамически -->
+            </div>
+            <!-- КОНТЕЙНЕР ДЛЯ КНОПКИ TON CONNECT (всегда виден, но скрыт/показан через JS) -->
+            <div id="ton-connect-container" style="display: none; margin: 12px 0; text-align: center;">
+                <div id="ton-connect-button"></div>
+                <p style="font-size: 12px; color: rgba(255,255,255,0.35); margin-top: 8px;">Подключите TON кошелек для пополнения</p>
             </div>
             <div class="deposit-modal-footer" id="depositModalFooter">
                 <!-- Кнопки генерируются динамически -->
