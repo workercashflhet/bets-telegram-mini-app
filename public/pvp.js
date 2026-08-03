@@ -774,7 +774,9 @@ const depositState = {
 
 // Проверка подключения кошелька
 function checkWalletConnection() {
-    const wallet = window.tonWallet || window.TonConnect;
+    // Проверяем наличие TonConnect UI
+    const tonConnectUI = window.TonConnectUI;
+    const wallet = tonConnectUI?.wallet;
     depositState.isWalletConnected = !!wallet;
     return depositState.isWalletConnected;
 }
@@ -811,12 +813,12 @@ function updateDepositModalUI() {
             <input type="number" class="deposit-input" id="depositAmountInput" 
                    placeholder="Введите сумму в ${depositState.currency === 'ton' ? 'TON' : 'Stars'}" min="0">
             ${depositState.currency === 'ton' && !isWalletConnected ? 
-                `<div class="deposit-wallet-warning">⚠️ Для пополнения в TON необходимо подключить кошелек</div>` : ''}
+                `<div class="deposit-wallet-warning">🔗 Для пополнения в TON необходимо подключить кошелек</div>` : ''}
             ${depositState.error ? `<div class="deposit-error">${depositState.error}</div>` : ''}
         `;
         footerEl.innerHTML = `
             ${depositState.currency === 'ton' && !isWalletConnected ? 
-                `<button class="deposit-wallet-btn" id="depositWalletBtn">🔗 Подключить кошелек</button>` : ''}
+                `<button class="deposit-wallet-btn" id="depositWalletBtn">🔗 Подключить TON кошелек</button>` : ''}
             <button class="deposit-button" id="depositConfirmBtn">
                 ${depositState.currency === 'ton' ? `Пополнить TON` : `Оплатить Stars`}
             </button>
@@ -824,6 +826,7 @@ function updateDepositModalUI() {
         `;
         
         setTimeout(() => {
+            // Переключение валюты
             document.querySelectorAll('.deposit-currency-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
                     depositState.currency = this.dataset.currency;
@@ -832,31 +835,27 @@ function updateDepositModalUI() {
                 });
             });
             
+            // Кнопка подключения кошелька
             const walletBtn = document.getElementById('depositWalletBtn');
             if (walletBtn) {
                 walletBtn.addEventListener('click', function() {
-                    if (window.TonConnectUI) {
-                        window.TonConnectUI.openModal();
-                    } else {
-                        tg.showPopup({
-                            title: 'Подключение кошелька',
-                            message: 'Для пополнения в TON необходимо подключить TON кошелек через раздел "Profile"',
-                            buttons: [{ id: 'ok', text: 'OK' }]
-                        });
-                    }
+                    connectTonWallet();
                 });
             }
             
+            // Кнопка подтверждения
             const confirmBtn = document.getElementById('depositConfirmBtn');
             if (confirmBtn) {
                 confirmBtn.addEventListener('click', handleDepositConfirm);
             }
             
+            // Кнопка отмены
             const cancelBtn = document.getElementById('depositCancelBtn');
             if (cancelBtn) {
                 cancelBtn.addEventListener('click', closeDepositModal);
             }
             
+            // Ввод суммы
             const amountInput = document.getElementById('depositAmountInput');
             if (amountInput) {
                 amountInput.addEventListener('input', function() {
@@ -898,9 +897,68 @@ function updateDepositModalUI() {
     }
 }
 
-// Обработчик подтверждения депозита
+// ============================================================
+// ПОДКЛЮЧЕНИЕ TON КОШЕЛЬКА
+// ============================================================
+
+function connectTonWallet() {
+    // Проверяем наличие TonConnectUI
+    const tonConnectUI = window.TonConnectUI;
+    
+    if (!tonConnectUI) {
+        // Если TonConnect не инициализирован, пытаемся инициализировать
+        try {
+            // Инициализируем TonConnect с manifest
+            const manifestUrl = 'https://raw.githubusercontent.com/workercashflhet/bets-telegram-mini-app/main/public/tonconnect-manifest.json';
+            const TonConnectUI = window.TonConnectUI;
+            
+            if (TonConnectUI) {
+                const ui = new TonConnectUI({
+                    manifestUrl: manifestUrl,
+                    buttonRootId: 'ton-connect-button'
+                });
+                window.TonConnectUI = ui;
+                ui.openModal();
+            } else {
+                // Если TonConnectUI не загружен, показываем инструкцию
+                tg.showPopup({
+                    title: 'Подключение TON кошелька',
+                    message: 'Для пополнения в TON необходимо:\n\n1. Установить TON кошелек (Tonkeeper, Tonhub, Wallet)\n2. Подключить его через кнопку "Connect Wallet" в профиле\n\nИли используйте оплату Stars',
+                    buttons: [
+                        { id: 'open_profile', text: '📱 Перейти в профиль' },
+                        { id: 'ok', text: 'OK' }
+                    ]
+                }, (buttonId) => {
+                    if (buttonId === 'open_profile') {
+                        // Переключаемся на вкладку профиля (если есть)
+                        const profileTab = document.querySelector('[data-page="profile"]');
+                        if (profileTab) {
+                            profileTab.click();
+                        }
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('Error initializing TonConnect:', error);
+            tg.showAlert('❌ Не удалось подключить TON кошелек. Попробуйте позже.');
+        }
+        return;
+    }
+    
+    // Открываем модальное окно TonConnect
+    try {
+        tonConnectUI.openModal();
+    } catch (error) {
+        console.error('Error opening TonConnect modal:', error);
+        tg.showAlert('❌ Не удалось открыть окно подключения кошелька.');
+    }
+}
+
+// ============================================================
+// ОБРАБОТЧИК ПОДТВЕРЖДЕНИЯ ДЕПОЗИТА
+// ============================================================
+
 async function handleDepositConfirm() {
-    // Защита от повторного нажатия
     if (depositState.isProcessing) return;
     
     const amount = depositState.amount;
@@ -925,11 +983,42 @@ async function handleDepositConfirm() {
                 depositState.step = 'input';
                 depositState.isProcessing = false;
                 updateDepositModalUI();
+                
+                // Показываем кнопку подключения
+                setTimeout(() => {
+                    const walletBtn = document.getElementById('depositWalletBtn');
+                    if (walletBtn) {
+                        walletBtn.style.display = 'block';
+                    }
+                }, 100);
                 return;
             }
             
-            // Симуляция TON транзакции
-            await simulateTonTransaction(amount);
+            // Отправляем транзакцию через TonConnect
+            const tonConnectUI = window.TonConnectUI;
+            if (tonConnectUI) {
+                try {
+                    await tonConnectUI.sendTransaction({
+                        validUntil: Math.floor(Date.now() / 1000) + 300,
+                        messages: [
+                            {
+                                address: OWNER_WALLET,
+                                amount: (amount * 1_000_000_000).toString(),
+                            },
+                        ],
+                    });
+                } catch (txError) {
+                    console.error('Transaction error:', txError);
+                    depositState.error = 'Транзакция отклонена или отменена';
+                    depositState.step = 'input';
+                    depositState.isProcessing = false;
+                    updateDepositModalUI();
+                    return;
+                }
+            } else {
+                // Если TonConnectUI не доступен, используем симуляцию
+                await simulateTonTransaction(amount);
+            }
             
             depositState.step = 'success';
             depositState.isProcessing = false;
@@ -948,10 +1037,8 @@ async function handleDepositConfirm() {
             
             const starsAmount = Math.floor(amount);
             
-            // СОЗДАНИЕ ИНВОЙСА ЧЕРЕЗ API БОТА
-            // Используем тот же метод, что и в предыдущем проекте
+            // Создаем инвойс для Stars через API
             try {
-                // Запрос к API для создания инвойса
                 const response = await fetch('/api/create-invoice', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -964,7 +1051,6 @@ async function handleDepositConfirm() {
                     throw new Error(data.error || 'Не удалось создать счет');
                 }
                 
-                // Открываем инвойс через Telegram
                 tg.openInvoice(data.invoiceLink, (status) => {
                     depositState.isProcessing = false;
                     
@@ -983,22 +1069,12 @@ async function handleDepositConfirm() {
                     }
                 });
             } catch (err) {
-                console.error('Ошибка создания инвойса:', err);
+                console.error('Stars invoice error:', err);
                 depositState.error = 'Не удалось создать счет для оплаты';
                 depositState.step = 'input';
                 depositState.isProcessing = false;
                 updateDepositModalUI();
             }
-            
-            // Таймаут на случай, если пользователь не завершил оплату
-            setTimeout(() => {
-                if (depositState.step === 'sending') {
-                    depositState.isProcessing = false;
-                    depositState.error = 'Время ожидания истекло. Попробуйте снова.';
-                    depositState.step = 'input';
-                    updateDepositModalUI();
-                }
-            }, 60000);
         }
     } catch (err) {
         console.error('Deposit error:', err);
@@ -1009,7 +1085,10 @@ async function handleDepositConfirm() {
     }
 }
 
-// Симуляция TON транзакции
+// ============================================================
+// СИМУЛЯЦИЯ TON ТРАНЗАКЦИИ
+// ============================================================
+
 async function simulateTonTransaction(amount) {
     return new Promise((resolve) => {
         setTimeout(() => {
@@ -1018,9 +1097,11 @@ async function simulateTonTransaction(amount) {
     });
 }
 
-// Функция пополнения баланса (ТОЛЬКО ПОСЛЕ УСПЕШНОЙ ОПЛАТЫ)
+// ============================================================
+// ПОПОЛНЕНИЕ БАЛАНСА
+// ============================================================
+
 function depositToBalance(amount, currency) {
-    // Проверяем, что депозит был успешно подтвержден
     if (depositState.step !== 'success') {
         console.warn('Попытка пополнения без подтверждения оплаты');
         return;
@@ -1042,7 +1123,10 @@ function depositToBalance(amount, currency) {
     tg.showAlert(`✅ ${amount} ${currency === 'ton' ? 'TON' : 'Stars'} успешно пополнены!`);
 }
 
-// Открытие модального окна депозита
+// ============================================================
+// ОТКРЫТИЕ / ЗАКРЫТИЕ МОДАЛЬНОГО ОКНА
+// ============================================================
+
 function openDepositModal() {
     depositState.step = 'input';
     depositState.error = null;
@@ -1057,7 +1141,6 @@ function openDepositModal() {
     }
 }
 
-// Закрытие модального окна депозита
 function closeDepositModal() {
     const modal = document.getElementById('depositModal');
     if (modal) {
