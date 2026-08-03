@@ -571,9 +571,7 @@ function updateUI() {
     
     const activePlayers = getActivePlayers();
     const playersCountEl = document.getElementById('playersCount');
-    const playersCountCompactEl = document.getElementById('playersCountCompact');
     if (playersCountEl) playersCountEl.textContent = activePlayers.length;
-    if (playersCountCompactEl) playersCountCompactEl.textContent = activePlayers.length;
     
     updateRoundDisplay();
     
