@@ -365,7 +365,7 @@ function setupUI() {
         const min = gameState.selectedCurrency === 'ton' ? MIN_BET_TON : MIN_BET_STARS;
         let newAmount = gameState.betAmount - step;
         if (newAmount < min) newAmount = min;
-        gameState.betAmount = newAmount;
+        gameState.betAmount = parseFloat(newAmount.toFixed(2));
         updateBetUI();
         updatePlaceBetButton();
     });
@@ -375,7 +375,7 @@ function setupUI() {
         const max = gameState.selectedCurrency === 'ton' ? gameState.balance.ton : gameState.balance.stars;
         let newAmount = gameState.betAmount + step;
         if (newAmount > max) newAmount = max;
-        gameState.betAmount = newAmount;
+        gameState.betAmount = parseFloat(newAmount.toFixed(2));
         updateBetUI();
         updatePlaceBetButton();
     });
