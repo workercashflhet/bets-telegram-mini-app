@@ -17,5 +17,8 @@
   "license": "MIT",
   "devDependencies": {
     "serve": "^14.2.0"
+  },
+  "dependencies": {
+    "@tonconnect/ui-react": "^3.0.0"
   }
 }
