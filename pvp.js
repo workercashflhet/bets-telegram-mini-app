@@ -354,18 +354,7 @@ function setupUI() {
     });
     
     document.getElementById('pvpDepositBtn').addEventListener('click', () => {
-        tg.showPopup({
-            title: '💰 Депозит',
-            message: 'Выберите способ пополнения',
-            buttons: [
-                { id: 'crypto', text: 'Криптовалюта' },
-                { id: 'card', text: 'Банковская карта' },
-                { id: 'cancel', text: 'Отмена', type: 'cancel' }
-            ]
-        }, (buttonId) => {
-            if (buttonId === 'crypto') tg.showAlert('💰 Пополните баланс через криптовалюту');
-            else if (buttonId === 'card') tg.showAlert('💳 Пополните баланс через банковскую карту');
-        });
+        openDepositModal();
     });
     
     document.getElementById('betDec').addEventListener('click', () => {
@@ -472,6 +461,22 @@ function setupUI() {
     
     // Настройка быстрых ставок
     setupQuickBets();
+    
+    // Закрытие модалки депозита по клику на крестик
+    const depositModalClose = document.getElementById('depositModalClose');
+    if (depositModalClose) {
+        depositModalClose.addEventListener('click', closeDepositModal);
+    }
+    
+    // Закрытие модалки по клику на оверлей
+    const depositModal = document.getElementById('depositModal');
+    if (depositModal) {
+        depositModal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeDepositModal();
+            }
+        });
+    }
 }
 
 // ============================================================
@@ -748,6 +753,262 @@ function updateQuickBetButtons() {
         const isActive = Math.abs(gameState.betAmount - amount) < tolerance;
         btn.classList.toggle('active', isActive);
     });
+}
+
+// ============================================================
+// ДЕПОЗИТЫ (АДАПТИРОВАНЫ ПОД ТЕКУЩИЙ ПРОЕКТ)
+// ============================================================
+
+// Владелец кошелька для TON депозитов
+const OWNER_WALLET = 'UQC5ZUl4Qobq69CgLi7tg-8y6aOwVilc5b82jJFZShtnetrw';
+
+// Состояние депозита
+const depositState = {
+    amount: 0,
+    currency: 'ton',
+    step: 'input', // input | sending | success
+    error: null
+};
+
+// Функция для обновления UI депозита
+function updateDepositModalUI() {
+    const modal = document.getElementById('depositModal');
+    if (!modal) return;
+    
+    const titleEl = document.getElementById('depositModalTitle');
+    const bodyEl = document.getElementById('depositModalBody');
+    const footerEl = document.getElementById('depositModalFooter');
+    
+    if (!titleEl || !bodyEl || !footerEl) return;
+    
+    if (depositState.step === 'input') {
+        titleEl.textContent = '💰 Deposit Funds';
+        bodyEl.innerHTML = `
+            <div class="deposit-currency-toggle">
+                <button class="deposit-currency-btn ${depositState.currency === 'ton' ? 'active' : ''}" data-currency="ton">
+                    <img src="assets/ton.png" alt="TON" class="deposit-currency-icon"> TON
+                </button>
+                <button class="deposit-currency-btn ${depositState.currency === 'stars' ? 'active' : ''}" data-currency="stars">
+                    <img src="assets/stars.png" alt="Stars" class="deposit-currency-icon"> Stars
+                </button>
+            </div>
+            <div class="deposit-balance-info">
+                Your balance: ${depositState.currency === 'ton' ? 
+                    `${gameState.balance.ton.toFixed(1)} TON` : 
+                    `${gameState.balance.stars.toFixed(0)} Stars`}
+            </div>
+            <input type="number" class="deposit-input" id="depositAmountInput" 
+                   placeholder="Enter amount in ${depositState.currency === 'ton' ? 'TON' : 'Stars'}" min="0">
+            ${depositState.error ? `<div class="deposit-error">${depositState.error}</div>` : ''}
+        `;
+        footerEl.innerHTML = `
+            <button class="deposit-button" id="depositConfirmBtn">
+                ${depositState.currency === 'ton' ? `Deposit TON` : `Pay Stars`}
+            </button>
+            <button class="deposit-cancel-btn" id="depositCancelBtn">Cancel</button>
+        `;
+        
+        // Добавляем обработчики после рендера
+        setTimeout(() => {
+            // Переключение валюты
+            document.querySelectorAll('.deposit-currency-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    depositState.currency = this.dataset.currency;
+                    depositState.error = null;
+                    updateDepositModalUI();
+                });
+            });
+            
+            // Кнопка подтверждения
+            const confirmBtn = document.getElementById('depositConfirmBtn');
+            if (confirmBtn) {
+                confirmBtn.addEventListener('click', handleDepositConfirm);
+            }
+            
+            // Кнопка отмены
+            const cancelBtn = document.getElementById('depositCancelBtn');
+            if (cancelBtn) {
+                cancelBtn.addEventListener('click', closeDepositModal);
+            }
+            
+            // Ввод суммы
+            const amountInput = document.getElementById('depositAmountInput');
+            if (amountInput) {
+                amountInput.addEventListener('input', function() {
+                    depositState.amount = parseFloat(this.value) || 0;
+                });
+            }
+        }, 50);
+        
+    } else if (depositState.step === 'sending') {
+        titleEl.textContent = depositState.currency === 'ton' ? 'Confirm in Wallet' : 'Opening Invoice...';
+        bodyEl.innerHTML = `
+            <div class="deposit-sending">
+                <div class="deposit-spinner"></div>
+                <p>${depositState.currency === 'ton' 
+                    ? 'Please confirm the transaction in your TON wallet...' 
+                    : 'Please complete the payment in Telegram...'}</p>
+            </div>
+        `;
+        footerEl.innerHTML = '';
+        
+    } else if (depositState.step === 'success') {
+        titleEl.textContent = '✅ Success!';
+        bodyEl.innerHTML = `
+            <div class="deposit-success">
+                <p>Deposited ${depositState.amount} ${depositState.currency === 'ton' ? 'TON' : 'Stars'}</p>
+                <p>Your balance has been updated</p>
+            </div>
+        `;
+        footerEl.innerHTML = `
+            <button class="deposit-close-btn" id="depositCloseBtn">Close</button>
+        `;
+        
+        setTimeout(() => {
+            const closeBtn = document.getElementById('depositCloseBtn');
+            if (closeBtn) {
+                closeBtn.addEventListener('click', closeDepositModal);
+            }
+        }, 50);
+    }
+}
+
+// Обработчик подтверждения депозита
+async function handleDepositConfirm() {
+    const amount = depositState.amount;
+    const currency = depositState.currency;
+    
+    if (!amount || amount <= 0) {
+        depositState.error = 'Please enter a valid amount';
+        updateDepositModalUI();
+        return;
+    }
+    
+    depositState.step = 'sending';
+    depositState.error = null;
+    updateDepositModalUI();
+    
+    try {
+        if (currency === 'ton') {
+            // Проверяем подключен ли TON кошелек
+            const wallet = window.tonWallet;
+            if (!wallet) {
+                depositState.error = 'Please connect your TON wallet first';
+                depositState.step = 'input';
+                updateDepositModalUI();
+                return;
+            }
+            
+            // Здесь должна быть логика отправки транзакции через TonConnect
+            // В текущей версии используем симуляцию
+            await simulateTonTransaction(amount);
+            
+            depositState.step = 'success';
+            updateDepositModalUI();
+            depositToBalance(amount, 'ton');
+            
+        } else if (currency === 'stars') {
+            // Открываем инвойс в Telegram
+            const tg = window.Telegram?.WebApp;
+            if (!tg) {
+                depositState.error = 'Telegram WebApp not available';
+                depositState.step = 'input';
+                updateDepositModalUI();
+                return;
+            }
+            
+            // Создаем инвойс через API
+            const response = await fetch('/api/create-invoice', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ amount: Math.floor(amount) })
+            });
+            
+            const data = await response.json();
+            
+            if (!data.success || !data.invoiceLink) {
+                throw new Error(data.error || 'Failed to create invoice');
+            }
+            
+            tg.openInvoice(data.invoiceLink, (status) => {
+                if (status === 'paid') {
+                    depositState.step = 'success';
+                    updateDepositModalUI();
+                    depositToBalance(amount, 'stars');
+                } else if (status === 'cancelled') {
+                    depositState.error = 'Payment cancelled';
+                    depositState.step = 'input';
+                    updateDepositModalUI();
+                } else {
+                    depositState.error = 'Payment failed';
+                    depositState.step = 'input';
+                    updateDepositModalUI();
+                }
+            });
+        }
+    } catch (err) {
+        console.error('Deposit error:', err);
+        depositState.error = err.message || 'Transaction failed';
+        depositState.step = 'input';
+        updateDepositModalUI();
+    }
+}
+
+// Симуляция TON транзакции (заглушка)
+async function simulateTonTransaction(amount) {
+    return new Promise((resolve, reject) => {
+        setTimeout(() => {
+            // 90% шанс успеха для демо
+            if (Math.random() < 0.9) {
+                resolve();
+            } else {
+                reject(new Error('Transaction failed'));
+            }
+        }, 2000);
+    });
+}
+
+// Функция пополнения баланса
+function depositToBalance(amount, currency) {
+    if (currency === 'ton') {
+        gameState.balance.ton += amount;
+    } else {
+        gameState.balance.stars += amount;
+    }
+    saveBalance();
+    updatePvPBalanceUI();
+    
+    // Обновляем отображение в главном приложении
+    const tonEl = document.getElementById('pvpTonBalance');
+    const starsEl = document.getElementById('pvpStarsBalance');
+    if (tonEl) tonEl.textContent = gameState.balance.ton.toFixed(2);
+    if (starsEl) starsEl.textContent = Math.floor(gameState.balance.stars);
+    
+    tg.showAlert(`✅ ${amount} ${currency === 'ton' ? 'TON' : 'Stars'} deposited successfully!`);
+}
+
+// Открытие модального окна депозита
+function openDepositModal() {
+    depositState.step = 'input';
+    depositState.error = null;
+    depositState.amount = 0;
+    depositState.currency = gameState.selectedCurrency || 'ton';
+    
+    const modal = document.getElementById('depositModal');
+    if (modal) {
+        modal.classList.add('show');
+        updateDepositModalUI();
+    }
+}
+
+// Закрытие модального окна депозита
+function closeDepositModal() {
+    const modal = document.getElementById('depositModal');
+    if (modal) {
+        modal.classList.remove('show');
+    }
+    depositState.step = 'input';
+    depositState.error = null;
 }
 
 // ============================================================

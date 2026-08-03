@@ -1105,6 +1105,250 @@ body {
 }
 
 /* ============================================================
+   МОДАЛЬНОЕ ОКНО ДЕПОЗИТА
+   ============================================================ */
+.deposit-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.85);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1001;
+    padding: 20px;
+}
+
+.deposit-modal.show {
+    display: flex;
+}
+
+.deposit-modal-content {
+    background: #1a1a2e;
+    border-radius: 24px;
+    padding: 24px;
+    width: 100%;
+    max-width: 400px;
+    position: relative;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 0 60px rgba(0, 0, 0, 0.5);
+}
+
+.deposit-modal-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 20px;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    transition: all 0.2s;
+}
+
+.deposit-modal-close:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.deposit-modal-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.deposit-modal-body {
+    margin-bottom: 16px;
+}
+
+/* Переключатель валют */
+.deposit-currency-toggle {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.deposit-currency-btn {
+    flex: 1;
+    padding: 12px;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.deposit-currency-btn.active {
+    border-color: #667eea;
+    background: rgba(102, 126, 234, 0.2);
+    color: #ffffff;
+}
+
+.deposit-currency-icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    object-fit: contain;
+}
+
+/* Баланс в модалке */
+.deposit-balance-info {
+    text-align: center;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 14px;
+    margin-bottom: 16px;
+}
+
+/* Поле ввода */
+.deposit-input {
+    width: 100%;
+    padding: 14px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    color: #ffffff;
+    font-size: 18px;
+    text-align: center;
+    margin-bottom: 16px;
+    box-sizing: border-box;
+    outline: none;
+}
+
+.deposit-input:focus {
+    border-color: #667eea;
+}
+
+/* Ошибка */
+.deposit-error {
+    background: rgba(255, 69, 58, 0.15);
+    color: #ff453a;
+    padding: 10px;
+    border-radius: 8px;
+    text-align: center;
+    font-size: 13px;
+    margin-bottom: 12px;
+}
+
+/* Кнопки */
+.deposit-modal-footer {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.deposit-button {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: #ffffff;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.deposit-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.deposit-button:hover:not(:disabled) {
+    opacity: 0.9;
+}
+
+.deposit-cancel-btn {
+    width: 100%;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.deposit-cancel-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.deposit-close-btn {
+    width: 100%;
+    padding: 14px;
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.deposit-close-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* Состояние отправки */
+.deposit-sending {
+    text-align: center;
+    padding: 20px 0;
+}
+
+.deposit-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(255, 255, 255, 0.1);
+    border-top-color: #667eea;
+    border-radius: 50%;
+    animation: depositSpin 1s linear infinite;
+    margin: 0 auto 16px;
+}
+
+@keyframes depositSpin {
+    to { transform: rotate(360deg); }
+}
+
+.deposit-sending p {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 14px;
+}
+
+/* Состояние успеха */
+.deposit-success {
+    text-align: center;
+    padding: 20px 0;
+}
+
+.deposit-success p {
+    color: #ffffff;
+    margin: 8px 0;
+    font-size: 16px;
+}
+
+.deposit-success p:first-child {
+    font-weight: 700;
+    color: #0ceb0f;
+}
+
+/* ============================================================
    ОТКЛЮЧЕНИЕ ДВОЙНОГО КЛИКА ДЛЯ МАСШТАБИРОВАНИЯ
    ============================================================ */
 
@@ -1134,6 +1378,45 @@ body {
 .wheel-wrapper,
 .pvp-header-wrapper {
     touch-action: pan-y;
+}
+
+/* Адаптив для модалки депозита */
+@media (max-width: 430px) {
+    .deposit-modal-content {
+        padding: 20px;
+        max-width: 340px;
+    }
+    
+    .deposit-currency-btn {
+        font-size: 14px;
+        padding: 10px;
+    }
+    
+    .deposit-input {
+        font-size: 16px;
+        padding: 12px;
+    }
+    
+    .deposit-button {
+        font-size: 14px;
+        padding: 12px;
+    }
+}
+
+@media (max-width: 375px) {
+    .deposit-modal-content {
+        padding: 16px;
+        max-width: 300px;
+    }
+    
+    .deposit-currency-btn {
+        font-size: 12px;
+        padding: 8px;
+    }
+    
+    .deposit-modal-title {
+        font-size: 17px;
+    }
 }
 
 /* ============================================================
