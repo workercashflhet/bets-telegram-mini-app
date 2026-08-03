@@ -11,10 +11,25 @@ body {
     background: #000000 !important;
     max-width: 480px;
     margin: 0 auto;
-    padding: 0 12px 80px;
+    padding: 0 12px 0px;
     min-height: 100vh;
     position: relative;
-    overflow: visible !important;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+}
+
+/* Скрытие скроллбара для #app */
+#app::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
+}
+
+#app {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
 }
 
 /* ============================================================
@@ -43,13 +58,13 @@ body {
     pointer-events: auto;
 }
 
-/* Левый островок (БОЛЬШОЙ, БЕЗ ФОНА, БЕЗ ОБВОДКИ, БЕЗ ПОДСВЕТКИ) */
+/* Левый островок с профилем (УВЕЛИЧЕН, БЕЗ ОБВОДКИ) */
 .user-island {
     display: flex;
     align-items: center;
     justify-content: flex-start;
-    gap: 14px;
-    padding: 8px 20px 8px 12px;
+    gap: 10px;
+    padding: 6px 16px 6px 10px;
     background: transparent;
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
@@ -57,16 +72,16 @@ body {
     border-radius: 0;
     box-shadow: none;
     animation: none;
-    height: 56px;
-    min-height: 56px;
+    height: 44px;
+    min-height: 44px;
     box-sizing: border-box;
     width: auto;
     flex-shrink: 0;
 }
 
 .user-avatar {
-    width: 44px;
-    height: 44px;
+    width: 34px;
+    height: 34px;
     border-radius: 50%;
     object-fit: cover;
     border: none;
@@ -74,27 +89,27 @@ body {
 }
 
 .user-avatar-fallback {
-    width: 44px;
-    height: 44px;
+    width: 34px;
+    height: 34px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     background: #0ceb0f;
     color: #000000;
-    font-size: 20px;
+    font-size: 16px;
     font-weight: 700;
     flex-shrink: 0;
     border: none;
 }
 
 .user-name {
-    font-size: 20px;
+    font-size: 16px;
     font-weight: 600;
     color: #ffffff;
     letter-spacing: 0.3px;
     white-space: nowrap;
-    max-width: 150px;
+    max-width: 120px;
     overflow: hidden;
     text-overflow: ellipsis;
 }
@@ -618,6 +633,7 @@ body {
     border-radius: 12px;
     padding: 10px 14px;
     border: 1px solid rgba(255,255,255,0.04);
+    margin-bottom: 120px;
 }
 
 /* ============================================================
@@ -855,6 +871,20 @@ body {
     display: flex;
     flex-direction: column;
     gap: 4px;
+    max-height: 200px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.players-list-compact::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
+}
+
+.players-list-compact {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
 }
 
 .player-row {
@@ -911,7 +941,20 @@ body {
     padding: 8px 0;
 }
 
-/* Модальное окно победителя */
+/* ============================================================
+   ВСПОМОГАТЕЛЬНЫЕ КЛАССЫ
+   ============================================================ */
+.hidden {
+    display: none !important;
+}
+
+.visible {
+    display: block !important;
+}
+
+/* ============================================================
+   МОДАЛЬНОЕ ОКНО ПОБЕДИТЕЛЯ
+   ============================================================ */
 .winner-modal {
     position: fixed;
     top: 0;
@@ -1012,6 +1055,38 @@ body {
 }
 
 /* ============================================================
+   ОТКЛЮЧЕНИЕ ДВОЙНОГО КЛИКА ДЛЯ МАСШТАБИРОВАНИЯ
+   ============================================================ */
+
+/* Запрет на выделение текста и масштабирование */
+* {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+/* Запрет на масштабирование через двойной клик на iOS */
+html, body {
+    touch-action: manipulation;
+}
+
+/* Запрет на масштабирование через жест пальцами */
+body {
+    touch-action: pan-y pinch-zoom;
+}
+
+/* Для элементов, где может быть скролл */
+.game-content,
+.players-list-compact,
+.wheel-wrapper,
+.pvp-header-wrapper {
+    touch-action: pan-y;
+}
+
+/* ============================================================
    АДАПТИВ
    ============================================================ */
 @media (max-width: 430px) {
@@ -1020,28 +1095,29 @@ body {
     }
     
     .user-island {
-        padding: 6px 14px 6px 10px;
-        gap: 10px;
-        height: 44px;
-        min-height: 44px;
+        padding: 5px 12px 5px 8px;
+        gap: 8px;
+        border-radius: 14px;
+        height: 36px;
+        min-height: 36px;
     }
     
     .user-avatar {
-        width: 34px;
-        height: 34px;
+        width: 26px;
+        height: 26px;
         border: none;
     }
     
     .user-avatar-fallback {
-        width: 34px;
-        height: 34px;
-        font-size: 16px;
+        width: 26px;
+        height: 26px;
+        font-size: 13px;
         border: none;
     }
     
     .user-name {
-        font-size: 16px;
-        max-width: 100px;
+        font-size: 14px;
+        max-width: 80px;
     }
     
     .balance-wrapper {
@@ -1134,6 +1210,7 @@ body {
     
     .players-compact {
         margin-top: 20px;
+        margin-bottom: 100px;
     }
     
     .info-value {
@@ -1309,6 +1386,7 @@ body {
     
     .players-compact {
         margin-top: 16px;
+        margin-bottom: 80px;
     }
     
     .info-block {
@@ -1351,70 +1429,4 @@ body {
         border-right: 13px solid transparent;
         border-top: 24px solid #ffffff;
     }
-}
-
-/* ============================================================
-   СКРОЛЛ И СКРЫТИЕ СКРОЛЛБАРА
-   ============================================================ */
-
-/* Основной контейнер приложения - скролл */
-#app {
-    overflow-y: auto;
-    overflow-x: hidden;
-    -webkit-overflow-scrolling: touch;
-    scroll-behavior: smooth;
-}
-
-/* Скрытие скроллбара для всех браузеров */
-#app::-webkit-scrollbar {
-    width: 0;
-    height: 0;
-    display: none;
-}
-
-#app {
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-}
-
-/* Для элементов, которые могут скроллиться */
-.game-content,
-.players-list-compact,
-.tabs-content,
-.pvp-header-wrapper {
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    scroll-behavior: smooth;
-}
-
-.game-content::-webkit-scrollbar,
-.players-list-compact::-webkit-scrollbar,
-.tabs-content::-webkit-scrollbar,
-.pvp-header-wrapper::-webkit-scrollbar {
-    width: 0;
-    height: 0;
-    display: none;
-}
-
-.game-content,
-.players-list-compact,
-.tabs-content,
-.pvp-header-wrapper {
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-}
-
-/* Для контента игры */
-.game-content {
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    scroll-behavior: smooth;
-    padding-bottom: 120px;
-}
-
-/* Для списка игроков */
-.players-list-compact {
-    max-height: 200px;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
 }
