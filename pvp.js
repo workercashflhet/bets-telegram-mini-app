@@ -866,13 +866,13 @@ function updateDepositModalUI() {
         }, 50);
         
     } else if (depositState.step === 'sending') {
-        titleEl.textContent = depositState.currency === 'ton' ? 'Подтверждение в кошельке' : 'Открытие счета...';
+        titleEl.textContent = depositState.currency === 'ton' ? 'Подтверждение в кошельке' : 'Оплата Stars...';
         bodyEl.innerHTML = `
             <div class="deposit-sending">
                 <div class="deposit-spinner"></div>
                 <p>${depositState.currency === 'ton' 
                     ? 'Пожалуйста, подтвердите транзакцию в вашем TON кошельке...' 
-                    : 'Пожалуйста, завершите оплату в Telegram...'}</p>
+                    : 'Открытие счета для оплаты Stars...'}</p>
             </div>
         `;
         footerEl.innerHTML = '';
@@ -928,8 +928,7 @@ async function handleDepositConfirm() {
                 return;
             }
             
-            // Здесь будет реальная транзакция через TonConnect
-            // Пока используем симуляцию
+            // Симуляция TON транзакции
             await simulateTonTransaction(amount);
             
             depositState.step = 'success';
@@ -947,34 +946,51 @@ async function handleDepositConfirm() {
                 return;
             }
             
-            // Создаем инвойс через бота
-            const botUsername = 'itsrefinelifebot';
             const starsAmount = Math.floor(amount);
             
-            // Формируем ссылку для оплаты Stars
-            // Используем формат: https://t.me/bot_username?start=pay_amount
-            const invoiceLink = `https://t.me/${botUsername}?start=pay_${starsAmount}`;
-            
-            // Открываем инвойс
-            tg.openInvoice(invoiceLink, (status) => {
-                depositState.isProcessing = false;
+            // СОЗДАНИЕ ИНВОЙСА ЧЕРЕЗ API БОТА
+            // Используем тот же метод, что и в предыдущем проекте
+            try {
+                // Запрос к API для создания инвойса
+                const response = await fetch('/api/create-invoice', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ amount: starsAmount })
+                });
                 
-                if (status === 'paid') {
-                    depositState.step = 'success';
-                    updateDepositModalUI();
-                    depositToBalance(amount, 'stars');
-                } else if (status === 'cancelled') {
-                    depositState.error = 'Оплата отменена';
-                    depositState.step = 'input';
-                    updateDepositModalUI();
-                } else {
-                    depositState.error = 'Оплата не удалась. Попробуйте снова.';
-                    depositState.step = 'input';
-                    updateDepositModalUI();
+                const data = await response.json();
+                
+                if (!data.success || !data.invoiceLink) {
+                    throw new Error(data.error || 'Не удалось создать счет');
                 }
-            });
+                
+                // Открываем инвойс через Telegram
+                tg.openInvoice(data.invoiceLink, (status) => {
+                    depositState.isProcessing = false;
+                    
+                    if (status === 'paid') {
+                        depositState.step = 'success';
+                        updateDepositModalUI();
+                        depositToBalance(amount, 'stars');
+                    } else if (status === 'cancelled') {
+                        depositState.error = 'Оплата отменена';
+                        depositState.step = 'input';
+                        updateDepositModalUI();
+                    } else {
+                        depositState.error = 'Оплата не удалась. Попробуйте снова.';
+                        depositState.step = 'input';
+                        updateDepositModalUI();
+                    }
+                });
+            } catch (err) {
+                console.error('Ошибка создания инвойса:', err);
+                depositState.error = 'Не удалось создать счет для оплаты';
+                depositState.step = 'input';
+                depositState.isProcessing = false;
+                updateDepositModalUI();
+            }
             
-            // Если пользователь закрыл инвойс без действия
+            // Таймаут на случай, если пользователь не завершил оплату
             setTimeout(() => {
                 if (depositState.step === 'sending') {
                     depositState.isProcessing = false;
@@ -982,7 +998,7 @@ async function handleDepositConfirm() {
                     depositState.step = 'input';
                     updateDepositModalUI();
                 }
-            }, 60000); // 60 секунд таймаут
+            }, 60000);
         }
     } catch (err) {
         console.error('Deposit error:', err);
