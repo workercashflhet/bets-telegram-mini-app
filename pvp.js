@@ -363,15 +363,21 @@ function setupUI() {
     document.getElementById('betDec').addEventListener('click', () => {
         const step = gameState.selectedCurrency === 'ton' ? 0.1 : 1;
         const min = gameState.selectedCurrency === 'ton' ? MIN_BET_TON : MIN_BET_STARS;
-        gameState.betAmount = Math.max(min, gameState.betAmount - step);
+        let newAmount = gameState.betAmount - step;
+        if (newAmount < min) newAmount = min;
+        gameState.betAmount = newAmount;
         updateBetUI();
+        updatePlaceBetButton();
     });
     
     document.getElementById('betInc').addEventListener('click', () => {
         const step = gameState.selectedCurrency === 'ton' ? 0.1 : 1;
         const max = gameState.selectedCurrency === 'ton' ? gameState.balance.ton : gameState.balance.stars;
-        gameState.betAmount = Math.min(max, gameState.betAmount + step);
+        let newAmount = gameState.betAmount + step;
+        if (newAmount > max) newAmount = max;
+        gameState.betAmount = newAmount;
         updateBetUI();
+        updatePlaceBetButton();
     });
     
     // Обработка ввода суммы с точкой как разделителем
@@ -394,11 +400,7 @@ function setupUI() {
                 const max = gameState.selectedCurrency === 'ton' ? gameState.balance.ton : gameState.balance.stars;
                 const min = gameState.selectedCurrency === 'ton' ? MIN_BET_TON : MIN_BET_STARS;
                 gameState.betAmount = Math.min(max, Math.max(min, val));
-                // Обновляем состояние кнопки
-                const btn = document.getElementById('placeBetBtn');
-                if (btn) {
-                    btn.disabled = gameState.betAmount > max || gameState.betAmount < min || gameState.isSpinning || gameState.roundPhase === 'finished';
-                }
+                updatePlaceBetButton();
             }
         } else if (value === '.') {
             // Если пользователь ввел только точку, показываем "0."
@@ -409,6 +411,7 @@ function setupUI() {
             const min = gameState.selectedCurrency === 'ton' ? MIN_BET_TON : MIN_BET_STARS;
             gameState.betAmount = min;
             this.value = min;
+            updatePlaceBetButton();
         }
     });
     
@@ -418,9 +421,12 @@ function setupUI() {
             this.value = min;
             gameState.betAmount = min;
             updateBetUI();
+            updatePlaceBetButton();
         } else if (this.value.endsWith('.')) {
             this.value = this.value.slice(0, -1);
             gameState.betAmount = parseFloat(this.value) || min;
+            updateBetUI();
+            updatePlaceBetButton();
         }
     });
     
@@ -445,6 +451,7 @@ function setupUI() {
             btn.classList.add('active');
             gameState.selectedCurrency = btn.dataset.currency;
             updateBetUI();
+            updatePlaceBetButton();
         });
     });
 }
@@ -487,13 +494,14 @@ function updateBetUI() {
         gameState.betAmount.toFixed(1) : 
         Math.floor(gameState.betAmount);
     input.value = display;
-    
+}
+
+function updatePlaceBetButton() {
+    const btn = document.getElementById('placeBetBtn');
+    if (!btn) return;
     const max = gameState.selectedCurrency === 'ton' ? gameState.balance.ton : gameState.balance.stars;
     const min = gameState.selectedCurrency === 'ton' ? MIN_BET_TON : MIN_BET_STARS;
-    const btn = document.getElementById('placeBetBtn');
-    if (btn) {
-        btn.disabled = gameState.betAmount > max || gameState.betAmount < min || gameState.isSpinning || gameState.roundPhase === 'finished';
-    }
+    btn.disabled = gameState.betAmount > max || gameState.betAmount < min || gameState.isSpinning || gameState.roundPhase === 'finished';
 }
 
 function updateHub(type, data) {
@@ -720,6 +728,7 @@ function startWaitingPhase() {
     updateUI();
     updateBetUI();
     updateTimerUI();
+    updatePlaceBetButton();
 }
 
 function startCountdown() {
@@ -828,6 +837,7 @@ function placeBet() {
     updateUI();
     updateBetUI();
     updateTimerUI();
+    updatePlaceBetButton();
     
     tg.showAlert(`✅ Ставка ${amount} ${currency === 'ton' ? 'TON' : 'Stars'} принята!`);
 }
@@ -886,6 +896,7 @@ function startSpin() {
         
         showWinner(winner);
         updateUI();
+        updatePlaceBetButton();
     }, SPIN_DURATION);
 }
 
@@ -1090,6 +1101,7 @@ function startNewRound() {
     updateUI();
     updateBetUI();
     updateTimerUI();
+    updatePlaceBetButton();
     
     tg.showAlert('🔄 Новый раунд начался! Делайте ставки!');
 }
