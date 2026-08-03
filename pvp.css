@@ -402,13 +402,13 @@ body {
 .wheel-pointer::before {
     content: '';
     position: absolute;
-    top: -30px;
-    left: -18px;
+    top: -32px;
+    left: -19px;
     width: 0;
     height: 0;
-    border-left: 18px solid transparent;
-    border-right: 18px solid transparent;
-    border-top: 32px solid rgba(255,255,255,0.8);
+    border-left: 19px solid transparent;
+    border-right: 19px solid transparent;
+    border-top: 34px solid #ffffff;
     z-index: -1;
     border-radius: 2px;
 }
@@ -1181,11 +1181,11 @@ body {
     }
     
     .wheel-pointer::before {
-        top: -24px;
-        left: -14px;
-        border-left: 14px solid transparent;
-        border-right: 14px solid transparent;
-        border-top: 26px solid rgba(255,255,255,0.8);
+        top: -26px;
+        left: -15px;
+        border-left: 15px solid transparent;
+        border-right: 15px solid transparent;
+        border-top: 28px solid #ffffff;
     }
 }
 
@@ -1345,10 +1345,10 @@ body {
     }
     
     .wheel-pointer::before {
-        top: -20px;
-        left: -12px;
-        border-left: 12px solid transparent;
-        border-right: 12px solid transparent;
-        border-top: 22px solid rgba(255,255,255,0.8);
+        top: -22px;
+        left: -13px;
+        border-left: 13px solid transparent;
+        border-right: 13px solid transparent;
+        border-top: 24px solid #ffffff;
     }
 }
