@@ -1874,3 +1874,72 @@ body {
         height: 10px;
     }
 }
+
+/* ============================================================
+   TON CONNECT В МОДАЛКЕ ДЕПОЗИТА
+   ============================================================ */
+
+.deposit-ton-connect-wrapper {
+    margin: 12px 0;
+    padding: 16px;
+    background: rgba(12, 235, 15, 0.04);
+    border: 1px solid rgba(12, 235, 15, 0.1);
+    border-radius: 12px;
+    text-align: center;
+}
+
+.deposit-ton-connect-wrapper #ton-connect-button {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 8px;
+}
+
+.deposit-ton-connect-wrapper #ton-connect-button button {
+    background: #0ceb0f !important;
+    color: #000000 !important;
+    border: none !important;
+    border-radius: 12px !important;
+    padding: 12px 24px !important;
+    font-size: 16px !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+}
+
+.deposit-ton-connect-wrapper #ton-connect-button button:hover {
+    background: #33ff36 !important;
+}
+
+.deposit-ton-hint {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.35);
+    margin: 0;
+}
+
+/* Стили для кнопки TonConnect в модалке */
+.ton-connect-button-wrapper {
+    display: flex;
+    justify-content: center;
+    margin: 8px 0;
+}
+
+.ton-connect-button-wrapper .ton-connect-button {
+    background: #0ceb0f;
+    color: #000000;
+    border: none;
+    border-radius: 12px;
+    padding: 12px 24px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: 100%;
+}
+
+.ton-connect-button-wrapper .ton-connect-button:hover {
+    background: #33ff36;
+}
+
+.ton-connect-button-wrapper .ton-connect-button:active {
+    transform: scale(0.97);
+}
