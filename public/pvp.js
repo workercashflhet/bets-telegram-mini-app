@@ -785,45 +785,76 @@ function checkWalletConnection() {
 }
 
 // ============================================================
-// ИНИЦИАЛИЗАЦИЯ TON CONNECT (РАБОЧАЯ ВЕРСИЯ)
+// ИНИЦИАЛИЗАЦИЯ TON CONNECT (ИСПРАВЛЕННАЯ ВЕРСИЯ)
 // ============================================================
 
 function initTonConnect() {
     const container = document.getElementById('ton-connect-container');
     if (!container) {
-        console.warn('TonConnect container not found');
+        console.warn('❌ TonConnect container not found');
         return;
     }
+    
+    // Показываем контейнер
+    container.style.display = 'block';
+    container.style.padding = '12px 0';
+    container.style.textAlign = 'center';
+    
+    // Очищаем контейнер
+    container.innerHTML = '';
     
     // Проверяем, загружен ли TonConnectUI
     if (typeof TonConnectUI === 'undefined') {
-        console.warn('TonConnectUI not loaded, waiting...');
+        console.log('⏳ TonConnectUI not loaded yet, waiting...');
         container.innerHTML = `
-            <div style="text-align: center; padding: 8px; color: rgba(255,255,255,0.5); font-size: 13px;">
+            <div style="color: rgba(255,255,255,0.5); font-size: 14px; padding: 12px;">
                 ⏳ Загрузка TON кошелька...
             </div>
         `;
-        container.style.display = 'block';
         
-        // Ждем загрузки скрипта
+        // Ждем загрузку скрипта с повторными попытками
+        let attempts = 0;
+        const maxAttempts = 20;
+        
         const checkInterval = setInterval(() => {
+            attempts++;
             if (typeof TonConnectUI !== 'undefined') {
                 clearInterval(checkInterval);
-                console.log('TonConnectUI loaded, initializing...');
-                initTonConnect();
+                console.log('✅ TonConnectUI loaded, rendering button...');
+                renderTonConnectButton(container);
+            } else if (attempts >= maxAttempts) {
+                clearInterval(checkInterval);
+                console.warn('⚠️ TonConnectUI not loaded after 10 seconds');
+                container.innerHTML = `
+                    <div style="color: #ff6b6b; font-size: 14px; padding: 12px;">
+                        ⚠️ Не удалось загрузить TON кошелек. Попробуйте обновить страницу.
+                    </div>
+                    <button onclick="initTonConnect()" style="
+                        margin-top: 8px;
+                        padding: 8px 16px;
+                        background: #0ceb0f;
+                        color: #000;
+                        border: none;
+                        border-radius: 8px;
+                        font-weight: 600;
+                        cursor: pointer;
+                    ">🔄 Повторить</button>
+                `;
             }
         }, 500);
-        setTimeout(() => clearInterval(checkInterval), 10000);
         return;
     }
     
-    // Сбрасываем флаг, чтобы пересоздать кнопку
-    depositState.tonConnectInitialized = false;
+    // Если загружен - рендерим кнопку
+    renderTonConnectButton(container);
+}
+
+function renderTonConnectButton(container) {
+    // Очищаем контейнер
+    container.innerHTML = '';
+    container.style.display = 'block';
     
     try {
-        // Очищаем контейнер
-        container.innerHTML = '';
-        
         // СОЗДАЕМ КНОПКУ ВРУЧНУЮ
         const btn = document.createElement('button');
         btn.className = 'ton-connect-button';
@@ -855,12 +886,11 @@ function initTonConnect() {
         hint.style.cssText = 'font-size: 12px; color: rgba(255,255,255,0.35); margin-top: 8px; margin-bottom: 0;';
         container.appendChild(hint);
         
-        container.style.display = 'block';
+        console.log('✅ TonConnect button rendered successfully');
         depositState.tonConnectInitialized = true;
         
-        console.log('TonConnect button rendered successfully');
     } catch (error) {
-        console.error('Error rendering TonConnect button:', error);
+        console.error('❌ Error rendering TonConnect button:', error);
         container.innerHTML = `
             <div style="color: #ff6b6b; text-align: center; padding: 12px; font-size: 14px;">
                 ⚠️ Ошибка загрузки TON кошелька
@@ -870,35 +900,50 @@ function initTonConnect() {
     }
 }
 
+// ============================================================
+// ПОДКЛЮЧЕНИЕ TON КОШЕЛЬКА (ИСПРАВЛЕННАЯ ВЕРСИЯ)
+// ============================================================
+
 function connectTonWallet() {
+    console.log('🔗 Connecting TON wallet...');
+    
     try {
+        // Проверяем, есть ли уже экземпляр TonConnectUI
         let ui = window.TonConnectUI;
         
         if (!ui && typeof TonConnectUI !== 'undefined') {
+            console.log('🔄 Creating new TonConnectUI instance...');
             const manifestUrl = 'https://bets-telegram-mini-app.vercel.app/tonconnect-manifest.json';
             ui = new TonConnectUI({
                 manifestUrl: manifestUrl
             });
             window.TonConnectUI = ui;
             
+            // Подписываемся на изменения статуса
             ui.onStatusChange((wallet) => {
+                console.log('💰 Wallet status changed:', wallet ? 'connected' : 'disconnected');
                 if (wallet) {
                     depositState.isWalletConnected = true;
+                    // Обновляем UI модалки
                     updateDepositModalUI();
                     tg.showAlert('✅ TON кошелек успешно подключен!');
                 } else {
                     depositState.isWalletConnected = false;
+                    // Обновляем UI модалки
+                    updateDepositModalUI();
                 }
             });
         }
         
         if (ui) {
+            console.log('📱 Opening TonConnect modal...');
             ui.openModal();
         } else {
+            console.error('❌ TonConnectUI not available');
             tg.showAlert('❌ TON кошелек временно недоступен. Попробуйте позже.');
         }
     } catch (error) {
-        console.error('Error connecting wallet:', error);
+        console.error('❌ Error connecting wallet:', error);
         tg.showAlert('❌ Ошибка подключения кошелька. Попробуйте снова.');
     }
 }
