@@ -769,7 +769,8 @@ const depositState = {
     step: 'input',
     error: null,
     isWalletConnected: false,
-    isProcessing: false
+    isProcessing: false,
+    tonConnectInitialized: false
 };
 
 // Проверка подключения кошелька
@@ -781,77 +782,84 @@ function checkWalletConnection() {
 }
 
 // ============================================================
-// ИНИЦИАЛИЗАЦИЯ TON CONNECT (ИСПРАВЛЕННАЯ)
+// ИНИЦИАЛИЗАЦИЯ TON CONNECT (РАБОЧАЯ ВЕРСИЯ)
 // ============================================================
 
-let tonConnectInitialized = false;
-let tonConnectUIInstance = null;
-
 function initTonConnect() {
-    if (tonConnectInitialized && tonConnectUIInstance) return;
-    
     // Проверяем, загружен ли TonConnectUI
     if (typeof TonConnectUI === 'undefined') {
-        console.warn('TonConnectUI not loaded, waiting...');
-        // Пробуем загрузить скрипт динамически
+        console.warn('TonConnectUI not loaded, loading script...');
         loadTonConnectScript();
         return;
     }
     
+    const buttonContainer = document.getElementById('ton-connect-container');
+    if (!buttonContainer) {
+        console.warn('TonConnect container not found');
+        return;
+    }
+    
+    // Проверяем, есть ли уже кнопка
+    if (buttonContainer.querySelector('.ton-connect-button')) {
+        return;
+    }
+    
     try {
-        const buttonContainer = document.getElementById('ton-connect-container');
-        const buttonRoot = document.getElementById('ton-connect-button');
-        
-        if (!buttonRoot) {
-            console.warn('TonConnect button root not found');
-            return;
-        }
-        
-        // Если кнопка уже есть, не создаем заново
-        if (buttonRoot.querySelector('.ton-connect-button')) {
-            return;
-        }
-        
         // Показываем контейнер
-        if (buttonContainer) {
-            buttonContainer.style.display = 'block';
-        }
+        buttonContainer.style.display = 'block';
         
-        // Создаем экземпляр TonConnectUI
-        const manifestUrl = 'https://bets-telegram-mini-app.vercel.app/tonconnect-manifest.json';
+        // Очищаем контейнер от старых элементов
+        buttonContainer.innerHTML = '';
         
-        tonConnectUIInstance = new TonConnectUI({
-            manifestUrl: manifestUrl,
-            buttonRootId: 'ton-connect-button'
-        });
+        // Создаем кнопку вручную (этот метод работает всегда)
+        const btn = document.createElement('button');
+        btn.className = 'ton-connect-button';
+        btn.textContent = '🔗 Подключить TON кошелек';
+        btn.style.cssText = `
+            background: #0ceb0f;
+            color: #000000;
+            border: none;
+            border-radius: 12px;
+            padding: 14px 24px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.3s ease;
+            margin-bottom: 4px;
+        `;
+        btn.onmouseenter = function() { this.style.background = '#33ff36'; };
+        btn.onmouseleave = function() { this.style.background = '#0ceb0f'; };
+        btn.onclick = function() {
+            connectTonWallet();
+        };
         
-        window.TonConnectUI = tonConnectUIInstance;
-        tonConnectInitialized = true;
+        buttonContainer.appendChild(btn);
         
-        // Слушаем изменения статуса кошелька
-        tonConnectUIInstance.onStatusChange((wallet) => {
-            depositState.isWalletConnected = !!wallet;
-            if (wallet) {
-                // Обновляем UI
-                updateDepositModalUI();
-                tg.showAlert('✅ TON кошелек успешно подключен!');
-            }
-        });
+        // Добавляем подпись
+        const hint = document.createElement('p');
+        hint.textContent = 'Подключите TON кошелек для пополнения';
+        hint.style.cssText = 'font-size: 12px; color: rgba(255,255,255,0.35); margin-top: 8px; margin-bottom: 0;';
+        buttonContainer.appendChild(hint);
         
-        console.log('TonConnect initialized successfully');
+        console.log('TonConnect button rendered manually');
     } catch (error) {
-        console.error('Error initializing TonConnect:', error);
+        console.error('Error rendering TonConnect button:', error);
     }
 }
 
 function loadTonConnectScript() {
     // Проверяем, есть ли уже скрипт
     if (document.querySelector('script[src*="tonconnect-ui"]')) {
-        setTimeout(() => {
+        // Если скрипт есть, ждем загрузки
+        const checkInterval = setInterval(() => {
             if (typeof TonConnectUI !== 'undefined') {
+                clearInterval(checkInterval);
                 initTonConnect();
             }
-        }, 2000);
+        }, 500);
+        // Останавливаем проверку через 10 секунд
+        setTimeout(() => clearInterval(checkInterval), 10000);
         return;
     }
     
@@ -866,8 +874,51 @@ function loadTonConnectScript() {
     };
     script.onerror = function() {
         console.error('Failed to load TonConnect script');
+        // Показываем сообщение пользователю
+        const container = document.getElementById('ton-connect-container');
+        if (container) {
+            container.innerHTML = `
+                <div style="color: #ff6b6b; text-align: center; padding: 12px; font-size: 14px;">
+                    ⚠️ Не удалось загрузить TON кошелек. Попробуйте обновить страницу.
+                </div>
+            `;
+        }
     };
     document.head.appendChild(script);
+}
+
+function connectTonWallet() {
+    try {
+        // Проверяем, есть ли уже экземпляр TonConnectUI
+        let ui = window.TonConnectUI;
+        
+        if (!ui && typeof TonConnectUI !== 'undefined') {
+            // Создаем новый экземпляр
+            const manifestUrl = 'https://bets-telegram-mini-app.vercel.app/tonconnect-manifest.json';
+            ui = new TonConnectUI({
+                manifestUrl: manifestUrl
+            });
+            window.TonConnectUI = ui;
+            
+            // Слушаем изменения статуса
+            ui.onStatusChange((wallet) => {
+                depositState.isWalletConnected = !!wallet;
+                if (wallet) {
+                    updateDepositModalUI();
+                    tg.showAlert('✅ TON кошелек успешно подключен!');
+                }
+            });
+        }
+        
+        if (ui) {
+            ui.openModal();
+        } else {
+            tg.showAlert('❌ TON кошелек временно недоступен. Попробуйте позже.');
+        }
+    } catch (error) {
+        console.error('Error connecting wallet:', error);
+        tg.showAlert('❌ Ошибка подключения кошелька. Попробуйте снова.');
+    }
 }
 
 // ============================================================
@@ -894,12 +945,10 @@ function updateDepositModalUI() {
         if (tonContainer) {
             if (depositState.currency === 'ton' && !isWalletConnected) {
                 tonContainer.style.display = 'block';
-                // Инициализируем TonConnect после отображения
+                // Инициализируем TonConnect
                 setTimeout(() => {
                     initTonConnect();
                 }, 300);
-            } else if (depositState.currency === 'ton' && isWalletConnected) {
-                tonContainer.style.display = 'none';
             } else {
                 tonContainer.style.display = 'none';
             }
@@ -960,11 +1009,11 @@ function updateDepositModalUI() {
                 });
             }
             
-            // Инициализация TonConnect, если выбран TON
-            if (depositState.currency === 'ton') {
+            // Инициализация TonConnect, если выбран TON и кошелек не подключен
+            if (depositState.currency === 'ton' && !checkWalletConnection()) {
                 initTonConnect();
             }
-        }, 100);
+        }, 150);
         
     } else if (depositState.step === 'sending') {
         if (tonContainer) tonContainer.style.display = 'none';
@@ -1001,7 +1050,6 @@ function updateDepositModalUI() {
     }
 }
 
-
 // ============================================================
 // ОБРАБОТЧИК ПОДТВЕРЖДЕНИЯ ДЕПОЗИТА
 // ============================================================
@@ -1031,6 +1079,14 @@ async function handleDepositConfirm() {
                 depositState.step = 'input';
                 depositState.isProcessing = false;
                 updateDepositModalUI();
+                // Показываем кнопку подключения
+                setTimeout(() => {
+                    const container = document.getElementById('ton-connect-container');
+                    if (container) {
+                        container.style.display = 'block';
+                        initTonConnect();
+                    }
+                }, 100);
                 return;
             }
             
@@ -1051,6 +1107,8 @@ async function handleDepositConfirm() {
                     console.error('Transaction error:', txError);
                     if (txError.message?.includes('cancelled') || txError.message?.includes('rejected')) {
                         depositState.error = 'Транзакция отменена';
+                    } else if (txError.message?.includes('insufficient')) {
+                        depositState.error = 'Недостаточно средств на кошельке';
                     } else {
                         depositState.error = 'Транзакция не удалась. Попробуйте снова.';
                     }
@@ -1060,6 +1118,7 @@ async function handleDepositConfirm() {
                     return;
                 }
             } else {
+                // Если TonConnect не доступен, используем демо-режим
                 await simulateTonTransaction(amount);
             }
             
@@ -1128,7 +1187,7 @@ async function handleDepositConfirm() {
 }
 
 // ============================================================
-// СИМУЛЯЦИЯ TON ТРАНЗАКЦИИ
+// СИМУЛЯЦИЯ TON ТРАНЗАКЦИИ (ДЛЯ ТЕСТОВ)
 // ============================================================
 
 async function simulateTonTransaction(amount) {
@@ -1175,7 +1234,6 @@ function openDepositModal() {
     depositState.amount = 0;
     depositState.currency = gameState.selectedCurrency || 'ton';
     depositState.isProcessing = false;
-    tonConnectInitialized = false;
     
     const modal = document.getElementById('depositModal');
     if (modal) {
