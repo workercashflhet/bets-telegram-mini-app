@@ -288,6 +288,117 @@ var NEW_ROUND_DELAY = 5000;
 var OWNER_WALLET = 'UQC5ZUl4Qobq69CgLi7tg-8y6aOwVilc5b82jJFZShtnetrw';
 
 // ============================================================
+// ПРИНУДИТЕЛЬНЫЙ СБРОС РАУНДА
+// ============================================================
+
+var FORCE_RESET_TIMEOUT = 30000;
+var forceResetTimer = null;
+
+function startForceResetTimer() {
+    clearForceResetTimer();
+    console.log('⏰ Starting force reset timer (' + FORCE_RESET_TIMEOUT + 'ms)');
+    forceResetTimer = setTimeout(function() {
+        console.log('⚠️ Force reset triggered - round stuck!');
+        forceResetRound();
+    }, FORCE_RESET_TIMEOUT);
+}
+
+function clearForceResetTimer() {
+    if (forceResetTimer) {
+        clearTimeout(forceResetTimer);
+        forceResetTimer = null;
+        console.log('⏰ Force reset timer cleared');
+    }
+}
+
+function forceResetRound() {
+    console.log('🔄 FORCE RESETTING ROUND');
+    
+    // Останавливаем все таймеры
+    if (gameState.timer) {
+        clearInterval(gameState.timer);
+        gameState.timer = null;
+    }
+    if (gameState.spinTimer) {
+        clearTimeout(gameState.spinTimer);
+        gameState.spinTimer = null;
+    }
+    if (gameState.newRoundTimer) {
+        clearTimeout(gameState.newRoundTimer);
+        gameState.newRoundTimer = null;
+    }
+    
+    // Сбрасываем состояние
+    gameState.isSpinning = false;
+    gameState.roundPhase = 'waiting';
+    gameState.winner = null;
+    gameState.timeLeft = ROUND_DURATION;
+    gameState.rotationAngle = 0;
+    
+    // Скрываем индикаторы
+    var spinningStatus = document.getElementById('spinningStatus');
+    if (spinningStatus) spinningStatus.style.display = 'none';
+    
+    var winnerSection = document.getElementById('winnerSection');
+    if (winnerSection) winnerSection.style.display = 'none';
+    
+    var winnerModal = document.getElementById('winnerModal');
+    if (winnerModal) winnerModal.classList.remove('show');
+    
+    var betSection = document.getElementById('betSection');
+    if (betSection) betSection.style.display = 'block';
+    
+    var placeBtn = document.getElementById('placeBetBtn');
+    if (placeBtn) placeBtn.disabled = false;
+    
+    // Сбрасываем колесо
+    var wheel = document.getElementById('wheel');
+    if (wheel) {
+        wheel.style.transform = 'rotate(0deg)';
+        wheel.style.transition = 'none';
+        wheel.classList.remove('spinning');
+        wheel.classList.add('waiting-pattern');
+        wheel.classList.add('waiting-spin');
+    }
+    
+    // Обновляем центр колеса
+    var hubContent = document.getElementById('hubContent');
+    if (hubContent) {
+        hubContent.innerHTML = '<div class="hub-timer" id="hubTimer">' + ROUND_DURATION + '</div><div class="hub-status" id="hubStatus">Ожидание</div>';
+    }
+    
+    // Очищаем игроков в комнате
+    clearRoomPlayers().then(function() {
+        console.log('✅ Room cleared, ready for new round');
+    });
+    
+    // Обновляем UI
+    updateUI();
+    updateBetUI();
+    updateTimerUI();
+    updatePlaceBetButton();
+    updatePlayersList();
+    updateRoomStatus();
+    updateHubCurrentPlayer();
+    
+    // Запускаем фазу ожидания
+    gameState.timeLeft = ROUND_DURATION;
+    updateHub('timer', ROUND_DURATION);
+    updateHub('status', 'Ожидание');
+    startWaitingSpin();
+    
+    clearForceResetTimer();
+    
+    // Показываем уведомление
+    var tg = window.Telegram?.WebApp;
+    if (tg) {
+        tg.showAlert('🔄 Раунд принудительно сброшен! Делайте ставки.');
+    }
+    
+    console.log('✅ Force reset complete');
+}
+
+// ============================================================
 // ИНИЦИАЛИЗАЦИЯ
 // ============================================================
 
@@ -318,6 +429,26 @@ document.addEventListener('DOMContentLoaded', function() {
             input.blur();
         }
     });
+    
+    // Кнопка принудительного сброса (только для админа)
+    var resetBtn = document.getElementById('forceResetBtn');
+    if (resetBtn) {
+        resetBtn.addEventListener('click', function() {
+            var user = UserManager ? UserManager.getUser() : null;
+            if (user && user.is_admin) {
+                forceResetRound();
+            } else {
+                tg.showAlert('⛔ Только для администратора');
+            }
+        });
+    }
+    
+    // Показываем кнопку сброса только админу
+    var user = UserManager ? UserManager.getUser() : null;
+    var adminSection = document.getElementById('adminResetSection');
+    if (adminSection && user && user.is_admin) {
+        adminSection.style.display = 'block';
+    }
 });
 
 // ============================================================
@@ -404,8 +535,6 @@ async function initPvPRoom() {
     }
 }
 
-// В функции setupRealtimeHandlers добавьте более надежную обработку
-
 function setupRealtimeHandlers() {
     if (!PvPRoomManager) return;
     
@@ -419,11 +548,9 @@ function setupRealtimeHandlers() {
         switch(event) {
             case 'players_loaded':
             case 'players_updated':
-                // Обновляем игроков
                 if (data && data.length !== undefined) {
                     updatePlayersFromRoom(data);
                 } else {
-                    // Если данных нет - загружаем принудительно
                     syncRoomData();
                 }
                 updateWheelImmediately();
@@ -440,7 +567,6 @@ function setupRealtimeHandlers() {
                 
             case 'player_added':
             case 'player_updated':
-                // При добавлении или обновлении игрока - принудительная синхронизация
                 syncRoomData();
                 updateWheelImmediately();
                 break;
@@ -560,7 +686,8 @@ function handleRoomFinished(data) {
     gameState.roundPhase = 'finished';
     document.getElementById('spinningStatus').style.display = 'none';
     
-    // Закрываем модалку с победителем через 3 секунды
+    clearForceResetTimer();
+    
     setTimeout(function() {
         var modal = document.getElementById('winnerModal');
         if (modal) {
@@ -568,7 +695,6 @@ function handleRoomFinished(data) {
         }
     }, 3000);
     
-    // Запускаем таймер для автоматического нового раунда через 5 секунд
     if (gameState.newRoundTimer) {
         clearTimeout(gameState.newRoundTimer);
     }
@@ -632,6 +758,7 @@ async function clearRoomPlayers() {
 // ============================================================
 
 function startNewRound() {
+    clearForceResetTimer();
     if (gameState.timer) clearInterval(gameState.timer);
     if (gameState.spinTimer) clearTimeout(gameState.spinTimer);
     if (gameState.newRoundTimer) {
@@ -653,7 +780,6 @@ function startNewRound() {
         console.log('✅ Room cleared, ready for new round');
     });
     
-    // ВОЗВРАЩАЕМ КОЛЕСО К ЧЕРНО-ЗЕЛЕНОМУ РЕЖИМУ ОЖИДАНИЯ
     var wheel = document.getElementById('wheel');
     if (wheel) {
         wheel.style.transform = 'rotate(0deg)';
@@ -665,7 +791,7 @@ function startNewRound() {
     
     var hubContent = document.getElementById('hubContent');
     if (hubContent) {
-        hubContent.innerHTML = '<div class="hub-timer" id="hubTimer">20</div><div class="hub-status" id="hubStatus">Ожидание</div>';
+        hubContent.innerHTML = '<div class="hub-timer" id="hubTimer">' + ROUND_DURATION + '</div><div class="hub-status" id="hubStatus">Ожидание</div>';
     }
     
     var winnerModal = document.getElementById('winnerModal');
@@ -683,18 +809,18 @@ function startNewRound() {
     var placeBtn = document.getElementById('placeBetBtn');
     if (placeBtn) placeBtn.disabled = false;
     
+    gameState.timeLeft = ROUND_DURATION;
+    updateTimerUI();
     updateUI();
     updateBetUI();
-    updateTimerUI();
     updatePlaceBetButton();
     updatePlayersList();
     updateRoomStatus();
+    updateHubCurrentPlayer();
+    updateHub('timer', ROUND_DURATION);
+    updateHub('status', 'Ожидание');
     
-    // Запускаем фазу ожидания
-    startWaitingPhase();
-    
-    // АЛЕРТ УДАЛЕН
-    // tg.showAlert('🔄 Новый раунд начался! Делайте ставки!');
+    startWaitingSpin();
 }
 
 // ============================================================
@@ -707,7 +833,6 @@ function createWheelSegments() {
     
     if (!wheel) return;
     
-    // Если нет игроков - показываем режим ожидания
     if (activePlayers.length === 0) {
         wheel.innerHTML = '';
         wheel.classList.add('waiting-pattern');
@@ -716,7 +841,6 @@ function createWheelSegments() {
         return;
     }
     
-    // Если есть игроки - убираем режим ожидания
     wheel.classList.remove('waiting-pattern');
     wheel.classList.remove('waiting-spin');
     
@@ -831,12 +955,17 @@ function startSpin() {
         wheel.style.transition = 'transform 5s cubic-bezier(0.17, 0.67, 0.12, 0.99)';
         wheel.style.transform = 'rotate(' + gameState.rotationAngle + 'deg)';
         wheel.classList.add('spinning');
+        wheel.classList.remove('waiting-pattern');
+        wheel.classList.remove('waiting-spin');
     }
     
     updateHub('avatar', winner);
     updateHubCurrentPlayer();
     
+    startForceResetTimer();
+    
     gameState.spinTimer = setTimeout(function() {
+        clearForceResetTimer();
         if (wheel) {
             wheel.classList.remove('spinning');
             wheel.style.transition = 'none';
@@ -1277,6 +1406,8 @@ function updateTopGameDisplay() {
 // ============================================================
 
 function startWaitingPhase() {
+    clearForceResetTimer();
+    
     gameState.roundPhase = 'waiting';
     gameState.timeLeft = ROUND_DURATION;
     gameState.isSpinning = false;
@@ -1284,7 +1415,6 @@ function startWaitingPhase() {
     
     if (gameState.timer) clearInterval(gameState.timer);
     
-    // Запускаем вращение в режиме ожидания
     startWaitingSpin();
     
     updateHub('timer', ROUND_DURATION);
@@ -1332,6 +1462,8 @@ function startCountdown() {
     var placeBtn = document.getElementById('placeBetBtn');
     if (placeBtn) placeBtn.disabled = false;
     
+    startForceResetTimer();
+    
     gameState.timer = setInterval(function() {
         gameState.timeLeft--;
         updateTimerUI();
@@ -1339,6 +1471,7 @@ function startCountdown() {
         
         if (gameState.timeLeft <= 0) {
             clearInterval(gameState.timer);
+            clearForceResetTimer();
             startSpin();
         }
     }, 1000);
@@ -1350,7 +1483,6 @@ function startCountdown() {
 // Периодическая синхронизация с комнатой (каждые 3 секунды)
 setInterval(function() {
     if (PvPRoomManager && PvPRoomManager._isConnected && !gameState.isSpinning) {
-        // Проверяем, изменился ли пул
         var currentPool = PvPRoomManager.getPool();
         if (currentPool.ton !== gameState.totalPoolTon || 
             currentPool.stars !== gameState.totalPoolStars) {
@@ -1368,13 +1500,11 @@ function startWaitingSpin() {
     var wheel = document.getElementById('wheel');
     if (!wheel) return;
     
-    // Сбрасываем вращение
     gameState.rotationAngle = 0;
     wheel.style.transform = 'rotate(0deg)';
     wheel.style.transition = 'none';
     wheel.classList.remove('spinning');
     
-    // Добавляем черно-зеленый узор и вращение
     wheel.classList.add('waiting-pattern');
     wheel.classList.add('waiting-spin');
 }
@@ -1483,10 +1613,8 @@ async function showWinner(winner) {
         updateHeaderInfo();
     }
     
-    // ПОКАЗЫВАЕМ МОДАЛКУ
     modal.classList.add('show');
     
-    // АВТОМАТИЧЕСКИ ЗАКРЫВАЕМ МОДАЛКУ ЧЕРЕЗ 3 СЕКУНДЫ
     setTimeout(function() {
         modal.classList.remove('show');
     }, 3000);
@@ -1568,10 +1696,6 @@ async function loadPlayerStats(userId) {
 
 // ============================================================
 // НАСТРОЙКА UI
-// ============================================================
-
-// ============================================================
-// НАСТРОЙКА UI (БЕЗ КНОПОК НОВОГО РАУНДА)
 // ============================================================
 
 function setupUI() {
@@ -1658,8 +1782,6 @@ function setupUI() {
     });
     
     document.getElementById('placeBetBtn').addEventListener('click', placeBet);
-    
-    // УДАЛЕНЫ обработчики для кнопок нового раунда
     
     document.querySelectorAll('.currency-btn').forEach(function(btn) {
         btn.addEventListener('click', function() {
@@ -1854,7 +1976,6 @@ async function placeBet() {
         updatePvPBalanceUI();
     }
     
-    // Отправляем ставку в комнату
     var roomSuccess = await PvPRoomManager.addBet(
         String(user.id),
         user.username || '',
@@ -1869,10 +1990,8 @@ async function placeBet() {
         return;
     }
     
-    // ПРИНУДИТЕЛЬНО ОБНОВЛЯЕМ ДАННЫЕ
     await syncRoomData();
     
-    // Обновляем локальное состояние
     var player = gameState.players.find(function(p) { return p.userId === String(user.id); });
     if (!player) {
         player = {
@@ -1889,7 +2008,6 @@ async function placeBet() {
     player.bets.push({ amount: amount, currency: currency });
     gameState.playerBets.push({ amount: amount, currency: currency });
     
-    // Обновляем UI
     updateUI();
     updateBetUI();
     updateTimerUI();
@@ -1911,13 +2029,11 @@ async function syncRoomData() {
     try {
         console.log('🔄 Forcing room data sync...');
         
-        // Загружаем свежие данные из БД
         await PvPRoomManager.loadPlayers();
         
         var players = PvPRoomManager.getPlayers();
         var pool = PvPRoomManager.getPool();
         
-        // Обновляем локальное состояние
         gameState.players = players.map(function(p) {
             return {
                 userId: p.user_id,
@@ -1932,7 +2048,6 @@ async function syncRoomData() {
         gameState.totalPoolTon = pool.ton;
         gameState.totalPoolStars = pool.stars;
         
-        // Обновляем UI
         updateUI();
         updatePlayersList();
         updateWheelImmediately();
@@ -2329,7 +2444,8 @@ window.pvpGame = {
     updateUI: updateUI,
     openDepositModal: openDepositModal,
     updateBalanceFromDB: updateBalanceFromDB,
-    updateWheelImmediately: updateWheelImmediately
+    updateWheelImmediately: updateWheelImmediately,
+    forceResetRound: forceResetRound
 };
 
 console.log('✅ PvP game loaded');

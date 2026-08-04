@@ -158,6 +158,23 @@
             <button class="place-bet-button" id="placeBetBtn">Сделать ставку</button>
         </div>
 
+        <!-- Админ-кнопка принудительного сброса -->
+        <div class="admin-reset-section" id="adminResetSection" style="margin-top: 12px; text-align: center; display: none;">
+            <button class="admin-reset-btn" id="forceResetBtn" style="
+                padding: 8px 16px;
+                background: #ff453a;
+                color: #ffffff;
+                border: none;
+                border-radius: 8px;
+                font-size: 12px;
+                font-weight: 600;
+                cursor: pointer;
+                opacity: 0.6;
+                transition: opacity 0.3s;
+            ">🔄 Принудительный сброс раунда</button>
+            <p style="font-size: 10px; color: rgba(255,255,255,0.2); margin-top: 4px;">Только для администратора</p>
+        </div>
+
         <!-- Список игроков (реальное время) -->
         <div class="players-compact">
             <div class="players-header">
