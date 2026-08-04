@@ -8,7 +8,7 @@ const MANIFEST_URL = 'https://bets-telegram-mini-app.vercel.app/tonconnect-manif
 export const tonConnectUI = new TonConnectUI({
     manifestUrl: MANIFEST_URL,
     actionsConfiguration: {
-        twaReturnUrl: 'https://t.me/YourBot/app' // Замените на ваш бот
+        twaReturnUrl: 'https://t.me/betsgambles_bot/betsgambles' // Замените на ваш бот
     },
     uiPreferences: {
         theme: 'DARK'

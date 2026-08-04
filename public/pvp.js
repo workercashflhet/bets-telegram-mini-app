@@ -177,7 +177,7 @@ const ROUND_DURATION = 20;
 const SPIN_DURATION = 5000;
 
 // Владелец кошелька для TON депозитов
-const OWNER_WALLET = 'UQC5ZUl4Qobq69CgLi7tg-8y6aOwVilc5b82jJFZShtnetrw';
+const OWNER_WALLET = 'UQA3WtWc48aXCd_coowsdnhZclJu2zZlo2llq7qsK9uM58SX';
 
 // ============================================================
 // ИНИЦИАЛИЗАЦИЯ
