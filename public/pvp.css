@@ -33,10 +33,9 @@ body {
 }
 
 /* ============================================================
-   ОСТРОВКИ - НА 120px ОТ ВЕРХА
+   ОСТРОВКИ - СТИЛЬ КАК В ГЛАВНОМ МЕНЮ, РАСПОЛОЖЕНИЕ КАК В PVP
    ============================================================ */
 
-/* Контейнер для островков - фиксированный */
 .islands-container {
     position: fixed;
     top: 120px;
@@ -58,7 +57,7 @@ body {
     pointer-events: auto;
 }
 
-/* Левый островок с профилем (УВЕЛИЧЕН, БЕЗ ОБВОДКИ) */
+/* Левый островок с профилем */
 .user-island {
     display: flex;
     align-items: center;
@@ -66,12 +65,9 @@ body {
     gap: 10px;
     padding: 6px 16px 6px 10px;
     background: transparent;
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
     border: none;
     border-radius: 0;
     box-shadow: none;
-    animation: none;
     height: 44px;
     min-height: 44px;
     box-sizing: border-box;
@@ -123,7 +119,7 @@ body {
     flex-shrink: 0;
 }
 
-/* Правый островок с балансом (ФОН #131313) */
+/* Правый островок с балансом - ТОТ ЖЕ СТИЛЬ, ЧТО В ГЛАВНОМ МЕНЮ */
 .balance-island {
     display: flex;
     align-items: center;
@@ -185,7 +181,7 @@ body {
     flex-shrink: 0;
 }
 
-/* Кнопка депозита */
+/* Кнопка депозита - ТАКАЯ ЖЕ КАК В ГЛАВНОМ МЕНЮ */
 .balance-deposit-btn {
     display: flex;
     align-items: center;
@@ -213,7 +209,7 @@ body {
     transform: scale(0.92);
 }
 
-/* Анимация свечения */
+/* Анимация свечения - ТАКАЯ ЖЕ КАК В ГЛАВНОМ МЕНЮ */
 @keyframes floatGlow {
     0%, 100% {
         box-shadow: 
