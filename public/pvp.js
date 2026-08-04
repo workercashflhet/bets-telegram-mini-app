@@ -643,6 +643,8 @@ async function initializeUserInPvP() {
             gameState.balance.ton = user.ton_balance || 0;
             gameState.balance.stars = user.stars_balance || 0;
             updatePvPBalanceUI();
+            updatePvPUserUI(); // <-- ДОБАВЛЕНО
+            
             await initPvPRoom();
             
             setTimeout(function() {
@@ -656,6 +658,86 @@ async function initializeUserInPvP() {
         console.error('❌ Error loading user in PvP:', error);
         return null;
     }
+}
+
+// ДОБАВЬТЕ ЭТУ ФУНКЦИЮ
+function updatePvPUserUI() {
+    var user = getUserData();
+    if (!user) return;
+    
+    var nameDisplay = document.getElementById('pvpUserNameDisplay');
+    if (nameDisplay) {
+        var firstName = user.first_name || '';
+        var lastName = user.last_name || '';
+        var username = user.username || '';
+        
+        if (firstName) {
+            nameDisplay.textContent = firstName + (lastName ? ' ' + lastName : '');
+        } else if (username) {
+            nameDisplay.textContent = '@' + username;
+        } else {
+            nameDisplay.textContent = 'User';
+        }
+    }
+    
+    var avatar = document.getElementById('pvpUserAvatar');
+    if (avatar) {
+        var tgUser = UserManager.getTelegramUser();
+        
+        if (tgUser && tgUser.id) {
+            var avatarUrl = 'https://t.me/i/userpic/320/' + tgUser.id + '.jpg';
+            avatar.src = avatarUrl;
+            avatar.onerror = function() {
+                this.src = 'assets/avatar.png';
+                this.onerror = null;
+            };
+            avatar.style.display = 'block';
+            
+            // Скрываем fallback если есть
+            var fallback = document.querySelector('.user-avatar-fallback');
+            if (fallback) {
+                fallback.style.display = 'none';
+            }
+        } else if (user.photo_url) {
+            avatar.src = user.photo_url;
+            avatar.onerror = function() {
+                this.src = 'assets/avatar.png';
+                this.onerror = null;
+            };
+            avatar.style.display = 'block';
+            
+            var fallback = document.querySelector('.user-avatar-fallback');
+            if (fallback) {
+                fallback.style.display = 'none';
+            }
+        } else {
+            avatar.style.display = 'none';
+            var fallback = document.querySelector('.user-avatar-fallback');
+            if (!fallback) {
+                fallback = document.createElement('span');
+                fallback.className = 'user-avatar-fallback';
+                var letter = (user.first_name || user.username || 'U')[0].toUpperCase();
+                fallback.textContent = letter;
+                avatar.parentNode.insertBefore(fallback, avatar);
+            } else {
+                fallback.style.display = 'flex';
+                var letter = (user.first_name || user.username || 'U')[0].toUpperCase();
+                fallback.textContent = letter;
+            }
+        }
+    }
+}
+
+// В начале файла, после подписки на баланс, добавьте:
+
+if (UserManager) {
+    UserManager.subscribe(function(user) {
+        console.log('🔄 PvP: Balance updated from UserManager');
+        gameState.balance.ton = user.ton_balance || 0;
+        gameState.balance.stars = user.stars_balance || 0;
+        updatePvPBalanceUI();
+        updatePvPUserUI(); // <-- ДОБАВЛЕНО
+    });
 }
 
 // ============================================================
@@ -1376,6 +1458,72 @@ function updatePvPBalanceUI() {
     if (tonEl) tonEl.textContent = gameState.balance.ton.toFixed(2);
     if (starsEl) starsEl.textContent = Math.floor(gameState.balance.stars);
 }
+
+// Добавьте в pvp.js после updatePvPBalanceUI()
+
+function updatePvPUserUI() {
+    var user = getUserData();
+    if (!user) return;
+    
+    // Обновляем имя
+    var nameDisplay = document.getElementById('pvpUserNameDisplay');
+    if (nameDisplay) {
+        var firstName = user.first_name || '';
+        var lastName = user.last_name || '';
+        var username = user.username || '';
+        
+        if (firstName) {
+            nameDisplay.textContent = firstName + (lastName ? ' ' + lastName : '');
+        } else if (username) {
+            nameDisplay.textContent = '@' + username;
+        } else {
+            nameDisplay.textContent = 'User';
+        }
+    }
+    
+    // Обновляем аватарку
+    var avatar = document.getElementById('pvpUserAvatar');
+    if (avatar) {
+        // Получаем Telegram пользователя
+        var tgUser = UserManager.getTelegramUser();
+        
+        if (tgUser && tgUser.id) {
+            // Используем фото из Telegram
+            var avatarUrl = 'https://t.me/i/userpic/320/' + tgUser.id + '.jpg';
+            avatar.src = avatarUrl;
+            avatar.onerror = function() {
+                // Если фото не загрузилось - показываем заглушку
+                this.src = 'assets/avatar.png';
+                this.onerror = null;
+            };
+            avatar.style.display = 'block';
+        } else if (user.photo_url) {
+            avatar.src = user.photo_url;
+            avatar.onerror = function() {
+                this.src = 'assets/avatar.png';
+                this.onerror = null;
+            };
+            avatar.style.display = 'block';
+        } else {
+            // Если нет фото - показываем букву
+            avatar.style.display = 'none';
+            var fallback = document.querySelector('.user-avatar-fallback');
+            if (!fallback) {
+                fallback = document.createElement('span');
+                fallback.className = 'user-avatar-fallback';
+                var letter = (user.first_name || user.username || 'U')[0].toUpperCase();
+                fallback.textContent = letter;
+                avatar.parentNode.insertBefore(fallback, avatar);
+            } else {
+                fallback.style.display = 'flex';
+                var letter = (user.first_name || user.username || 'U')[0].toUpperCase();
+                fallback.textContent = letter;
+            }
+        }
+    }
+}
+
+
 
 function updateBalanceFromDB(user) {
     if (!user) {
