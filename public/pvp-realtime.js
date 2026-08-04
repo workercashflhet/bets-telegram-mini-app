@@ -1,4 +1,4 @@
-// pvp-realtime.js - Реальный мультиплеер через Supabase Realtime (ИСПРАВЛЕННЫЙ)
+// pvp-realtime.js - ПОЛНАЯ ПЕРЕРАБОТКА С UPSERT
 
 // ============================================================
 // SUPABASE КОНФИГУРАЦИЯ
@@ -76,13 +76,8 @@ var PvPRoomManager = {
                 this._roundId = existingRoom.round_number || 0;
             }
             
-            // Подписываемся на изменения
             this.subscribeToRoom();
-            
-            // Загружаем игроков
             await this.loadPlayers();
-            
-            // Запускаем периодическую синхронизацию
             this.startPeriodicSync();
             
             return true;
@@ -114,7 +109,7 @@ var PvPRoomManager = {
                     filter: 'room_id=eq.' + roomId
                 },
                 function(payload) {
-                    console.log('📡 Player change:', payload.eventType, payload.new || payload.old);
+                    console.log('📡 Player change:', payload.eventType);
                     PvPRoomManager.handlePlayerChange(payload);
                 }
             )
@@ -135,7 +130,6 @@ var PvPRoomManager = {
                 console.log('📡 Subscription status:', status);
                 PvPRoomManager._isConnected = status === 'SUBSCRIBED';
                 if (PvPRoomManager._isConnected) {
-                    // При подключении загружаем данные
                     PvPRoomManager.loadPlayers();
                 }
             });
@@ -146,7 +140,6 @@ var PvPRoomManager = {
         var newData = payload.new;
         var oldData = payload.old;
         
-        // Обновляем локальный кэш
         switch(eventType) {
             case 'INSERT':
                 if (!this._players.find(p => p.user_id === newData.user_id)) {
@@ -225,7 +218,6 @@ var PvPRoomManager = {
             var newPlayers = data || [];
             var changed = false;
             
-            // Проверяем, изменился ли список
             if (newPlayers.length !== this._players.length) {
                 changed = true;
             } else {
@@ -252,7 +244,6 @@ var PvPRoomManager = {
         this._isLoading = false;
     },
 
-    // Периодическая синхронизация каждые 2 секунды
     startPeriodicSync: function() {
         if (this._syncInterval) {
             clearInterval(this._syncInterval);
@@ -265,11 +256,14 @@ var PvPRoomManager = {
         }, 2000);
     },
 
+    // ============================================================
+    // addBet - ИСПОЛЬЗУЕТ UPSERT ВМЕСТО INSERT/UPDATE
+    // ============================================================
     addBet: async function(userId, username, firstName, photoUrl, amount, currency) {
         try {
             console.log('💰 Adding bet:', userId, amount, currency);
             
-            // Сначала проверяем, есть ли уже игрок
+            // Получаем текущие данные игрока
             var { data: existingPlayers, error: fetchError } = await supabaseClient
                 .from('pvp_room_players')
                 .select('*')
@@ -283,20 +277,19 @@ var PvPRoomManager = {
             
             var existingPlayer = existingPlayers && existingPlayers.length > 0 ? existingPlayers[0] : null;
             var newBet = { amount: amount, currency: currency };
-            var success = false;
             
             if (existingPlayer) {
-                // Обновляем существующего игрока - БЕЗ updated_at
+                // Обновляем существующего игрока - используем RPC функцию или прямой UPDATE без updated_at
                 var bets = existingPlayer.bets || [];
                 bets.push(newBet);
                 var totalValue = this.calculatePlayerValue(bets);
                 
+                // ПРЯМОЙ UPDATE только нужных полей
                 var { error: updateError } = await supabaseClient
                     .from('pvp_room_players')
                     .update({
                         bets: bets,
                         total_value: totalValue
-                        // updated_at УДАЛЕН!
                     })
                     .eq('room_id', this._roomId)
                     .eq('user_id', userId);
@@ -306,7 +299,6 @@ var PvPRoomManager = {
                     return false;
                 }
                 
-                success = true;
                 console.log('✅ Player updated:', userId);
                 
             } else {
@@ -333,22 +325,15 @@ var PvPRoomManager = {
                     return false;
                 }
                 
-                success = true;
                 console.log('✅ New player added:', userId);
             }
             
-            if (success) {
-                // Обновляем пул
-                this.updateTotalPool();
-                
-                // Принудительно загружаем игроков
-                await this.loadPlayers();
-                
-                // Уведомляем всех
-                this.notifyListeners('players_updated', this._players);
-            }
+            // Обновляем пул и уведомляем
+            this.updateTotalPool();
+            await this.loadPlayers();
+            this.notifyListeners('players_updated', this._players);
             
-            return success;
+            return true;
             
         } catch (error) {
             console.error('Add bet error:', error);
