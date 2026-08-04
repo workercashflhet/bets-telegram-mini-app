@@ -87,7 +87,8 @@ var gameState = {
     _lastSync: 0,
     _isPlacingBet: false,
     _pendingBet: null,
-    _lastProcessedRoomId: null
+    _lastProcessedRoomId: null,
+    _lastPlayersHash: null
 };
 
 var forceResetTimer = null;
@@ -991,7 +992,7 @@ async function startNewRound() {
 }
 
 // ============================================================
-// КОЛЕСО - СЕГМЕНТЫ
+// КОЛЕСО - СЕГМЕНТЫ (с кешированием)
 // ============================================================
 
 function createWheelSegments() {
@@ -1475,6 +1476,10 @@ function updateBetUI() {
     updateQuickBetIcons();
     updateQuickBetButtons();
 }
+
+// ============================================================
+// ОБНОВЛЕНИЕ КНОПКИ СТАВКИ
+// ============================================================
 
 function updatePlaceBetButton() {
     var btn = document.getElementById('placeBetBtn');
@@ -2172,6 +2177,7 @@ function toNano(amount) {
 
 async function placeBet() {
     if (gameState._isPlacingBet) {
+        console.log('⚠️ Already placing bet, ignoring...');
         return;
     }
     
@@ -2253,6 +2259,7 @@ async function placeBet() {
         
         if (!roomSuccess) {
             // Откат: возвращаем средства, если ставка не засчитана
+            console.warn('⚠️ Room add failed, rolling back...');
             tg.showAlert('❌ Не удалось разместить ставку. Средства возвращены.');
             if (UserManager) {
                 if (currency === 'ton') {

@@ -1,4 +1,4 @@
-// pvp-realtime.js - ОПТИМИЗИРОВАННАЯ ВЕРСИЯ С АТОМАРНЫМИ ОПЕРАЦИЯМИ
+// pvp-realtime.js - ОПТИМИЗИРОВАННАЯ ВЕРСИЯ
 
 // ============================================================
 // SUPABASE КОНФИГУРАЦИЯ
@@ -49,6 +49,8 @@ var PvPRoomManager = {
     _lastProcessedEventId: null,
     _pendingUpdates: [],
     _updateTimeout: null,
+    _lastFinishedRoundId: null,
+    _lastBetTimestamps: {},
 
     initRoom: async function() {
         try {
@@ -363,10 +365,20 @@ var PvPRoomManager = {
         try {
             console.log('💰 Adding bet:', userId, amount, currency);
             
-            var clientBetId = userId + '_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            // Проверяем дублирование ставки за последние 5 секунд
+            var now = Date.now();
+            if (this._lastBetTimestamps && this._lastBetTimestamps[userId] && 
+                now - this._lastBetTimestamps[userId] < 5000) {
+                console.warn('⚠️ Bet too fast, ignoring...');
+                return true;
+            }
             
-            // Используем транзакцию через RPC функцию (нужно создать в Supabase)
-            // Пока используем оптимистичную блокировку через версионирование
+            if (!this._lastBetTimestamps) {
+                this._lastBetTimestamps = {};
+            }
+            this._lastBetTimestamps[userId] = now;
+            
+            var clientBetId = userId + '_' + now + '_' + Math.random().toString(36).substr(2, 6);
             
             var existingPlayer = this._players.find(p => p.user_id === userId);
             var newBet = { 
@@ -385,70 +397,31 @@ var PvPRoomManager = {
                 
                 if (isDuplicate) {
                     console.warn('⚠️ Duplicate bet detected:', clientBetId);
-                    return true; // Считаем успехом, чтобы не показывать ошибку
+                    return true;
                 }
                 
                 bets.push(newBet);
                 var totalValue = this.calculatePlayerValue(bets);
                 
-                // Используем версионирование для предотвращения race condition
-                var version = existingPlayer._version || 0;
-                
+                // Простой UPDATE без версионирования
                 var updateResponse = await supabaseRestRequest(
-                    'pvp_room_players?room_id=eq.pvp_main_room&user_id=eq.' + userId + '&_version=eq.' + version,
+                    'pvp_room_players?room_id=eq.pvp_main_room&user_id=eq.' + userId,
                     'PATCH',
                     {
                         bets: bets,
                         total_value: totalValue,
-                        _version: version + 1,
                         updated_at: new Date().toISOString()
                     }
                 );
                 
                 if (!updateResponse.ok) {
-                    // Проверяем, не произошло ли конфликта версий
-                    var errorText = await updateResponse.text();
-                    if (updateResponse.status === 409 || errorText.includes('version')) {
-                        console.warn('⚠️ Version conflict, retrying...');
-                        // Повторяем с новой версией
-                        var refreshed = await this.loadPlayer(userId);
-                        if (refreshed) {
-                            var freshBets = refreshed.bets || [];
-                            freshBets.push(newBet);
-                            var freshTotal = this.calculatePlayerValue(freshBets);
-                            var freshVersion = refreshed._version || 0;
-                            
-                            var retryResponse = await supabaseRestRequest(
-                                'pvp_room_players?room_id=eq.pvp_main_room&user_id=eq.' + userId + '&_version=eq.' + freshVersion,
-                                'PATCH',
-                                {
-                                    bets: freshBets,
-                                    total_value: freshTotal,
-                                    _version: freshVersion + 1,
-                                    updated_at: new Date().toISOString()
-                                }
-                            );
-                            
-                            if (!retryResponse.ok) {
-                                console.error('❌ Retry failed:', await retryResponse.text());
-                                return false;
-                            }
-                            
-                            existingPlayer.bets = freshBets;
-                            existingPlayer.total_value = freshTotal;
-                            existingPlayer._version = freshVersion + 1;
-                        } else {
-                            return false;
-                        }
-                    } else {
-                        console.error('❌ Update player error:', errorText);
-                        return false;
-                    }
-                } else {
-                    existingPlayer.bets = bets;
-                    existingPlayer.total_value = totalValue;
-                    existingPlayer._version = version + 1;
+                    console.error('❌ Update player error:', await updateResponse.text());
+                    return false;
                 }
+                
+                // Обновляем локальные данные
+                existingPlayer.bets = bets;
+                existingPlayer.total_value = totalValue;
                 
                 console.log('✅ Player updated:', userId);
                 
@@ -467,8 +440,7 @@ var PvPRoomManager = {
                     photo_url: photoUrl || '',
                     color: color,
                     bets: bets,
-                    total_value: totalValue,
-                    _version: 0
+                    total_value: totalValue
                 };
                 
                 var insertResponse = await supabaseRestRequest(
@@ -478,13 +450,46 @@ var PvPRoomManager = {
                 );
                 
                 if (!insertResponse.ok) {
-                    console.error('❌ Insert player error:', await insertResponse.text());
-                    return false;
+                    var errorText = await insertResponse.text();
+                    console.error('❌ Insert player error:', errorText);
+                    
+                    // Проверяем, может игрок уже существует (конфликт)
+                    if (errorText.includes('duplicate key') || errorText.includes('23505')) {
+                        // Пробуем обновить существующего
+                        var existing = this._players.find(p => p.user_id === userId);
+                        if (existing) {
+                            var existingBets = existing.bets || [];
+                            existingBets.push(newBet);
+                            var existingTotal = this.calculatePlayerValue(existingBets);
+                            
+                            var retryResponse = await supabaseRestRequest(
+                                'pvp_room_players?room_id=eq.pvp_main_room&user_id=eq.' + userId,
+                                'PATCH',
+                                {
+                                    bets: existingBets,
+                                    total_value: existingTotal,
+                                    updated_at: new Date().toISOString()
+                                }
+                            );
+                            
+                            if (!retryResponse.ok) {
+                                console.error('❌ Retry update failed:', await retryResponse.text());
+                                return false;
+                            }
+                            
+                            existing.bets = existingBets;
+                            existing.total_value = existingTotal;
+                            console.log('✅ Player updated after conflict:', userId);
+                        } else {
+                            return false;
+                        }
+                    } else {
+                        return false;
+                    }
+                } else {
+                    this._players.push(newPlayer);
+                    console.log('✅ New player added:', userId);
                 }
-                
-                this._players.push(newPlayer);
-                
-                console.log('✅ New player added:', userId);
             }
             
             this.updateTotalPool();
@@ -495,25 +500,6 @@ var PvPRoomManager = {
         } catch (error) {
             console.error('❌ Add bet error:', error);
             return false;
-        }
-    },
-
-    // Загрузка одного игрока с актуальной версией
-    loadPlayer: async function(userId) {
-        try {
-            var response = await supabaseRestRequest(
-                'pvp_room_players?room_id=eq.' + this._roomId + '&user_id=eq.' + userId,
-                'GET'
-            );
-            
-            if (!response.ok) return null;
-            
-            var data = await response.json();
-            return data[0] || null;
-            
-        } catch (error) {
-            console.error('Load player error:', error);
-            return null;
         }
     },
 
@@ -535,6 +521,7 @@ var PvPRoomManager = {
             this._totalPoolTon = 0;
             this._totalPoolStars = 0;
             this._lastFinishedRoundId = null;
+            this._lastBetTimestamps = {};
             
             this.notifyListeners('players_updated', []);
             this.notifyListeners('pool_updated', { ton: 0, stars: 0 });

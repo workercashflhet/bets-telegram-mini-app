@@ -150,7 +150,6 @@ var UserManager = {
         var userId = this._user.user_id;
         var newBalance = this._user.ton_balance + amount;
 
-        // Атомарный UPDATE с проверкой
         var { data, error } = await supabaseClient
             .from('users')
             .update({
@@ -224,7 +223,6 @@ var UserManager = {
         var userId = this._user.user_id;
         var newBalance = this._user.ton_balance - amount;
 
-        // Атомарный UPDATE с условием достаточности баланса
         var { data, error } = await supabaseClient
             .from('users')
             .update({
@@ -269,7 +267,7 @@ var UserManager = {
                 updated_at: new Date().toISOString()
             })
             .eq('user_id', userId)
-            .gte('stars_balance', amount)
+            .gte('stars_balance', amount)  // Критично: проверка на сервере
             .select();
 
         if (error) {
