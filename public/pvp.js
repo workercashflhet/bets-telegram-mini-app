@@ -270,6 +270,7 @@ var gameState = {
     winner: null,
     roundId: 0,
     spinTimer: null,
+    newRoundTimer: null,
     history: [],
     topGame: null,
     currentRoundId: null,
@@ -282,6 +283,7 @@ var MIN_BET_TON = 0.1;
 var MIN_BET_STARS = 10;
 var ROUND_DURATION = 20;
 var SPIN_DURATION = 5000;
+var NEW_ROUND_DELAY = 5000;
 
 var OWNER_WALLET = 'UQC5ZUl4Qobq69CgLi7tg-8y6aOwVilc5b82jJFZShtnetrw';
 
@@ -546,6 +548,22 @@ function handleRoomFinished(data) {
     gameState.isSpinning = false;
     gameState.roundPhase = 'finished';
     document.getElementById('spinningStatus').style.display = 'none';
+    
+    // Закрываем модалку с победителем через 3 секунды
+    setTimeout(function() {
+        var modal = document.getElementById('winnerModal');
+        if (modal) {
+            modal.classList.remove('show');
+        }
+    }, 3000);
+    
+    // Запускаем таймер для автоматического нового раунда через 5 секунд
+    if (gameState.newRoundTimer) {
+        clearTimeout(gameState.newRoundTimer);
+    }
+    gameState.newRoundTimer = setTimeout(function() {
+        startNewRound();
+    }, NEW_ROUND_DELAY);
 }
 
 function handleRoomWaiting() {
@@ -599,14 +617,17 @@ async function clearRoomPlayers() {
 }
 
 // ============================================================
-// НОВЫЙ РАУНД - ПОЛНАЯ ОЧИСТКА
+// НОВЫЙ РАУНД - ПОЛНАЯ ОЧИСТКА С ВОЗВРАТОМ К ОЖИДАНИЮ
 // ============================================================
 
 function startNewRound() {
     if (gameState.timer) clearInterval(gameState.timer);
     if (gameState.spinTimer) clearTimeout(gameState.spinTimer);
+    if (gameState.newRoundTimer) {
+        clearTimeout(gameState.newRoundTimer);
+        gameState.newRoundTimer = null;
+    }
     
-    // Очищаем локальное состояние
     gameState.players = [];
     gameState.playerBets = [];
     gameState.totalPoolTon = 0;
@@ -615,19 +636,27 @@ function startNewRound() {
     gameState.isSpinning = false;
     gameState.wheelSegments = [];
     gameState.roundPhase = 'waiting';
+    gameState.rotationAngle = 0;
     
-    // ОЧИЩАЕМ ВСЕХ ИГРОКОВ В БД
     clearRoomPlayers().then(function() {
         console.log('✅ Room cleared, ready for new round');
     });
     
-    // Обновляем центр колеса
+    // ВОЗВРАЩАЕМ КОЛЕСО К ЧЕРНО-ЗЕЛЕНОМУ РЕЖИМУ ОЖИДАНИЯ
+    var wheel = document.getElementById('wheel');
+    if (wheel) {
+        wheel.style.transform = 'rotate(0deg)';
+        wheel.style.transition = 'none';
+        wheel.classList.remove('spinning');
+        wheel.classList.add('waiting-pattern');
+        wheel.classList.add('waiting-spin');
+    }
+    
     var hubContent = document.getElementById('hubContent');
     if (hubContent) {
         hubContent.innerHTML = '<div class="hub-timer" id="hubTimer">20</div><div class="hub-status" id="hubStatus">Ожидание</div>';
     }
     
-    // Скрываем модалки
     var winnerModal = document.getElementById('winnerModal');
     if (winnerModal) winnerModal.classList.remove('show');
     
@@ -643,16 +672,6 @@ function startNewRound() {
     var placeBtn = document.getElementById('placeBetBtn');
     if (placeBtn) placeBtn.disabled = false;
     
-    // Обновляем колесо (показываем пустое)
-    var wheel = document.getElementById('wheel');
-    if (wheel) {
-        wheel.innerHTML = '<div style="width:100%;height:100%;border-radius:50%;background:#1a1a2e;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.1);font-size:14px;">Ожидание игроков</div>';
-        wheel.style.transform = 'rotate(0deg)';
-        wheel.classList.remove('waiting-spin', 'waiting-pattern', 'spinning');
-        wheel.style.transition = 'none';
-    }
-    
-    // Обновляем UI
     updateUI();
     updateBetUI();
     updateTimerUI();
@@ -663,7 +682,8 @@ function startNewRound() {
     // Запускаем фазу ожидания
     startWaitingPhase();
     
-    tg.showAlert('🔄 Новый раунд начался! Делайте ставки!');
+    // АЛЕРТ УДАЛЕН
+    // tg.showAlert('🔄 Новый раунд начался! Делайте ставки!');
 }
 
 // ============================================================
@@ -676,10 +696,18 @@ function createWheelSegments() {
     
     if (!wheel) return;
     
+    // Если нет игроков - показываем режим ожидания
     if (activePlayers.length === 0) {
-        wheel.innerHTML = '<div style="width:100%;height:100%;border-radius:50%;background:#1a1a2e;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.1);font-size:14px;">Ожидание игроков</div>';
+        wheel.innerHTML = '';
+        wheel.classList.add('waiting-pattern');
+        wheel.classList.add('waiting-spin');
+        wheel.style.transition = 'none';
         return;
     }
+    
+    // Если есть игроки - убираем режим ожидания
+    wheel.classList.remove('waiting-pattern');
+    wheel.classList.remove('waiting-spin');
     
     var totalValue = (gameState.totalPoolTon * TON_TO_STARS_RATE) + gameState.totalPoolStars;
     
@@ -1245,6 +1273,7 @@ function startWaitingPhase() {
     
     if (gameState.timer) clearInterval(gameState.timer);
     
+    // Запускаем вращение в режиме ожидания
     startWaitingSpin();
     
     updateHub('timer', ROUND_DURATION);
@@ -1308,17 +1337,22 @@ function startCountdown() {
 }
 
 // ============================================================
-// РЕЖИМ ОЖИДАНИЯ - ВРАЩЕНИЕ КОЛЕСА
+// РЕЖИМ ОЖИДАНИЯ - ВРАЩЕНИЕ КОЛЕСА (ЧЕРНО-ЗЕЛЕНОЕ)
 // ============================================================
 
 function startWaitingSpin() {
     var wheel = document.getElementById('wheel');
     if (!wheel) return;
     
-    createWheelSegments();
+    // Сбрасываем вращение
+    gameState.rotationAngle = 0;
+    wheel.style.transform = 'rotate(0deg)';
+    wheel.style.transition = 'none';
+    wheel.classList.remove('spinning');
+    
+    // Добавляем черно-зеленый узор и вращение
     wheel.classList.add('waiting-pattern');
     wheel.classList.add('waiting-spin');
-    wheel.style.transition = 'none';
 }
 
 function stopWaitingSpin() {
@@ -1425,7 +1459,13 @@ async function showWinner(winner) {
         updateHeaderInfo();
     }
     
+    // ПОКАЗЫВАЕМ МОДАЛКУ
     modal.classList.add('show');
+    
+    // АВТОМАТИЧЕСКИ ЗАКРЫВАЕМ МОДАЛКУ ЧЕРЕЗ 3 СЕКУНДЫ
+    setTimeout(function() {
+        modal.classList.remove('show');
+    }, 3000);
 }
 
 // ============================================================
@@ -1504,6 +1544,10 @@ async function loadPlayerStats(userId) {
 
 // ============================================================
 // НАСТРОЙКА UI
+// ============================================================
+
+// ============================================================
+// НАСТРОЙКА UI (БЕЗ КНОПОК НОВОГО РАУНДА)
 // ============================================================
 
 function setupUI() {
@@ -1591,18 +1635,7 @@ function setupUI() {
     
     document.getElementById('placeBetBtn').addEventListener('click', placeBet);
     
-    document.getElementById('winnerModalBtn').addEventListener('click', function() {
-        document.getElementById('winnerModal').classList.remove('show');
-        startNewRound();
-    });
-    
-    var newRoundBtn = document.getElementById('newRoundBtn');
-    if (newRoundBtn) {
-        newRoundBtn.addEventListener('click', function() {
-            document.getElementById('winnerSection').style.display = 'none';
-            startNewRound();
-        });
-    }
+    // УДАЛЕНЫ обработчики для кнопок нового раунда
     
     document.querySelectorAll('.currency-btn').forEach(function(btn) {
         btn.addEventListener('click', function() {
