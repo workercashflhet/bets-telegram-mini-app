@@ -909,22 +909,23 @@ function renderTonConnectButton(container) {
 // Подключение кошелька
 function connectTonWallet() {
     console.log('🔗 Connecting TON wallet...');
+    console.log('📌 TonConnectUI type:', typeof TonConnectUI);
+    console.log('📌 window.TonConnectUI:', window.TonConnectUI);
     
     try {
-        // ВАЖНО: используем ТОТ ЖЕ домен, что и в манифесте
         const manifestUrl = 'https://bets-telegram-mini-app.vercel.app/tonconnect-manifest.json';
         
         let ui = window.TonConnectUI;
         
         if (!ui && typeof TonConnectUI !== 'undefined') {
-            console.log('🔄 Creating TonConnectUI instance...');
+            console.log('🔄 Creating new TonConnectUI instance...');
             ui = new TonConnectUI({
                 manifestUrl: manifestUrl
             });
             window.TonConnectUI = ui;
             
             ui.onStatusChange((wallet) => {
-                console.log('💰 Wallet status:', wallet ? 'connected' : 'disconnected');
+                console.log('💰 Wallet status changed:', wallet ? 'connected' : 'disconnected');
                 if (wallet) {
                     isWalletConnected = true;
                     depositState.isWalletConnected = true;
@@ -939,13 +940,36 @@ function connectTonWallet() {
         }
         
         if (ui) {
-            ui.openModal();
+            console.log('📌 Available methods:', Object.keys(ui));
+            
+            // Пробуем разные методы открытия
+            if (typeof ui.openModal === 'function') {
+                console.log('📱 Using ui.openModal()');
+                ui.openModal();
+            } else if (typeof ui.open === 'function') {
+                console.log('📱 Using ui.open()');
+                ui.open();
+            } else if (typeof ui.connectWallet === 'function') {
+                console.log('📱 Using ui.connectWallet()');
+                ui.connectWallet();
+            } else if (ui.connection && typeof ui.connection.connect === 'function') {
+                console.log('📱 Using ui.connection.connect()');
+                ui.connection.connect();
+            } else {
+                console.warn('⚠️ No known open method found, trying to call ui directly');
+                // Пробуем вызвать ui как функцию
+                try {
+                    ui();
+                } catch (e) {
+                    tg.showAlert('❌ TON кошелек: метод открытия не найден');
+                }
+            }
         } else {
             tg.showAlert('❌ TON кошелек временно недоступен');
         }
     } catch (error) {
         console.error('❌ Error connecting wallet:', error);
-        tg.showAlert('❌ Ошибка подключения кошелька');
+        tg.showAlert('❌ Ошибка подключения кошелька: ' + error.message);
     }
 }
 
