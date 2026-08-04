@@ -5,10 +5,35 @@
 var tg = window.Telegram.WebApp;
 
 // ============================================================
-// ПОДКЛЮЧЕНИЕ USERMANAGER И СИНХРОНИЗАЦИЯ
+// ПОДКЛЮЧЕНИЕ И ЗАГРУЗКА USERMANAGER
 // ============================================================
 
 var UserManager = window.UserManager;
+
+// Принудительная загрузка пользователя в PvP
+async function ensureUserLoaded() {
+    // Если UserManager уже есть и пользователь загружен
+    if (UserManager && UserManager.getUser()) {
+        console.log('✅ User already loaded in PvP');
+        return UserManager.getUser();
+    }
+    
+    // Если UserManager есть, но пользователь не загружен - загружаем
+    if (UserManager) {
+        console.log('🔄 Loading user in PvP...');
+        try {
+            var user = await UserManager.loadUser();
+            if (user) {
+                console.log('✅ User loaded in PvP:', user);
+                return user;
+            }
+        } catch (error) {
+            console.error('❌ Failed to load user in PvP:', error);
+        }
+    }
+    
+    return null;
+}
 
 function getUserData() {
     if (UserManager && UserManager.getUser()) {
@@ -302,7 +327,9 @@ document.addEventListener('DOMContentLoaded', function() {
     initTonConnect();
     
     // Загружаем баланс с ожиданием UserManager
-    loadBalance();
+    ensureUserLoaded().then(function() {
+        loadBalance();
+    });
     
     loadHistoryFromDB();
     initializePvPUser();
@@ -334,35 +361,21 @@ function loadBalance() {
         return;
     }
     
-    console.warn('⚠️ UserManager not ready, waiting for sync...');
+    console.warn('⚠️ UserManager not ready, loading from localStorage');
     
-    // Ждем загрузку UserManager с повторными попытками
-    var attempts = 0;
-    var maxAttempts = 30;
-    
-    var checkInterval = setInterval(function() {
-        attempts++;
-        var retryUser = getUserData();
-        
-        if (retryUser) {
-            clearInterval(checkInterval);
-            gameState.balance.ton = retryUser.ton_balance || 0;
-            gameState.balance.stars = retryUser.stars_balance || 0;
-            updatePvPBalanceUI();
-            console.log('💰 Balance loaded from UserManager (retry after', attempts, 'attempts):', gameState.balance.ton, gameState.balance.stars);
-        } else if (attempts >= maxAttempts) {
-            clearInterval(checkInterval);
-            console.warn('⚠️ Could not load from UserManager after', maxAttempts, 'attempts, using localStorage');
-            var saved = localStorage.getItem('bets_data');
-            if (saved) {
-                var data = JSON.parse(saved);
-                gameState.balance.ton = data.balance || 0;
-                gameState.balance.stars = data.inventory || 0;
-                updatePvPBalanceUI();
-                console.log('💰 Balance loaded from localStorage:', gameState.balance.ton, gameState.balance.stars);
-            }
-        }
-    }, 300);
+    // Пробуем загрузить из localStorage как fallback
+    var saved = localStorage.getItem('bets_data');
+    if (saved) {
+        var data = JSON.parse(saved);
+        gameState.balance.ton = data.balance || 0;
+        gameState.balance.stars = data.inventory || 0;
+        updatePvPBalanceUI();
+        console.log('💰 Balance loaded from localStorage:', gameState.balance.ton, gameState.balance.stars);
+    } else {
+        gameState.balance.ton = 0;
+        gameState.balance.stars = 0;
+        updatePvPBalanceUI();
+    }
 }
 
 function updatePvPBalanceUI() {
