@@ -118,10 +118,62 @@
 
             <!-- Вкладка Settings -->
             <div class="tab-content" id="tab-settings">
-                <div class="placeholder-content">
-                    <span class="placeholder-icon">⚙️</span>
-                    <h2 class="placeholder-title">Settings</h2>
-                    <p class="placeholder-text">App settings and preferences</p>
+                <div class="settings-content" id="settingsContent">
+                    <div class="settings-container">
+                        <!-- Основные настройки -->
+                        <div class="settings-section">
+                            <h3 class="settings-title">⚙️ Настройки</h3>
+                            <div class="settings-item">
+                                <span class="settings-label">Версия приложения</span>
+                                <span class="settings-value">1.0.0</span>
+                            </div>
+                            <div class="settings-item">
+                                <span class="settings-label">Telegram ID</span>
+                                <span class="settings-value" id="settingsUserId">—</span>
+                            </div>
+                        </div>
+
+                        <!-- Админ-панель (показывается только админу) -->
+                        <div class="settings-section admin-section" id="adminSection" style="display: none;">
+                            <h3 class="settings-title">🔐 Админ-панель</h3>
+                            <p class="admin-hint">Пополнение баланса пользователей</p>
+                            
+                            <!-- Поиск пользователя -->
+                            <div class="admin-search">
+                                <input type="text" class="admin-input" id="adminSearchInput" placeholder="Введите Telegram ID или имя пользователя">
+                                <button class="admin-search-btn" id="adminSearchBtn">🔍 Найти</button>
+                            </div>
+
+                            <!-- Результаты поиска -->
+                            <div class="admin-results" id="adminResults">
+                                <div class="admin-no-results">Введите ID или имя для поиска</div>
+                            </div>
+
+                            <!-- Форма пополнения -->
+                            <div class="admin-deposit-form" id="adminDepositForm" style="display: none;">
+                                <div class="admin-user-info" id="adminUserInfo">
+                                    <img src="assets/avatar.png" alt="User" class="admin-user-avatar" id="adminUserAvatar">
+                                    <div class="admin-user-details">
+                                        <span class="admin-user-name" id="adminUserName">—</span>
+                                        <span class="admin-user-id" id="adminUserId">ID: —</span>
+                                        <span class="admin-user-balance" id="adminUserBalance">Баланс: 0 TON | 0 Stars</span>
+                                    </div>
+                                </div>
+
+                                <div class="admin-currency-toggle">
+                                    <button class="admin-currency-btn active" data-currency="ton">💰 TON</button>
+                                    <button class="admin-currency-btn" data-currency="stars">⭐ Stars</button>
+                                </div>
+
+                                <div class="admin-input-group">
+                                    <input type="number" class="admin-input" id="adminAmountInput" placeholder="Сумма" min="0" step="0.1">
+                                    <button class="admin-add-btn" id="adminAddBtn">➕ Пополнить</button>
+                                </div>
+
+                                <div class="admin-message" id="adminMessage"></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

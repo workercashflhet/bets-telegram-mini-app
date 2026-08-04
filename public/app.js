@@ -468,6 +468,9 @@ function initializeApp() {
     
     // Инициализируем карусель
     initializeCarousel();
+
+    // ИНИЦИАЛИЗИРУЕМ НАСТРОЙКИ (НОВОЕ)
+    initSettings();
     
     // Закрытие модалки по клику на крестик
     var depositModalClose = document.getElementById('depositModalClose');
@@ -837,6 +840,288 @@ function setupEventListeners() {
     tg.onEvent('backButtonClicked', function() {
         tg.close();
     });
+}
+
+// ============================================================
+// ВКЛАДКА НАСТРОЙКИ - АДМИН-ПАНЕЛЬ
+// ============================================================
+
+var adminState = {
+    selectedUser: null,
+    searchResults: [],
+    isProcessing: false
+};
+
+// Показать/скрыть админ-панель
+function updateSettingsUI() {
+    var settingsContent = document.getElementById('settingsContent');
+    if (!settingsContent) return;
+
+    var user = UserManager.getUser();
+    var isAdmin = UserManager.isAdmin();
+
+    // Обновляем ID пользователя
+    var userIdEl = document.getElementById('settingsUserId');
+    if (userIdEl && user) {
+        userIdEl.textContent = user.user_id;
+    }
+
+    // Показываем/скрываем админ-панель
+    var adminSection = document.getElementById('adminSection');
+    if (adminSection) {
+        if (isAdmin) {
+            adminSection.style.display = 'block';
+        } else {
+            adminSection.style.display = 'none';
+        }
+    }
+}
+
+// Поиск пользователей
+async function searchUsers() {
+    var input = document.getElementById('adminSearchInput');
+    var results = document.getElementById('adminResults');
+    var query = input.value.trim();
+
+    if (!query || query.length < 1) {
+        results.innerHTML = '<div class="admin-no-results">Введите ID или имя для поиска</div>';
+        return;
+    }
+
+    results.innerHTML = '<div class="admin-no-results">🔍 Поиск...</div>';
+
+    try {
+        var users = await UserManager.searchUsers(query);
+        adminState.searchResults = users;
+
+        if (users.length === 0) {
+            results.innerHTML = '<div class="admin-no-results">👤 Пользователь не найден</div>';
+            return;
+        }
+
+        results.innerHTML = users.map(function(user) {
+            var name = user.first_name || user.username || 'User';
+            var avatar = user.photo_url || 'assets/avatar.png';
+            var balance = user.ton_balance || 0;
+            var stars = user.stars_balance || 0;
+            var isCurrent = user.user_id === UserManager.getUser()?.user_id;
+
+            return '<div class="admin-user-result" data-userid="' + user.user_id + '">' +
+                '<div class="admin-user-result-info">' +
+                    '<img src="' + avatar + '" alt="' + name + '" class="admin-result-avatar" onerror="this.src=\'assets/avatar.png\'">' +
+                    '<div>' +
+                        '<div class="admin-result-name">' + name + (isCurrent ? ' (Вы)' : '') + '</div>' +
+                        '<div class="admin-result-id">ID: ' + user.user_id + '</div>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="admin-result-balance">' + balance.toFixed(2) + ' TON | ' + Math.floor(stars) + ' Stars</div>' +
+                '<button class="admin-result-select" data-userid="' + user.user_id + '">Выбрать</button>' +
+            '</div>';
+        }).join('');
+
+        // Обработчики кликов
+        document.querySelectorAll('.admin-result-select').forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                var userId = this.dataset.userid;
+                var user = adminState.searchResults.find(function(u) { return u.user_id === userId; });
+                if (user) {
+                    selectUser(user);
+                }
+            });
+        });
+
+        document.querySelectorAll('.admin-user-result').forEach(function(el) {
+            el.addEventListener('click', function() {
+                var userId = this.dataset.userid;
+                var user = adminState.searchResults.find(function(u) { return u.user_id === userId; });
+                if (user) {
+                    selectUser(user);
+                }
+            });
+        });
+
+    } catch (error) {
+        console.error('Search error:', error);
+        results.innerHTML = '<div class="admin-no-results">❌ Ошибка поиска</div>';
+    }
+}
+
+// Выбор пользователя
+function selectUser(user) {
+    adminState.selectedUser = user;
+
+    var form = document.getElementById('adminDepositForm');
+    var avatar = document.getElementById('adminUserAvatar');
+    var name = document.getElementById('adminUserName');
+    var id = document.getElementById('adminUserId');
+    var balance = document.getElementById('adminUserBalance');
+
+    if (avatar) avatar.src = user.photo_url || 'assets/avatar.png';
+    if (name) name.textContent = user.first_name || user.username || 'User';
+    if (id) id.textContent = 'ID: ' + user.user_id;
+    if (balance) {
+        var ton = user.ton_balance || 0;
+        var stars = user.stars_balance || 0;
+        balance.textContent = 'Баланс: ' + ton.toFixed(2) + ' TON | ' + Math.floor(stars) + ' Stars';
+    }
+
+    form.style.display = 'block';
+
+    // Очищаем сообщение
+    var msg = document.getElementById('adminMessage');
+    if (msg) {
+        msg.className = 'admin-message';
+        msg.style.display = 'none';
+        msg.textContent = '';
+    }
+
+    // Скрываем результаты поиска
+    var results = document.getElementById('adminResults');
+    if (results) {
+        results.innerHTML = '<div class="admin-no-results">✅ Пользователь выбран</div>';
+    }
+
+    document.getElementById('adminAmountInput').focus();
+}
+
+// Пополнение баланса (админ)
+async function adminAddBalance() {
+    if (adminState.isProcessing) return;
+    if (!adminState.selectedUser) {
+        showAdminMessage('Сначала выберите пользователя', 'error');
+        return;
+    }
+
+    var amountInput = document.getElementById('adminAmountInput');
+    var amount = parseFloat(amountInput.value);
+
+    if (!amount || amount <= 0) {
+        showAdminMessage('Введите корректную сумму', 'error');
+        return;
+    }
+
+    var currencyBtn = document.querySelector('.admin-currency-btn.active');
+    var currency = currencyBtn ? currencyBtn.dataset.currency : 'ton';
+
+    adminState.isProcessing = true;
+    showAdminMessage('⏳ Пополнение...', 'loading');
+
+    try {
+        var result = await UserManager.adminAddBalance(
+            adminState.selectedUser.user_id,
+            amount,
+            currency,
+            'Admin deposit from panel'
+        );
+
+        if (result.success) {
+            showAdminMessage(
+                '✅ Пополнено ' + amount + ' ' + (currency === 'ton' ? 'TON' : 'Stars') + 
+                ' пользователю ' + (adminState.selectedUser.first_name || adminState.selectedUser.username || 'User'),
+                'success'
+            );
+
+            // Обновляем баланс в UI
+            var balanceEl = document.getElementById('adminUserBalance');
+            if (balanceEl && adminState.selectedUser) {
+                adminState.selectedUser.ton_balance = result.newBalance || adminState.selectedUser.ton_balance;
+                adminState.selectedUser.stars_balance = result.newBalance || adminState.selectedUser.stars_balance;
+                var ton = adminState.selectedUser.ton_balance || 0;
+                var stars = adminState.selectedUser.stars_balance || 0;
+                balanceEl.textContent = 'Баланс: ' + ton.toFixed(2) + ' TON | ' + Math.floor(stars) + ' Stars';
+            }
+
+            amountInput.value = '';
+            adminState.selectedUser = null;
+            document.getElementById('adminDepositForm').style.display = 'none';
+            document.getElementById('adminResults').innerHTML = '<div class="admin-no-results">✅ Операция выполнена успешно</div>';
+
+            // Обновляем список пользователей
+            setTimeout(function() {
+                document.getElementById('adminResults').innerHTML = '<div class="admin-no-results">Введите ID или имя для поиска</div>';
+            }, 3000);
+
+        } else {
+            showAdminMessage('❌ ' + (result.error || 'Ошибка пополнения'), 'error');
+        }
+
+    } catch (error) {
+        console.error('Admin add balance error:', error);
+        showAdminMessage('❌ Ошибка: ' + (error.message || 'Неизвестная ошибка'), 'error');
+    }
+
+    adminState.isProcessing = false;
+}
+
+function showAdminMessage(text, type) {
+    var msg = document.getElementById('adminMessage');
+    if (!msg) return;
+    msg.textContent = text;
+    msg.className = 'admin-message ' + type;
+    msg.style.display = 'block';
+}
+
+// ============================================================
+// ИНИЦИАЛИЗАЦИЯ НАСТРОЕК
+// ============================================================
+
+function initSettings() {
+    updateSettingsUI();
+
+    // Подписываемся на изменения пользователя
+    UserManager.subscribe(function(user) {
+        updateSettingsUI();
+    });
+
+    // Поиск
+    var searchBtn = document.getElementById('adminSearchBtn');
+    if (searchBtn) {
+        searchBtn.addEventListener('click', searchUsers);
+    }
+
+    var searchInput = document.getElementById('adminSearchInput');
+    if (searchInput) {
+        searchInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                searchUsers();
+            }
+        });
+    }
+
+    // Переключатель валют
+    document.querySelectorAll('.admin-currency-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.admin-currency-btn').forEach(function(b) {
+                b.classList.remove('active');
+            });
+            this.classList.add('active');
+        });
+    });
+
+    // Кнопка пополнения
+    var addBtn = document.getElementById('adminAddBtn');
+    if (addBtn) {
+        addBtn.addEventListener('click', adminAddBalance);
+    }
+
+    // Enter на поле суммы
+    var amountInput = document.getElementById('adminAmountInput');
+    if (amountInput) {
+        amountInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                adminAddBalance();
+            }
+        });
+    }
+
+    // Обновляем при переключении на вкладку настроек
+    var settingsTab = document.querySelector('.nav-item[data-page="settings"]');
+    if (settingsTab) {
+        settingsTab.addEventListener('click', function() {
+            setTimeout(updateSettingsUI, 100);
+        });
+    }
 }
 
 // Экспорт
