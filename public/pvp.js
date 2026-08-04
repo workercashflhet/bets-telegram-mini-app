@@ -815,7 +815,13 @@ function setupRealtimeHandlers() {
                 break;
                 
             case 'room_finished':
+                // Предварительное уведомление - без модалки
                 handleRoomFinishedFromServer(data);
+                break;
+                
+            case 'room_finished_modal':
+                // Финальное уведомление - с модалкой
+                handleRoomFinishedFromServer({ ...data, showModal: true });
                 break;
                 
             case 'room_waiting':
@@ -919,13 +925,19 @@ function handleRoomSpin() {
     document.getElementById('placeBetBtn').disabled = true;
 }
 
+// ============================================================
+// ОБРАБОТЧИК СОБЫТИЙ REALTIME - ДЛЯ СИНХРОНИЗАЦИИ ПОБЕДИТЕЛЯ
+// ============================================================
+
 async function handleRoomFinishedFromServer(data) {
     console.log('🏁 Room finished from server:', data);
     
+    // Если уже показываем победителя - пропускаем
     if (gameState.roundPhase === 'finished' && gameState.winner) {
         return;
     }
     
+    // Если данные пришли с данными победителя
     if (data && data.winner_id) {
         var winner = {
             userId: data.winner_id,
@@ -937,13 +949,16 @@ async function handleRoomFinishedFromServer(data) {
         gameState.isSpinning = false;
         gameState.roundPhase = 'finished';
         gameState.isResultLoaded = true;
+        gameState.roundId = data.roundId || gameState.roundId;
         
+        // Останавливаем колесо
         var wheel = document.getElementById('wheel');
         if (wheel) {
             wheel.classList.remove('spinning');
             wheel.style.transition = 'none';
         }
         
+        // Скрываем индикаторы
         var spinningStatus = document.getElementById('spinningStatus');
         if (spinningStatus) spinningStatus.style.display = 'none';
         
@@ -953,6 +968,7 @@ async function handleRoomFinishedFromServer(data) {
         var placeBtn = document.getElementById('placeBetBtn');
         if (placeBtn) placeBtn.disabled = true;
         
+        // Показываем секцию победителя (без модалки, если это предварительное уведомление)
         var winnerSection = document.getElementById('winnerSection');
         if (winnerSection) {
             winnerSection.style.display = 'block';
@@ -960,13 +976,29 @@ async function handleRoomFinishedFromServer(data) {
             document.getElementById('winnerPrize').innerHTML = totalInTon.toFixed(2) + ' <img src="assets/ton.png" alt="TON" class="winner-prize-icon">';
         }
         
-        var modal = document.getElementById('winnerModal');
-        if (modal) {
-            document.getElementById('winnerModalName').textContent = winner.firstName;
-            document.getElementById('winnerModalPrize').innerHTML = totalInTon.toFixed(2) + ' <img src="assets/ton.png" alt="TON" class="winner-modal-icon-small">';
-            modal.classList.add('show');
+        // Показываем модалку ТОЛЬКО если это финальное уведомление
+        if (data.showModal !== false) {
+            var modal = document.getElementById('winnerModal');
+            if (modal) {
+                // Обновляем данные модалки
+                var playerValue = calculatePlayerTotalValue(winner);
+                var totalValue = (gameState.totalPoolTon * TON_TO_STARS_RATE) + gameState.totalPoolStars;
+                var multiplier = totalValue > 0 && playerValue > 0 ? totalValue / playerValue : 0;
+                
+                document.getElementById('winnerModalName').textContent = winner.firstName;
+                document.getElementById('winnerModalRound').textContent = '#' + String(gameState.roundId).padStart(4, '0');
+                document.getElementById('winnerModalPrize').innerHTML = totalInTon.toFixed(2) + ' <img src="assets/ton.png" alt="TON" class="winner-modal-icon-small">';
+                document.getElementById('winnerModalMultiplier').textContent = '×' + multiplier.toFixed(1);
+                modal.classList.add('show');
+                
+                // Автоматически закрываем через 3 секунды
+                setTimeout(function() {
+                    modal.classList.remove('show');
+                }, 3000);
+            }
         }
         
+        // Добавляем выигрыш победителю (только для победителя)
         var user = tg.initDataUnsafe?.user;
         if (user && winner.userId === String(user.id) && totalInTon > 0) {
             if (UserManager) {
@@ -986,6 +1018,7 @@ async function handleRoomFinishedFromServer(data) {
         updatePlayersList();
         updateHubCurrentPlayer();
         
+        // Запускаем новый раунд через задержку
         if (gameState.newRoundTimer) {
             clearTimeout(gameState.newRoundTimer);
         }
@@ -995,6 +1028,7 @@ async function handleRoomFinishedFromServer(data) {
         return;
     }
     
+    // Если данных нет - загружаем из БД
     var result = await loadSpinResultFromDB();
     if (result && result.winner_id) {
         var winner = {
@@ -1007,13 +1041,16 @@ async function handleRoomFinishedFromServer(data) {
         gameState.isSpinning = false;
         gameState.roundPhase = 'finished';
         gameState.isResultLoaded = true;
+        gameState.roundId = result.round_number || gameState.roundId;
         
+        // Останавливаем колесо
         var wheel = document.getElementById('wheel');
         if (wheel) {
             wheel.classList.remove('spinning');
             wheel.style.transition = 'none';
         }
         
+        // Скрываем индикаторы
         var spinningStatus = document.getElementById('spinningStatus');
         if (spinningStatus) spinningStatus.style.display = 'none';
         
@@ -1023,6 +1060,7 @@ async function handleRoomFinishedFromServer(data) {
         var placeBtn = document.getElementById('placeBetBtn');
         if (placeBtn) placeBtn.disabled = true;
         
+        // Показываем победителя
         var winnerSection = document.getElementById('winnerSection');
         if (winnerSection) {
             winnerSection.style.display = 'block';
@@ -1030,11 +1068,22 @@ async function handleRoomFinishedFromServer(data) {
             document.getElementById('winnerPrize').innerHTML = totalInTon.toFixed(2) + ' <img src="assets/ton.png" alt="TON" class="winner-prize-icon">';
         }
         
+        // Показываем модалку с правильными данными
         var modal = document.getElementById('winnerModal');
         if (modal) {
+            var playerValue = calculatePlayerTotalValue(winner);
+            var totalValue = (gameState.totalPoolTon * TON_TO_STARS_RATE) + gameState.totalPoolStars;
+            var multiplier = totalValue > 0 && playerValue > 0 ? totalValue / playerValue : 0;
+            
             document.getElementById('winnerModalName').textContent = winner.firstName;
+            document.getElementById('winnerModalRound').textContent = '#' + String(gameState.roundId).padStart(4, '0');
             document.getElementById('winnerModalPrize').innerHTML = totalInTon.toFixed(2) + ' <img src="assets/ton.png" alt="TON" class="winner-modal-icon-small">';
+            document.getElementById('winnerModalMultiplier').textContent = '×' + multiplier.toFixed(1);
             modal.classList.add('show');
+            
+            setTimeout(function() {
+                modal.classList.remove('show');
+            }, 3000);
         }
         
         updateUI();
@@ -1252,6 +1301,7 @@ async function startSpin() {
     gameState.roundId++;
     updateRoundDisplay();
     
+    // Выбираем победителя на сервере
     var winner = await selectWinnerOnServer();
     if (!winner) {
         tg.showAlert('❌ Ошибка выбора победителя');
@@ -1263,14 +1313,17 @@ async function startSpin() {
     
     var totalInTon = gameState.totalPoolTon + (gameState.totalPoolStars / TON_TO_STARS_RATE);
     
+    // Сохраняем результат в БД
     await saveSpinResultToDB(winner, totalInTon, gameState.roundId, activePlayers);
     await syncRoomStateToDB();
     
+    // Уведомляем всех через Realtime (но модалку пока не показываем!)
     PvPRoomManager.notifyListeners('room_finished', {
         winner_id: winner.userId,
         winner_name: winner.firstName,
         prize: totalInTon,
-        roundId: gameState.roundId
+        roundId: gameState.roundId,
+        showModal: false // <-- НЕ ПОКАЗЫВАТЬ МОДАЛКУ СРАЗУ
     });
     
     var placeBtn = document.getElementById('placeBetBtn');
@@ -1283,6 +1336,7 @@ async function startSpin() {
     updateHub('status', 'ИГРА');
     createWheelSegments();
     
+    // Рассчитываем угол для победителя
     var targetAngle = calculateTargetAngleForWinner(winner);
     var spins = 5 + Math.random() * 5;
     var finalAngle = 360 * spins + targetAngle;
@@ -1302,21 +1356,36 @@ async function startSpin() {
     
     startForceResetTimer();
     
+    // Ждем завершения вращения, затем показываем победителя
     gameState.spinTimer = setTimeout(async function() {
         clearForceResetTimer();
+        
+        // Останавливаем колесо
         if (wheel) {
             wheel.classList.remove('spinning');
             wheel.style.transition = 'none';
         }
+        
         gameState.isSpinning = false;
         gameState.roundPhase = 'finished';
         gameState.isResultLoaded = true;
         
         if (spinningStatus) spinningStatus.style.display = 'none';
         
+        // ТОЛЬКО ТЕПЕРЬ ПОКАЗЫВАЕМ ПОБЕДИТЕЛЯ С МОДАЛКОЙ
         await showWinner(winner);
+        
+        // Обновляем UI после показа победителя
         updateUI();
         updatePlaceBetButton();
+        
+        // Уведомляем всех, что колесо остановилось и можно показать модалку
+        PvPRoomManager.notifyListeners('room_finished_modal', {
+            winner_id: winner.userId,
+            winner_name: winner.firstName,
+            prize: totalInTon,
+            roundId: gameState.roundId
+        });
         
     }, SPIN_DURATION);
 }
@@ -1840,11 +1909,13 @@ async function showWinner(winner) {
     var prizeEl = document.getElementById('winnerModalPrize');
     var multiEl = document.getElementById('winnerModalMultiplier');
     
+    // ОБНОВЛЯЕМ ДАННЫЕ МОДАЛКИ
     if (nameEl) nameEl.textContent = winner.firstName;
     if (roundEl) roundEl.textContent = '#' + String(gameState.roundId).padStart(4, '0');
     if (prizeEl) prizeEl.innerHTML = totalInTon.toFixed(2) + ' <img src="assets/ton.png" alt="TON" class="winner-modal-icon-small">';
     if (multiEl) multiEl.textContent = '×' + multiplier.toFixed(1);
     
+    // Показываем секцию победителя
     var winnerSection = document.getElementById('winnerSection');
     if (winnerSection) {
         winnerSection.style.display = 'block';
@@ -1852,6 +1923,7 @@ async function showWinner(winner) {
         document.getElementById('winnerPrize').innerHTML = totalInTon.toFixed(2) + ' <img src="assets/ton.png" alt="TON" class="winner-prize-icon">';
     }
     
+    // Сохраняем в историю
     var playerDetails = getActivePlayers().map(function(p) {
         return {
             name: p.firstName,
@@ -1869,62 +1941,65 @@ async function showWinner(winner) {
         playerDetails
     );
     
-    if (savedRound) {
-        gameState.history.unshift({
-            roundId: gameState.roundId,
+    // Обновляем историю
+    gameState.history.unshift({
+        roundId: gameState.roundId,
+        winner: winner.firstName,
+        prize: totalInTon,
+        multiplier: multiplier,
+        players: getActivePlayers().length,
+        timestamp: Date.now()
+    });
+    
+    if (!gameState.topGame || totalInTon > gameState.topGame.prize) {
+        gameState.topGame = {
             winner: winner.firstName,
             prize: totalInTon,
-            multiplier: multiplier,
-            players: getActivePlayers().length,
-            timestamp: Date.now()
-        });
-        
-        if (!gameState.topGame || totalInTon > gameState.topGame.prize) {
-            gameState.topGame = {
-                winner: winner.firstName,
-                prize: totalInTon,
-                roundId: gameState.roundId
-            };
-        }
-        
-        var user = tg.initDataUnsafe?.user;
-        if (user && winner.userId === String(user.id) && totalInTon > 0) {
-            if (UserManager) {
-                var added = await UserManager.addWin(totalInTon, 'ton', 'Win in PvP Round #' + gameState.roundId);
-                if (added) {
-                    var updatedUser = UserManager.getUser();
-                    gameState.balance.ton = updatedUser.ton_balance;
-                    updatePvPBalanceUI();
-                    if (window.betsApp && window.betsApp.refreshBalance) {
-                        window.betsApp.refreshBalance();
-                    }
+            roundId: gameState.roundId
+        };
+    }
+    
+    updateTopGameDisplay();
+    updateHeaderInfo();
+    
+    // Добавляем выигрыш победителю (только если это текущий пользователь)
+    var user = tg.initDataUnsafe?.user;
+    if (user && winner.userId === String(user.id) && totalInTon > 0) {
+        if (UserManager) {
+            var added = await UserManager.addWin(totalInTon, 'ton', 'Win in PvP Round #' + gameState.roundId);
+            if (added) {
+                var updatedUser = UserManager.getUser();
+                gameState.balance.ton = updatedUser.ton_balance;
+                updatePvPBalanceUI();
+                if (window.betsApp && window.betsApp.refreshBalance) {
+                    window.betsApp.refreshBalance();
                 }
             }
         }
-        
-        if (user) {
-            var stats = await loadPlayerStats(user.id);
-            var totalBets = (stats?.total_bets || 0) + gameState.playerBets.length;
-            var totalWins = (stats?.total_wins || 0) + (winner.userId === String(user.id) ? 1 : 0);
-            var totalPrize = (stats?.total_prize || 0) + (winner.userId === String(user.id) ? totalInTon : 0);
-            
-            await updatePlayerStats(
-                String(user.id),
-                user.username || '',
-                user.first_name || '',
-                totalBets,
-                totalWins,
-                totalPrize
-            );
-        }
-        
-        updateTopGameDisplay();
-        updateHeaderInfo();
     }
     
+    // Обновляем статистику игрока
+    if (user) {
+        var stats = await loadPlayerStats(user.id);
+        var totalBets = (stats?.total_bets || 0) + gameState.playerBets.length;
+        var totalWins = (stats?.total_wins || 0) + (winner.userId === String(user.id) ? 1 : 0);
+        var totalPrize = (stats?.total_prize || 0) + (winner.userId === String(user.id) ? totalInTon : 0);
+        
+        await updatePlayerStats(
+            String(user.id),
+            user.username || '',
+            user.first_name || '',
+            totalBets,
+            totalWins,
+            totalPrize
+        );
+    }
+    
+    // ПОКАЗЫВАЕМ МОДАЛКУ только после того, как все данные обновлены
     modal.classList.add('show');
     await syncRoomStateToDB();
     
+    // Автоматически закрываем через 3 секунды
     setTimeout(function() {
         modal.classList.remove('show');
     }, 3000);
