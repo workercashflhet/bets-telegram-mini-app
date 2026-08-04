@@ -288,6 +288,174 @@ var supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
 });
 
 // ============================================================
+// PVP ROOM MANAGER - МУЛЬТИПЛЕЕР
+// ============================================================
+
+var PvPRoomManager = window.PvPRoomManager;
+
+// Инициализация комнаты
+async function initPvPRoom() {
+    try {
+        var user = UserManager.getUser();
+        if (!user) {
+            console.warn('⚠️ No user for room');
+            return false;
+        }
+        
+        await PvPRoomManager.initRoom();
+        
+        // Подписываемся на изменения
+        PvPRoomManager.subscribe(function(event, data) {
+            console.log('📡 Room event:', event, data);
+            
+            switch(event) {
+                case 'players_loaded':
+                case 'players_updated':
+                    // Обновляем список игроков
+                    updatePlayersFromRoom(data);
+                    break;
+                    
+                case 'pool_updated':
+                    // Обновляем пул
+                    gameState.totalPoolTon = data.ton;
+                    gameState.totalPoolStars = data.stars;
+                    updateUI();
+                    break;
+                    
+                case 'player_added':
+                case 'player_updated':
+                    // Игрок добавился или обновился
+                    updateUI();
+                    break;
+                    
+                case 'room_spinning':
+                    // Комната начала вращение
+                    handleRoomSpin();
+                    break;
+                    
+                case 'room_finished':
+                    // Раунд завершен
+                    handleRoomFinished(data);
+                    break;
+                    
+                case 'room_waiting':
+                    // Комната в ожидании
+                    handleRoomWaiting();
+                    break;
+            }
+        });
+        
+        // Обновляем UI с текущими данными
+        var players = PvPRoomManager.getPlayers();
+        var pool = PvPRoomManager.getPool();
+        
+        gameState.players = players.map(function(p) {
+            return {
+                userId: p.user_id,
+                firstName: p.first_name,
+                username: p.username,
+                avatar: p.photo_url,
+                color: p.color,
+                bets: p.bets || []
+            };
+        });
+        
+        gameState.totalPoolTon = pool.ton;
+        gameState.totalPoolStars = pool.stars;
+        
+        updateUI();
+        updatePlayersList();
+        
+        console.log('✅ PvP Room initialized');
+        return true;
+        
+    } catch (error) {
+        console.error('Init room error:', error);
+        return false;
+    }
+}
+
+// Обновление игроков из комнаты
+function updatePlayersFromRoom(players) {
+    if (!players) return;
+    
+    gameState.players = players.map(function(p) {
+        return {
+            userId: p.user_id,
+            firstName: p.first_name,
+            username: p.username,
+            avatar: p.photo_url,
+            color: p.color,
+            bets: p.bets || []
+        };
+    });
+    
+    // Обновляем пул
+    var pool = PvPRoomManager.getPool();
+    gameState.totalPoolTon = pool.ton;
+    gameState.totalPoolStars = pool.stars;
+    
+    updateUI();
+    updatePlayersList();
+    
+    // Проверяем, достаточно ли игроков для старта
+    var activePlayers = getActivePlayers();
+    if (activePlayers.length >= MIN_PLAYERS && gameState.roundPhase === 'waiting') {
+        startCountdown();
+    }
+}
+
+// Обновление списка игроков в UI
+function updatePlayersList() {
+    var list = document.getElementById('playersListCompact');
+    if (!list) return;
+    
+    var activePlayers = getActivePlayers();
+    
+    if (activePlayers.length === 0) {
+        list.innerHTML = '<div class="no-players-compact">Нет игроков в комнате</div>';
+        return;
+    }
+    
+    // Сортируем по сумме ставок
+    activePlayers.sort(function(a, b) {
+        var aValue = calculatePlayerTotalValue(a);
+        var bValue = calculatePlayerTotalValue(b);
+        return bValue - aValue;
+    });
+    
+    var totalValue = gameState.totalPoolTon * 76 + gameState.totalPoolStars;
+    
+    list.innerHTML = activePlayers.map(function(player) {
+        var isWinner = gameState.winner && gameState.winner.userId === player.userId;
+        var betText = formatPlayerBets(player);
+        var share = totalValue > 0 ? ((calculatePlayerTotalValue(player) / totalValue) * 100).toFixed(1) + '%' : '0%';
+        
+        return '<div class="player-row ' + (isWinner ? 'winner-row' : '') + '">' +
+            '<div class="player-row-color" style="background-color: ' + player.color + '"></div>' +
+            '<img src="' + getAvatarUrl(player) + '" alt="' + player.firstName + '" class="player-row-avatar">' +
+            '<span class="player-row-name">' + player.firstName + (isWinner ? ' 👑' : '') + '</span>' +
+            '<span class="player-row-bet">' + betText + '</span>' +
+            '<span class="player-row-share">' + share + '</span>' +
+            '</div>';
+    }).join('');
+}
+
+// Расчет общей стоимости ставок игрока
+function calculatePlayerTotalValue(player) {
+    if (!player || !player.bets) return 0;
+    var value = 0;
+    player.bets.forEach(function(bet) {
+        if (bet.currency === 'ton') {
+            value += bet.amount * TON_TO_STARS_RATE;
+        } else {
+            value += bet.amount;
+        }
+    });
+    return value;
+}
+
+// ============================================================
 // СОСТОЯНИЕ ИГРЫ
 // ============================================================
 var gameState = {
@@ -782,6 +950,21 @@ function updateHub(type, data) {
     }
 }
 
+// Обновление статуса комнаты
+function updateRoomStatus() {
+    var roomIdEl = document.getElementById('roomId');
+    var playersCountEl = document.getElementById('roomPlayersCount');
+    
+    if (roomIdEl) {
+        roomIdEl.textContent = PvPRoomManager.getRoomId() || '—';
+    }
+    
+    if (playersCountEl) {
+        var active = getActivePlayers();
+        playersCountEl.textContent = active.length;
+    }
+}
+
 function updateUI() {
     var totalInTon = gameState.totalPoolTon + (gameState.totalPoolStars / TON_TO_STARS_RATE);
     var poolEl = document.getElementById('poolTotal');
@@ -818,6 +1001,7 @@ function updateUI() {
     
     updateHeaderInfo();
     updateTopGameDisplay();
+    updateRoomStatus();
 }
 
 function updateHeaderInfo() {
@@ -1417,17 +1601,8 @@ async function placeBet() {
     var currency = gameState.selectedCurrency;
     var amount = gameState.betAmount;
     
-    var currentUser = getUserData();
-    var max = 0;
-    if (currentUser) {
-        max = currency === 'ton' ? currentUser.ton_balance : currentUser.stars_balance;
-        gameState.balance.ton = currentUser.ton_balance || 0;
-        gameState.balance.stars = currentUser.stars_balance || 0;
-        updatePvPBalanceUI();
-    } else {
-        max = currency === 'ton' ? gameState.balance.ton : gameState.balance.stars;
-    }
-    
+    var currentUser = UserManager.getUser();
+    var max = currency === 'ton' ? currentUser.ton_balance : currentUser.stars_balance;
     var min = currency === 'ton' ? MIN_BET_TON : MIN_BET_STARS;
     
     if (amount > max) {
@@ -1440,6 +1615,7 @@ async function placeBet() {
         return;
     }
     
+    // Списываем через UserManager
     if (UserManager) {
         var success;
         if (currency === 'ton') {
@@ -1457,40 +1633,32 @@ async function placeBet() {
         gameState.balance.ton = updatedUser.ton_balance;
         gameState.balance.stars = updatedUser.stars_balance;
         updatePvPBalanceUI();
-        
-        if (window.betsApp && window.betsApp.refreshBalance) {
-            window.betsApp.refreshBalance();
-        }
-        
-    } else {
-        if (currency === 'ton') {
-            if (gameState.balance.ton < amount) {
-                tg.showAlert('❌ Недостаточно средств!');
-                return;
-            }
-            gameState.balance.ton -= amount;
-        } else {
-            if (gameState.balance.stars < amount) {
-                tg.showAlert('❌ Недостаточно средств!');
-                return;
-            }
-            gameState.balance.stars -= amount;
-        }
-        localStorage.setItem('bets_data', JSON.stringify({
-            balance: gameState.balance.ton,
-            inventory: gameState.balance.stars
-        }));
-        updatePvPBalanceUI();
     }
     
-    var player = gameState.players.find(function(p) { return p.userId === user.id; });
+    // Отправляем ставку в комнату
+    var roomSuccess = await PvPRoomManager.addBet(
+        String(user.id),
+        user.username || '',
+        user.first_name || 'Игрок',
+        user.photo_url || '',
+        amount,
+        currency
+    );
+    
+    if (!roomSuccess) {
+        tg.showAlert('❌ Не удалось разместить ставку');
+        return;
+    }
+    
+    // Обновляем локальное состояние
+    var player = gameState.players.find(function(p) { return p.userId === String(user.id); });
     if (!player) {
         player = {
-            userId: user.id,
+            userId: String(user.id),
             firstName: user.first_name || 'Игрок',
             username: user.username || 'user',
             avatar: user.photo_url || '',
-            color: getRandomColor(),
+            color: PvPRoomManager.getRandomColor(),
             bets: []
         };
         gameState.players.push(player);
@@ -1499,23 +1667,20 @@ async function placeBet() {
     player.bets.push({ amount: amount, currency: currency });
     gameState.playerBets.push({ amount: amount, currency: currency });
     
-    if (currency === 'ton') {
-        gameState.totalPoolTon += amount;
-    } else {
-        gameState.totalPoolStars += amount;
-    }
-    
-    var activePlayers = getActivePlayers();
-    if (activePlayers.length >= MIN_PLAYERS && (gameState.roundPhase === 'waiting' || gameState.roundPhase === 'countdown')) {
-        startCountdown();
-    }
-    
+    // Обновляем UI
     updateUI();
     updateBetUI();
     updateTimerUI();
     updatePlaceBetButton();
+    updatePlayersList();
     
     tg.showAlert('✅ Ставка ' + amount + ' ' + (currency === 'ton' ? 'TON' : 'Stars') + ' принята!');
+    
+    // Проверяем количество игроков для старта
+    var activePlayers = getActivePlayers();
+    if (activePlayers.length >= MIN_PLAYERS && gameState.roundPhase === 'waiting') {
+        startCountdown();
+    }
 }
 
 // ============================================================
