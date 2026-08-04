@@ -230,7 +230,7 @@ var UserManager = {
                 updated_at: new Date().toISOString()
             })
             .eq('user_id', userId)
-            .gte('ton_balance', amount)  // Критично: проверка на сервере
+            .gte('ton_balance', amount)
             .select();
 
         if (error) {
@@ -267,7 +267,7 @@ var UserManager = {
                 updated_at: new Date().toISOString()
             })
             .eq('user_id', userId)
-            .gte('stars_balance', amount)  // Критично: проверка на сервере
+            .gte('stars_balance', amount)
             .select();
 
         if (error) {
