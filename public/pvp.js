@@ -17,19 +17,6 @@ function getUserData() {
     return null;
 }
 
-// Синхронизация баланса из UserManager
-function syncBalanceFromUserManager() {
-    var user = getUserData();
-    if (user) {
-        gameState.balance.ton = user.ton_balance || 0;
-        gameState.balance.stars = user.stars_balance || 0;
-        updatePvPBalanceUI();
-        console.log('🔄 PvP balance synced from UserManager:', gameState.balance.ton, gameState.balance.stars);
-        return true;
-    }
-    return false;
-}
-
 // Подписываемся на изменения из UserManager
 if (UserManager) {
     UserManager.subscribe(function(user) {
@@ -314,8 +301,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     initTonConnect();
     
-    // Загружаем баланс из UserManager
+    // Загружаем баланс с ожиданием UserManager
     loadBalance();
+    
     loadHistoryFromDB();
     initializePvPUser();
     setupUI();
@@ -329,16 +317,6 @@ document.addEventListener('DOMContentLoaded', function() {
             input.blur();
         }
     });
-
-    setTimeout(function() {
-        var user = getUserData();
-        if (user) {
-            gameState.balance.ton = user.ton_balance || 0;
-            gameState.balance.stars = user.stars_balance || 0;
-            updatePvPBalanceUI();
-            console.log('💰 PvP balance synced on load:', gameState.balance.ton, gameState.balance.stars);
-        }
-    }, 1000);
 });
 
 // ============================================================
@@ -347,23 +325,44 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function loadBalance() {
     var user = getUserData();
+    
     if (user) {
         gameState.balance.ton = user.ton_balance || 0;
         gameState.balance.stars = user.stars_balance || 0;
         console.log('💰 Balance loaded from UserManager:', gameState.balance.ton, gameState.balance.stars);
-    } else {
-        var saved = localStorage.getItem('bets_data');
-        if (saved) {
-            var data = JSON.parse(saved);
-            gameState.balance.ton = data.balance || 0;
-            gameState.balance.stars = data.inventory || 0;
-            console.log('💰 Balance loaded from localStorage (fallback):', gameState.balance.ton, gameState.balance.stars);
-        } else {
-            gameState.balance.ton = 0;
-            gameState.balance.stars = 0;
-        }
+        updatePvPBalanceUI();
+        return;
     }
-    updatePvPBalanceUI();
+    
+    console.warn('⚠️ UserManager not ready, waiting for sync...');
+    
+    // Ждем загрузку UserManager с повторными попытками
+    var attempts = 0;
+    var maxAttempts = 30;
+    
+    var checkInterval = setInterval(function() {
+        attempts++;
+        var retryUser = getUserData();
+        
+        if (retryUser) {
+            clearInterval(checkInterval);
+            gameState.balance.ton = retryUser.ton_balance || 0;
+            gameState.balance.stars = retryUser.stars_balance || 0;
+            updatePvPBalanceUI();
+            console.log('💰 Balance loaded from UserManager (retry after', attempts, 'attempts):', gameState.balance.ton, gameState.balance.stars);
+        } else if (attempts >= maxAttempts) {
+            clearInterval(checkInterval);
+            console.warn('⚠️ Could not load from UserManager after', maxAttempts, 'attempts, using localStorage');
+            var saved = localStorage.getItem('bets_data');
+            if (saved) {
+                var data = JSON.parse(saved);
+                gameState.balance.ton = data.balance || 0;
+                gameState.balance.stars = data.inventory || 0;
+                updatePvPBalanceUI();
+                console.log('💰 Balance loaded from localStorage:', gameState.balance.ton, gameState.balance.stars);
+            }
+        }
+    }, 300);
 }
 
 function updatePvPBalanceUI() {
@@ -541,11 +540,6 @@ function initializePvPUser() {
             userNameDisplay.textContent = 'Demo User';
         }
     }
-    
-    // Загружаем баланс из UserManager после инициализации
-    setTimeout(function() {
-        syncBalanceFromUserManager();
-    }, 500);
 }
 
 // ============================================================
@@ -1903,8 +1897,7 @@ window.pvpGame = {
     getActivePlayers: getActivePlayers,
     updateUI: updateUI,
     openDepositModal: openDepositModal,
-    updateBalanceFromDB: updateBalanceFromDB,
-    syncBalanceFromUserManager: syncBalanceFromUserManager
+    updateBalanceFromDB: updateBalanceFromDB
 };
 
 console.log('✅ PvP game loaded');
