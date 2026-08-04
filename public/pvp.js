@@ -68,6 +68,9 @@ function createTonConnectInstance() {
             }
         });
         
+        // ПОДНИМАЕМ TON CONNECT НАД ВСЕМИ МОДАЛКАМИ
+        ensureTonConnectZIndex();
+        
         tonConnectUI.onStatusChange(function(wallet) {
             console.log('💰 Status change:', wallet ? 'connected' : 'disconnected');
             if (wallet) {
@@ -96,6 +99,42 @@ function createTonConnectInstance() {
     }
 }
 
+function ensureTonConnectZIndex() {
+    var style = document.getElementById('tc-z-index-style');
+    if (!style) {
+        style = document.createElement('style');
+        style.id = 'tc-z-index-style';
+        style.textContent = `
+            /* TonConnect поверх всех модалок */
+            .tc-root {
+                z-index: 99999 !important;
+                position: relative !important;
+            }
+            .tc-wallets-modal,
+            .tc-modal-overlay,
+            .tc-actions-modal,
+            .ton-connect-modal,
+            .ton-connect-modal-overlay,
+            [data-tc-modal="true"],
+            [data-tc-wallets-modal-container="true"],
+            [data-tc-actions-modal-container="true"] {
+                z-index: 99999 !important;
+            }
+            .deposit-modal {
+                z-index: 1000 !important;
+            }
+            .deposit-modal.show {
+                z-index: 1000 !important;
+            }
+            .winner-modal {
+                z-index: 9000 !important;
+            }
+        `;
+        document.head.appendChild(style);
+        console.log('✅ TonConnect z-index style added');
+    }
+}
+
 function showTonConnectError() {
     var container = document.getElementById('ton-connect-container');
     if (container) {
@@ -119,6 +158,9 @@ function showTonConnectError() {
 function updateWalletUI(connected, address) {
     var container = document.getElementById('ton-connect-container');
     if (!container) return;
+    
+    // Убеждаемся, что z-index правильный
+    ensureTonConnectZIndex();
     
     if (connected && address) {
         var shortAddr = address.slice(0, 4) + '...' + address.slice(-4);
@@ -161,13 +203,18 @@ function updateWalletUI(connected, address) {
                         tg.showAlert('❌ TON кошелек не загружен. Обновите страницу.');
                         return;
                     }
+                    
                     console.log('🔗 Opening TonConnect modal...');
+                    
+                    // Открываем TonConnect (будет поверх всех модалок)
                     tonConnectUI.openModal().catch(function(err) {
                         console.error('Open modal error:', err);
+                        // Альтернативный метод
                         if (tonConnectUI.open) {
                             tonConnectUI.open();
                         }
                     });
+                    
                 } catch (error) {
                     console.error('Connection error:', error);
                     tg.showAlert('❌ Ошибка подключения кошелька');

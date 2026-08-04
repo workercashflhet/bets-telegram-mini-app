@@ -1943,3 +1943,54 @@ body {
 .ton-connect-button-wrapper .ton-connect-button:active {
     transform: scale(0.97);
 }
+
+/* ============================================================
+   TON CONNECT - ПОВЕРХ МОДАЛКИ ДЕПОЗИТА
+   ============================================================ */
+
+/* TonConnect UI - поверх всех модалок */
+.tc-root {
+    z-index: 99999 !important;
+    position: relative !important;
+}
+
+.tc-wallets-modal,
+.tc-modal-overlay,
+.tc-actions-modal,
+.ton-connect-modal,
+.ton-connect-modal-overlay,
+[data-tc-modal="true"],
+[data-tc-wallets-modal-container="true"],
+[data-tc-actions-modal-container="true"] {
+    z-index: 99999 !important;
+}
+
+/* Модалка депозита - ниже TonConnect */
+.deposit-modal {
+    z-index: 1000 !important;
+}
+
+.deposit-modal.show {
+    z-index: 1000 !important;
+}
+
+/* Winner modal - ниже TonConnect */
+.winner-modal {
+    z-index: 9000 !important;
+}
+
+/* Анимация появления TonConnect */
+.tc-wallets-modal {
+    animation: tcFadeIn 0.25s ease;
+}
+
+@keyframes tcFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
