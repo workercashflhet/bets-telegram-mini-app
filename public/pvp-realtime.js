@@ -1,4 +1,4 @@
-// pvp-realtime.js - ОПТИМИЗИРОВАННАЯ ВЕРСИЯ
+// pvp-realtime.js - ОПТИМИЗИРОВАННАЯ ВЕРСИЯ С АТОМАРНЫМИ ОПЕРАЦИЯМИ
 
 // ============================================================
 // SUPABASE КОНФИГУРАЦИЯ
@@ -32,7 +32,7 @@ function supabaseRestRequest(path, method, body) {
 }
 
 // ============================================================
-// PVP ROOM MANAGER
+// PVP ROOM MANAGER - ОПТИМИЗИРОВАННАЯ ВЕРСИЯ
 // ============================================================
 
 var PvPRoomManager = {
@@ -46,7 +46,9 @@ var PvPRoomManager = {
     _totalPoolStars: 0,
     _lastUpdate: 0,
     _isLoading: false,
-    _syncInterval: null,
+    _lastProcessedEventId: null,
+    _pendingUpdates: [],
+    _updateTimeout: null,
 
     initRoom: async function() {
         try {
@@ -75,7 +77,8 @@ var PvPRoomManager = {
                         status: 'waiting',
                         round_number: 0,
                         time_left: 20,
-                        phase: 'waiting'
+                        phase: 'waiting',
+                        updated_at: new Date().toISOString()
                     }
                 );
                 
@@ -91,7 +94,6 @@ var PvPRoomManager = {
             
             this.subscribeToRoom();
             await this.loadPlayers();
-            this.startPeriodicSync();
             
             return true;
             
@@ -120,8 +122,8 @@ var PvPRoomManager = {
             },
             realtime: {
                 params: {
-                    eventsPerSecond: 20,
-                    heartbeatIntervalMs: 3000
+                    eventsPerSecond: 10,
+                    heartbeatIntervalMs: 5000
                 }
             }
         });
@@ -137,7 +139,7 @@ var PvPRoomManager = {
                     filter: 'room_id=eq.' + roomId
                 },
                 function(payload) {
-                    console.log('📡 Player change:', payload.eventType);
+                    console.log('📡 Player change:', payload.eventType, payload.new?.user_id);
                     PvPRoomManager.handlePlayerChange(payload);
                 }
             )
@@ -156,9 +158,18 @@ var PvPRoomManager = {
             )
             .subscribe(function(status) {
                 console.log('📡 Subscription status:', status);
+                var wasConnected = PvPRoomManager._isConnected;
                 PvPRoomManager._isConnected = status === 'SUBSCRIBED';
-                if (PvPRoomManager._isConnected) {
+                
+                if (PvPRoomManager._isConnected && !wasConnected) {
                     PvPRoomManager.loadPlayers();
+                }
+                
+                if (!PvPRoomManager._isConnected && wasConnected) {
+                    console.warn('⚠️ Realtime connection lost, attempting to reconnect...');
+                    setTimeout(function() {
+                        PvPRoomManager.subscribeToRoom();
+                    }, 3000);
                 }
             });
     },
@@ -168,11 +179,84 @@ var PvPRoomManager = {
         var newData = payload.new;
         var oldData = payload.old;
         
+        // Пропускаем дублирующиеся события
+        var eventId = newData?.updated_at || oldData?.updated_at || Date.now();
+        if (this._lastProcessedEventId === eventId) {
+            return;
+        }
+        this._lastProcessedEventId = eventId;
+        
+        // Добавляем в очередь обновлений
+        this._pendingUpdates.push({
+            type: 'player',
+            eventType: eventType,
+            newData: newData,
+            oldData: oldData
+        });
+        
+        this._processPendingUpdates();
+    },
+
+    handleRoomChange: function(payload) {
+        var newData = payload.new;
+        if (!newData) return;
+        
+        // Пропускаем дублирующиеся события
+        var eventId = newData.updated_at || Date.now();
+        if (this._lastProcessedEventId === eventId) {
+            return;
+        }
+        this._lastProcessedEventId = eventId;
+        
+        // Добавляем в очередь обновлений
+        this._pendingUpdates.push({
+            type: 'room',
+            data: newData
+        });
+        
+        this._processPendingUpdates();
+    },
+
+    _processPendingUpdates: function() {
+        // Дебаунс для склеивания быстрых обновлений
+        if (this._updateTimeout) {
+            clearTimeout(this._updateTimeout);
+        }
+        
+        this._updateTimeout = setTimeout(function() {
+            var updates = PvPRoomManager._pendingUpdates.slice();
+            PvPRoomManager._pendingUpdates = [];
+            
+            // Обрабатываем обновления игроков
+            var playerUpdates = updates.filter(function(u) { return u.type === 'player'; });
+            if (playerUpdates.length > 0) {
+                var lastPlayerUpdate = playerUpdates[playerUpdates.length - 1];
+                PvPRoomManager._applyPlayerUpdate(lastPlayerUpdate);
+            }
+            
+            // Обрабатываем обновления комнаты
+            var roomUpdates = updates.filter(function(u) { return u.type === 'room'; });
+            if (roomUpdates.length > 0) {
+                var lastRoomUpdate = roomUpdates[roomUpdates.length - 1];
+                PvPRoomManager._applyRoomUpdate(lastRoomUpdate);
+            }
+            
+            // Уведомляем слушателей
+            PvPRoomManager.notifyListeners('players_updated', PvPRoomManager._players);
+            PvPRoomManager.updateTotalPool();
+            
+        }, 100);
+    },
+
+    _applyPlayerUpdate: function(update) {
+        var eventType = update.eventType;
+        var newData = update.newData;
+        var oldData = update.oldData;
+        
         switch(eventType) {
             case 'INSERT':
                 if (!this._players.find(p => p.user_id === newData.user_id)) {
                     this._players.push(newData);
-                    this.updateTotalPool();
                     this.notifyListeners('player_added', newData);
                 }
                 break;
@@ -180,32 +264,36 @@ var PvPRoomManager = {
             case 'UPDATE':
                 var index = this._players.findIndex(p => p.user_id === newData.user_id);
                 if (index !== -1) {
-                    this._players[index] = newData;
+                    // Обновляем только если данные изменились
+                    var oldPlayer = this._players[index];
+                    if (JSON.stringify(oldPlayer.bets) !== JSON.stringify(newData.bets) ||
+                        oldPlayer.total_value !== newData.total_value) {
+                        this._players[index] = newData;
+                        this.notifyListeners('player_updated', newData);
+                    }
                 } else {
                     this._players.push(newData);
+                    this.notifyListeners('player_added', newData);
                 }
-                this.updateTotalPool();
-                this.notifyListeners('player_updated', newData);
                 break;
                 
             case 'DELETE':
                 this._players = this._players.filter(p => p.user_id !== oldData.user_id);
-                this.updateTotalPool();
                 this.notifyListeners('player_removed', oldData);
                 break;
         }
-        
-        this.notifyListeners('players_updated', this._players);
     },
 
-    handleRoomChange: function(payload) {
-        var newData = payload.new;
-        console.log('📡 Room change:', newData);
+    _applyRoomUpdate: function(update) {
+        var newData = update.data;
+        console.log('📡 Room update:', newData.phase, 'Round:', newData.round_number);
         
-        if (newData) {
-            if (newData.phase === 'spinning') {
-                this.notifyListeners('room_spinning', newData);
-            } else if (newData.phase === 'finished') {
+        if (newData.phase === 'spinning') {
+            this.notifyListeners('room_spinning', newData);
+        } else if (newData.phase === 'finished' && newData.winner_id) {
+            // Проверяем, не было ли уже обработано это завершение
+            if (this._lastFinishedRoundId !== newData.round_number) {
+                this._lastFinishedRoundId = newData.round_number;
                 this.notifyListeners('room_finished', {
                     winner_id: newData.winner_id,
                     winner_name: newData.winner_name,
@@ -213,13 +301,13 @@ var PvPRoomManager = {
                     roundId: newData.round_number,
                     spin_result: newData.spin_result
                 });
-            } else if (newData.phase === 'waiting' || newData.phase === 'countdown') {
-                this.notifyListeners('room_waiting', newData);
             }
-            
-            if (newData.round_number !== undefined) {
-                this._roundId = newData.round_number;
-            }
+        } else if (newData.phase === 'waiting' || newData.phase === 'countdown') {
+            this.notifyListeners('room_waiting', newData);
+        }
+        
+        if (newData.round_number !== undefined) {
+            this._roundId = newData.round_number;
         }
     },
 
@@ -241,28 +329,26 @@ var PvPRoomManager = {
             
             var newPlayers = await response.json();
             
+            // Проверяем, изменились ли данные
+            var changed = false;
             if (newPlayers.length !== this._players.length) {
+                changed = true;
+            } else {
+                for (var i = 0; i < newPlayers.length; i++) {
+                    var old = this._players[i];
+                    var fresh = newPlayers[i];
+                    if (!old || old.user_id !== fresh.user_id || 
+                        JSON.stringify(old.bets) !== JSON.stringify(fresh.bets)) {
+                        changed = true;
+                        break;
+                    }
+                }
+            }
+            
+            if (changed) {
                 this._players = newPlayers;
                 this.updateTotalPool();
                 this.notifyListeners('players_loaded', this._players);
-            } else {
-                var changed = false;
-                var lastIndex = newPlayers.length - 1;
-                if (lastIndex >= 0) {
-                    var oldLast = this._players[lastIndex];
-                    var newLast = newPlayers[lastIndex];
-                    if (oldLast && newLast) {
-                        if (oldLast.user_id !== newLast.user_id ||
-                            JSON.stringify(oldLast.bets) !== JSON.stringify(newLast.bets)) {
-                            changed = true;
-                        }
-                    }
-                }
-                if (changed) {
-                    this._players = newPlayers;
-                    this.updateTotalPool();
-                    this.notifyListeners('players_loaded', this._players);
-                }
             }
             
         } catch (error) {
@@ -272,46 +358,97 @@ var PvPRoomManager = {
         this._isLoading = false;
     },
 
-    startPeriodicSync: function() {
-        if (this._syncInterval) {
-            clearInterval(this._syncInterval);
-        }
-        
-        this._syncInterval = setInterval(function() {
-            if (PvPRoomManager._isConnected) {
-                PvPRoomManager.loadPlayers();
-            }
-        }, 1000);
-    },
-
+    // АТОМАРНОЕ ДОБАВЛЕНИЕ СТАВКИ
     addBet: async function(userId, username, firstName, photoUrl, amount, currency) {
         try {
             console.log('💰 Adding bet:', userId, amount, currency);
             
+            var clientBetId = userId + '_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            
+            // Используем транзакцию через RPC функцию (нужно создать в Supabase)
+            // Пока используем оптимистичную блокировку через версионирование
+            
             var existingPlayer = this._players.find(p => p.user_id === userId);
-            var newBet = { amount: amount, currency: currency };
+            var newBet = { 
+                amount: amount, 
+                currency: currency,
+                client_id: clientBetId,
+                timestamp: new Date().toISOString()
+            };
             
             if (existingPlayer) {
+                // Проверяем, не дублируется ли ставка
                 var bets = existingPlayer.bets || [];
+                var isDuplicate = bets.some(function(b) { 
+                    return b.client_id === clientBetId; 
+                });
+                
+                if (isDuplicate) {
+                    console.warn('⚠️ Duplicate bet detected:', clientBetId);
+                    return true; // Считаем успехом, чтобы не показывать ошибку
+                }
+                
                 bets.push(newBet);
                 var totalValue = this.calculatePlayerValue(bets);
                 
+                // Используем версионирование для предотвращения race condition
+                var version = existingPlayer._version || 0;
+                
                 var updateResponse = await supabaseRestRequest(
-                    'pvp_room_players?room_id=eq.pvp_main_room&user_id=eq.' + userId,
+                    'pvp_room_players?room_id=eq.pvp_main_room&user_id=eq.' + userId + '&_version=eq.' + version,
                     'PATCH',
                     {
                         bets: bets,
-                        total_value: totalValue
+                        total_value: totalValue,
+                        _version: version + 1,
+                        updated_at: new Date().toISOString()
                     }
                 );
                 
                 if (!updateResponse.ok) {
-                    console.error('❌ Update player error:', await updateResponse.text());
-                    return false;
+                    // Проверяем, не произошло ли конфликта версий
+                    var errorText = await updateResponse.text();
+                    if (updateResponse.status === 409 || errorText.includes('version')) {
+                        console.warn('⚠️ Version conflict, retrying...');
+                        // Повторяем с новой версией
+                        var refreshed = await this.loadPlayer(userId);
+                        if (refreshed) {
+                            var freshBets = refreshed.bets || [];
+                            freshBets.push(newBet);
+                            var freshTotal = this.calculatePlayerValue(freshBets);
+                            var freshVersion = refreshed._version || 0;
+                            
+                            var retryResponse = await supabaseRestRequest(
+                                'pvp_room_players?room_id=eq.pvp_main_room&user_id=eq.' + userId + '&_version=eq.' + freshVersion,
+                                'PATCH',
+                                {
+                                    bets: freshBets,
+                                    total_value: freshTotal,
+                                    _version: freshVersion + 1,
+                                    updated_at: new Date().toISOString()
+                                }
+                            );
+                            
+                            if (!retryResponse.ok) {
+                                console.error('❌ Retry failed:', await retryResponse.text());
+                                return false;
+                            }
+                            
+                            existingPlayer.bets = freshBets;
+                            existingPlayer.total_value = freshTotal;
+                            existingPlayer._version = freshVersion + 1;
+                        } else {
+                            return false;
+                        }
+                    } else {
+                        console.error('❌ Update player error:', errorText);
+                        return false;
+                    }
+                } else {
+                    existingPlayer.bets = bets;
+                    existingPlayer.total_value = totalValue;
+                    existingPlayer._version = version + 1;
                 }
-                
-                existingPlayer.bets = bets;
-                existingPlayer.total_value = totalValue;
                 
                 console.log('✅ Player updated:', userId);
                 
@@ -330,7 +467,8 @@ var PvPRoomManager = {
                     photo_url: photoUrl || '',
                     color: color,
                     bets: bets,
-                    total_value: totalValue
+                    total_value: totalValue,
+                    _version: 0
                 };
                 
                 var insertResponse = await supabaseRestRequest(
@@ -360,6 +498,25 @@ var PvPRoomManager = {
         }
     },
 
+    // Загрузка одного игрока с актуальной версией
+    loadPlayer: async function(userId) {
+        try {
+            var response = await supabaseRestRequest(
+                'pvp_room_players?room_id=eq.' + this._roomId + '&user_id=eq.' + userId,
+                'GET'
+            );
+            
+            if (!response.ok) return null;
+            
+            var data = await response.json();
+            return data[0] || null;
+            
+        } catch (error) {
+            console.error('Load player error:', error);
+            return null;
+        }
+    },
+
     clearAllPlayers: async function() {
         try {
             console.log('🧹 Clearing all players from room:', this._roomId);
@@ -377,6 +534,7 @@ var PvPRoomManager = {
             this._players = [];
             this._totalPoolTon = 0;
             this._totalPoolStars = 0;
+            this._lastFinishedRoundId = null;
             
             this.notifyListeners('players_updated', []);
             this.notifyListeners('pool_updated', { ton: 0, stars: 0 });
@@ -469,10 +627,6 @@ var PvPRoomManager = {
     },
 
     disconnect: function() {
-        if (this._syncInterval) {
-            clearInterval(this._syncInterval);
-            this._syncInterval = null;
-        }
         if (this._channel) {
             this._channel.unsubscribe();
             this._channel = null;

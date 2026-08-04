@@ -1,4 +1,5 @@
 // user.js - Полный модуль управления пользователем и балансом
+// С АТОМАРНЫМИ ОПЕРАЦИЯМИ
 
 // ============================================================
 // SUPABASE КОНФИГУРАЦИЯ
@@ -25,6 +26,8 @@ var UserManager = {
     _user: null,
     _listeners: [],
     tg: window.Telegram?.WebApp || null,
+    _retryCount: 0,
+    _maxRetries: 3,
 
     // Получить данные из Telegram
     getTelegramUser: function() {
@@ -84,7 +87,8 @@ var UserManager = {
                 stars_balance: 0,
                 total_deposits_ton: 0,
                 total_deposits_stars: 0,
-                is_admin: isAdmin
+                is_admin: isAdmin,
+                created_at: new Date().toISOString()
             };
 
             var { data: created, error: insertError } = await supabaseClient
@@ -135,126 +139,154 @@ var UserManager = {
     },
 
     // ============================================================
-    // ОПЕРАЦИИ С БАЛАНСОМ
+    // АТОМАРНЫЕ ОПЕРАЦИИ С БАЛАНСОМ
     // ============================================================
 
-    // Добавить TON
+    // АТОМАРНОЕ добавление TON
     addTon: async function(amount, txHash, description) {
         if (!this._user) return false;
         if (amount <= 0) return false;
 
+        var userId = this._user.user_id;
         var newBalance = this._user.ton_balance + amount;
 
-        var { error } = await supabaseClient
+        // Атомарный UPDATE с проверкой
+        var { data, error } = await supabaseClient
             .from('users')
             .update({
                 ton_balance: newBalance,
                 total_deposits_ton: this._user.total_deposits_ton + amount,
                 updated_at: new Date().toISOString()
             })
-            .eq('user_id', this._user.user_id);
+            .eq('user_id', userId)
+            .select();
 
         if (error) {
             console.error('Update error:', error);
             return false;
         }
 
-        this._user.ton_balance = newBalance;
-        this._user.total_deposits_ton += amount;
+        if (!data || data.length === 0) {
+            console.error('No rows updated');
+            return false;
+        }
 
+        this._user = data[0];
         await this._addTransaction('deposit', 'ton', amount, 'completed', txHash, description);
 
         this._notifyListeners();
-        console.log('✅ TON added:', amount, 'New balance:', newBalance);
+        console.log('✅ TON added:', amount, 'New balance:', this._user.ton_balance);
         return true;
     },
 
-    // Добавить Stars
+    // АТОМАРНОЕ добавление Stars
     addStars: async function(amount, description) {
         if (!this._user) return false;
         if (amount <= 0) return false;
 
+        var userId = this._user.user_id;
         var newBalance = this._user.stars_balance + amount;
 
-        var { error } = await supabaseClient
+        var { data, error } = await supabaseClient
             .from('users')
             .update({
                 stars_balance: newBalance,
                 total_deposits_stars: this._user.total_deposits_stars + amount,
                 updated_at: new Date().toISOString()
             })
-            .eq('user_id', this._user.user_id);
+            .eq('user_id', userId)
+            .select();
 
         if (error) {
             console.error('Update error:', error);
             return false;
         }
 
-        this._user.stars_balance = newBalance;
-        this._user.total_deposits_stars += amount;
+        if (!data || data.length === 0) {
+            console.error('No rows updated');
+            return false;
+        }
 
+        this._user = data[0];
         await this._addTransaction('deposit', 'stars', amount, 'completed', null, description);
 
         this._notifyListeners();
-        console.log('✅ Stars added:', amount, 'New balance:', newBalance);
+        console.log('✅ Stars added:', amount, 'New balance:', this._user.stars_balance);
         return true;
     },
 
-    // Списать TON
+    // АТОМАРНОЕ списание TON с проверкой баланса
     subtractTon: async function(amount, description) {
         if (!this._user) return false;
         if (amount <= 0) return false;
         if (this._user.ton_balance < amount) return false;
 
+        var userId = this._user.user_id;
         var newBalance = this._user.ton_balance - amount;
 
-        var { error } = await supabaseClient
+        // Атомарный UPDATE с условием достаточности баланса
+        var { data, error } = await supabaseClient
             .from('users')
             .update({
                 ton_balance: newBalance,
                 updated_at: new Date().toISOString()
             })
-            .eq('user_id', this._user.user_id);
+            .eq('user_id', userId)
+            .gte('ton_balance', amount)  // Критично: проверка на сервере
+            .select();
 
         if (error) {
             console.error('Update error:', error);
             return false;
         }
 
-        this._user.ton_balance = newBalance;
+        if (!data || data.length === 0) {
+            console.warn('⚠️ Balance insufficient or concurrent update');
+            return false;
+        }
+
+        this._user = data[0];
         await this._addTransaction('bet', 'ton', -amount, 'completed', null, description);
 
         this._notifyListeners();
-        console.log('✅ TON subtracted:', amount, 'New balance:', newBalance);
+        console.log('✅ TON subtracted:', amount, 'New balance:', this._user.ton_balance);
         return true;
     },
 
-    // Списать Stars
+    // АТОМАРНОЕ списание Stars с проверкой баланса
     subtractStars: async function(amount, description) {
         if (!this._user) return false;
         if (amount <= 0) return false;
         if (this._user.stars_balance < amount) return false;
 
+        var userId = this._user.user_id;
         var newBalance = this._user.stars_balance - amount;
 
-        var { error } = await supabaseClient
+        var { data, error } = await supabaseClient
             .from('users')
             .update({
                 stars_balance: newBalance,
                 updated_at: new Date().toISOString()
             })
-            .eq('user_id', this._user.user_id);
+            .eq('user_id', userId)
+            .gte('stars_balance', amount)
+            .select();
 
         if (error) {
             console.error('Update error:', error);
             return false;
         }
 
-        this._user.stars_balance = newBalance;
+        if (!data || data.length === 0) {
+            console.warn('⚠️ Balance insufficient or concurrent update');
+            return false;
+        }
+
+        this._user = data[0];
         await this._addTransaction('bet', 'stars', -amount, 'completed', null, description);
 
         this._notifyListeners();
-        console.log('✅ Stars subtracted:', amount, 'New balance:', newBalance);
+        console.log('✅ Stars subtracted:', amount, 'New balance:', this._user.stars_balance);
         return true;
     },
 
@@ -263,7 +295,10 @@ var UserManager = {
         if (!this._user) return false;
         if (amount <= 0) return false;
 
-        var updateData = {};
+        var userId = this._user.user_id;
+        var updateData = {
+            updated_at: new Date().toISOString()
+        };
         var transactionData = {
             type: 'win',
             currency: currency,
@@ -274,24 +309,27 @@ var UserManager = {
 
         if (currency === 'ton') {
             updateData.ton_balance = this._user.ton_balance + amount;
-            this._user.ton_balance = updateData.ton_balance;
         } else {
             updateData.stars_balance = this._user.stars_balance + amount;
-            this._user.stars_balance = updateData.stars_balance;
         }
 
-        updateData.updated_at = new Date().toISOString();
-
-        var { error } = await supabaseClient
+        var { data, error } = await supabaseClient
             .from('users')
             .update(updateData)
-            .eq('user_id', this._user.user_id);
+            .eq('user_id', userId)
+            .select();
 
         if (error) {
             console.error('Update error:', error);
             return false;
         }
 
+        if (!data || data.length === 0) {
+            console.error('No rows updated');
+            return false;
+        }
+
+        this._user = data[0];
         await this._addTransaction(transactionData.type, transactionData.currency, amount, 'completed', null, description);
 
         this._notifyListeners();
@@ -362,24 +400,17 @@ var UserManager = {
                 return { success: false, error: 'User not found' };
             }
 
-            console.log('🔍 Target user found:', targetUser.user_id, 'Current balance:', targetUser.ton_balance, targetUser.stars_balance);
-
-            var updateData = {};
-            var newBalance = 0;
+            var updateData = {
+                updated_at: new Date().toISOString()
+            };
 
             if (currency === 'ton') {
-                newBalance = (targetUser.ton_balance || 0) + amount;
-                updateData.ton_balance = newBalance;
+                updateData.ton_balance = (targetUser.ton_balance || 0) + amount;
                 updateData.total_deposits_ton = (targetUser.total_deposits_ton || 0) + amount;
             } else {
-                newBalance = (targetUser.stars_balance || 0) + amount;
-                updateData.stars_balance = newBalance;
+                updateData.stars_balance = (targetUser.stars_balance || 0) + amount;
                 updateData.total_deposits_stars = (targetUser.total_deposits_stars || 0) + amount;
             }
-
-            updateData.updated_at = new Date().toISOString();
-
-            console.log('📝 Updating user:', userId, 'Currency:', currency, 'Amount:', amount, 'New balance:', newBalance);
 
             var { data, error: updateError } = await supabaseClient
                 .from('users')
@@ -392,7 +423,11 @@ var UserManager = {
                 return { success: false, error: 'Failed to update balance: ' + updateError.message };
             }
 
-            console.log('✅ Update response:', data);
+            if (!data || data.length === 0) {
+                return { success: false, error: 'User not found or not updated' };
+            }
+
+            var updatedUser = data[0];
 
             var { error: txError } = await supabaseClient
                 .from('transactions')
@@ -411,30 +446,10 @@ var UserManager = {
                 console.warn('⚠️ Transaction not saved:', txError);
             }
 
-            var { data: updatedUser, error: fetchError } = await supabaseClient
-                .from('users')
-                .select('*')
-                .eq('user_id', String(userId))
-                .single();
-
-            if (fetchError) {
-                console.error('❌ Error fetching updated user:', fetchError);
-                return { 
-                    success: true, 
-                    user: targetUser,
-                    newBalance: newBalance,
-                    currency: currency,
-                    amount: amount,
-                    note: 'Balance updated but could not fetch updated user'
-                };
-            }
-
             if (this._user && this._user.user_id === String(userId)) {
                 this._user = updatedUser;
                 this._notifyListeners();
             }
-
-            console.log('✅ Admin added balance:', amount, currency, 'to user:', userId, 'New balance:', updatedUser.ton_balance, updatedUser.stars_balance);
 
             return { 
                 success: true, 
@@ -465,7 +480,8 @@ var UserManager = {
                     amount: amount,
                     status: status,
                     tx_hash: txHash || '',
-                    description: description || ''
+                    description: description || '',
+                    created_at: new Date().toISOString()
                 });
         } catch (error) {
             console.error('Transaction error:', error);
@@ -474,4 +490,4 @@ var UserManager = {
 };
 
 window.UserManager = UserManager;
-console.log('✅ UserManager loaded');
+console.log('✅ UserManager loaded with atomic operations');

@@ -84,7 +84,10 @@ var gameState = {
     wheelSegments: [],
     isSyncing: false,
     isResultLoaded: false,
-    _lastSync: 0
+    _lastSync: 0,
+    _isPlacingBet: false,
+    _pendingBet: null,
+    _lastProcessedRoomId: null
 };
 
 var forceResetTimer = null;
@@ -116,6 +119,7 @@ function initTonConnect() {
             };
             script.onerror = function() {
                 console.error('❌ Failed to load TonConnectUI');
+                showTonConnectError();
             };
             document.head.appendChild(script);
             return;
@@ -343,7 +347,8 @@ async function saveSpinResultToDB(winner, prize, roundId, players) {
                         bets: p.bets,
                         value: calculatePlayerTotalValue(p)
                     };
-                })
+                }),
+                updated_at: new Date().toISOString()
             })
             .eq('room_id', 'pvp_main_room');
         
@@ -356,25 +361,6 @@ async function saveSpinResultToDB(winner, prize, roundId, players) {
     } catch (error) {
         console.error('Save spin result error:', error);
         return false;
-    }
-}
-
-async function loadSpinResultFromDB() {
-    try {
-        var { data, error } = await supabaseClient
-            .from('pvp_rooms')
-            .select('winner_id, winner_name, prize_amount, spin_result, phase, round_number')
-            .eq('room_id', 'pvp_main_room')
-            .single();
-        
-        if (error) {
-            console.error('Load spin result error:', error);
-            return null;
-        }
-        return data;
-    } catch (error) {
-        console.error('Load spin result error:', error);
-        return null;
     }
 }
 
@@ -419,6 +405,7 @@ async function forceResetRound() {
     gameState.timeLeft = ROUND_DURATION;
     gameState.rotationAngle = 0;
     gameState.isResultLoaded = false;
+    gameState._isPlacingBet = false;
     
     var spinningStatus = document.getElementById('spinningStatus');
     if (spinningStatus) spinningStatus.style.display = 'none';
@@ -429,7 +416,10 @@ async function forceResetRound() {
     var betSection = document.getElementById('betSection');
     if (betSection) betSection.style.display = 'block';
     var placeBtn = document.getElementById('placeBetBtn');
-    if (placeBtn) placeBtn.disabled = false;
+    if (placeBtn) {
+        placeBtn.disabled = false;
+        placeBtn.textContent = 'Сделать ставку';
+    }
     
     var wheel = document.getElementById('wheel');
     if (wheel) {
@@ -484,7 +474,6 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeUserInPvP();
     loadHistoryFromDB();
     setupUI();
-    addDemoPlayers();
     
     loadRoomStateFromDB().then(function(state) {
         if (state) {
@@ -503,22 +492,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 var totalInTon = state.prize_amount || 0;
                 
-                var winnerSection = document.getElementById('winnerSection');
-                if (winnerSection) {
-                    winnerSection.style.display = 'block';
-                    document.getElementById('winnerName').textContent = winner.firstName;
-                    document.getElementById('winnerPrize').innerHTML = totalInTon.toFixed(2) + ' <img src="assets/ton.png" alt="TON" class="winner-prize-icon">';
-                }
-                
-                var modal = document.getElementById('winnerModal');
-                if (modal) {
-                    document.getElementById('winnerModalName').textContent = winner.firstName;
-                    document.getElementById('winnerModalPrize').innerHTML = totalInTon.toFixed(2) + ' <img src="assets/ton.png" alt="TON" class="winner-modal-icon-small">';
-                    modal.classList.add('show');
-                }
-                
-                var betSection = document.getElementById('betSection');
-                if (betSection) betSection.style.display = 'none';
+                showWinnerUI(winner, totalInTon);
                 
                 setTimeout(function() {
                     startNewRound();
@@ -535,22 +509,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 var totalInTon = state.spin_result.prize || 0;
                 
-                var winnerSection = document.getElementById('winnerSection');
-                if (winnerSection) {
-                    winnerSection.style.display = 'block';
-                    document.getElementById('winnerName').textContent = winner.firstName;
-                    document.getElementById('winnerPrize').innerHTML = totalInTon.toFixed(2) + ' <img src="assets/ton.png" alt="TON" class="winner-prize-icon">';
-                }
-                
-                var modal = document.getElementById('winnerModal');
-                if (modal) {
-                    document.getElementById('winnerModalName').textContent = winner.firstName;
-                    document.getElementById('winnerModalPrize').innerHTML = totalInTon.toFixed(2) + ' <img src="assets/ton.png" alt="TON" class="winner-modal-icon-small">';
-                    modal.classList.add('show');
-                }
-                
-                var betSection = document.getElementById('betSection');
-                if (betSection) betSection.style.display = 'none';
+                showWinnerUI(winner, totalInTon);
                 
                 setTimeout(function() {
                     startNewRound();
@@ -599,6 +558,29 @@ document.addEventListener('DOMContentLoaded', function() {
         adminSection.style.display = 'block';
     }
 });
+
+function showWinnerUI(winner, prize) {
+    var winnerSection = document.getElementById('winnerSection');
+    if (winnerSection) {
+        winnerSection.style.display = 'block';
+        document.getElementById('winnerName').textContent = winner.firstName;
+        document.getElementById('winnerPrize').innerHTML = prize.toFixed(2) + ' <img src="assets/ton.png" alt="TON" class="winner-prize-icon">';
+    }
+    
+    var modal = document.getElementById('winnerModal');
+    if (modal) {
+        document.getElementById('winnerModalName').textContent = winner.firstName;
+        document.getElementById('winnerModalPrize').innerHTML = prize.toFixed(2) + ' <img src="assets/ton.png" alt="TON" class="winner-modal-icon-small">';
+        modal.classList.add('show');
+    }
+    
+    var betSection = document.getElementById('betSection');
+    if (betSection) betSection.style.display = 'none';
+    var placeBtn = document.getElementById('placeBetBtn');
+    if (placeBtn) placeBtn.disabled = true;
+    var spinningStatus = document.getElementById('spinningStatus');
+    if (spinningStatus) spinningStatus.style.display = 'none';
+}
 
 // ============================================================
 // ПОЛЬЗОВАТЕЛЬ
@@ -724,7 +706,8 @@ async function initPvPRoom() {
                 username: p.username,
                 avatar: p.photo_url,
                 color: p.color,
-                bets: p.bets || []
+                bets: p.bets || [],
+                _version: p._version || 0
             };
         });
         
@@ -759,7 +742,6 @@ function setupRealtimeHandlers() {
                 } else {
                     syncRoomData();
                 }
-                updateWheelImmediately();
                 break;
                 
             case 'pool_updated':
@@ -768,13 +750,11 @@ function setupRealtimeHandlers() {
                     gameState.totalPoolStars = data.stars || 0;
                 }
                 updateUI();
-                updateWheelImmediately();
                 break;
                 
             case 'player_added':
             case 'player_updated':
                 syncRoomData();
-                updateWheelImmediately();
                 break;
                 
             case 'room_spinning':
@@ -806,7 +786,8 @@ function updatePlayersFromRoom(players) {
             username: p.username,
             avatar: p.photo_url,
             color: p.color,
-            bets: p.bets || []
+            bets: p.bets || [],
+            _version: p._version || 0
         };
     });
     
@@ -816,6 +797,7 @@ function updatePlayersFromRoom(players) {
     
     updateUI();
     updatePlayersList();
+    updateWheelImmediately();
     
     var activePlayers = getActivePlayers();
     if (activePlayers.length >= MIN_PLAYERS && gameState.roundPhase === 'waiting') {
@@ -868,40 +850,7 @@ async function handleRoomFinishedFromServer(data) {
             wheel.style.transition = 'none';
         }
         
-        var spinningStatus = document.getElementById('spinningStatus');
-        if (spinningStatus) spinningStatus.style.display = 'none';
-        
-        var betSection = document.getElementById('betSection');
-        if (betSection) betSection.style.display = 'none';
-        
-        var placeBtn = document.getElementById('placeBetBtn');
-        if (placeBtn) placeBtn.disabled = true;
-        
-        var winnerSection = document.getElementById('winnerSection');
-        if (winnerSection) {
-            winnerSection.style.display = 'block';
-            document.getElementById('winnerName').textContent = winner.firstName;
-            document.getElementById('winnerPrize').innerHTML = totalInTon.toFixed(2) + ' <img src="assets/ton.png" alt="TON" class="winner-prize-icon">';
-        }
-        
-        if (data.showModal !== false) {
-            var modal = document.getElementById('winnerModal');
-            if (modal) {
-                var playerValue = calculatePlayerTotalValue(winner);
-                var totalValue = (gameState.totalPoolTon * TON_TO_STARS_RATE) + gameState.totalPoolStars;
-                var multiplier = totalValue > 0 && playerValue > 0 ? totalValue / playerValue : 0;
-                
-                document.getElementById('winnerModalName').textContent = winner.firstName;
-                document.getElementById('winnerModalRound').textContent = '#' + String(gameState.roundId).padStart(4, '0');
-                document.getElementById('winnerModalPrize').innerHTML = totalInTon.toFixed(2) + ' <img src="assets/ton.png" alt="TON" class="winner-modal-icon-small">';
-                document.getElementById('winnerModalMultiplier').textContent = '×' + multiplier.toFixed(1);
-                modal.classList.add('show');
-                
-                setTimeout(function() {
-                    modal.classList.remove('show');
-                }, 3000);
-            }
-        }
+        showWinnerUI(winner, totalInTon);
         
         var user = tg.initDataUnsafe?.user;
         if (user && winner.userId === String(user.id) && totalInTon > 0) {
@@ -930,71 +879,6 @@ async function handleRoomFinishedFromServer(data) {
         }, NEW_ROUND_DELAY);
         return;
     }
-    
-    var result = await loadSpinResultFromDB();
-    if (result && result.winner_id) {
-        var winner = {
-            userId: result.winner_id,
-            firstName: result.winner_name || 'Winner'
-        };
-        var totalInTon = result.prize_amount || 0;
-        
-        gameState.winner = winner;
-        gameState.isSpinning = false;
-        gameState.roundPhase = 'finished';
-        gameState.isResultLoaded = true;
-        gameState.roundId = result.round_number || gameState.roundId;
-        
-        var wheel = document.getElementById('wheel');
-        if (wheel) {
-            wheel.classList.remove('spinning');
-            wheel.style.transition = 'none';
-        }
-        
-        var spinningStatus = document.getElementById('spinningStatus');
-        if (spinningStatus) spinningStatus.style.display = 'none';
-        
-        var betSection = document.getElementById('betSection');
-        if (betSection) betSection.style.display = 'none';
-        
-        var placeBtn = document.getElementById('placeBetBtn');
-        if (placeBtn) placeBtn.disabled = true;
-        
-        var winnerSection = document.getElementById('winnerSection');
-        if (winnerSection) {
-            winnerSection.style.display = 'block';
-            document.getElementById('winnerName').textContent = winner.firstName;
-            document.getElementById('winnerPrize').innerHTML = totalInTon.toFixed(2) + ' <img src="assets/ton.png" alt="TON" class="winner-prize-icon">';
-        }
-        
-        var modal = document.getElementById('winnerModal');
-        if (modal) {
-            var playerValue = calculatePlayerTotalValue(winner);
-            var totalValue = (gameState.totalPoolTon * TON_TO_STARS_RATE) + gameState.totalPoolStars;
-            var multiplier = totalValue > 0 && playerValue > 0 ? totalValue / playerValue : 0;
-            
-            document.getElementById('winnerModalName').textContent = winner.firstName;
-            document.getElementById('winnerModalRound').textContent = '#' + String(gameState.roundId).padStart(4, '0');
-            document.getElementById('winnerModalPrize').innerHTML = totalInTon.toFixed(2) + ' <img src="assets/ton.png" alt="TON" class="winner-modal-icon-small">';
-            document.getElementById('winnerModalMultiplier').textContent = '×' + multiplier.toFixed(1);
-            modal.classList.add('show');
-            
-            setTimeout(function() {
-                modal.classList.remove('show');
-            }, 3000);
-        }
-        
-        updateUI();
-        updatePlayersList();
-        updateHubCurrentPlayer();
-        
-        if (gameState.newRoundTimer) {
-            clearTimeout(gameState.newRoundTimer);
-        }
-        gameState.newRoundTimer = setTimeout(function() {
-            startNewRound();
-        }, NEW_ROUND_DELAY);
-    }
 }
 
 function handleRoomWaiting() {
@@ -1021,6 +905,7 @@ async function clearRoomPlayers() {
             gameState.playerBets = [];
             gameState.winner = null;
             gameState.wheelSegments = [];
+            gameState._isPlacingBet = false;
             updateUI();
             updatePlayersList();
             updateWheelImmediately();
@@ -1056,6 +941,8 @@ async function startNewRound() {
     gameState.rotationAngle = 0;
     gameState.timeLeft = ROUND_DURATION;
     gameState.isResultLoaded = false;
+    gameState._isPlacingBet = false;
+    gameState._pendingBet = null;
     
     await clearRoomPlayers();
     await syncRoomStateToDB();
@@ -1083,7 +970,10 @@ async function startNewRound() {
     var betSection = document.getElementById('betSection');
     if (betSection) betSection.style.display = 'block';
     var placeBtn = document.getElementById('placeBetBtn');
-    if (placeBtn) placeBtn.disabled = false;
+    if (placeBtn) {
+        placeBtn.disabled = false;
+        placeBtn.textContent = 'Сделать ставку';
+    }
     
     updateTimerUI();
     updateUI();
@@ -1108,6 +998,16 @@ function createWheelSegments() {
     var wheel = document.getElementById('wheel');
     var activePlayers = getActivePlayers();
     if (!wheel) return;
+    
+    // Не перерисовываем, если состав игроков не изменился
+    var playersHash = activePlayers.map(function(p) { 
+        return p.userId + '|' + calculatePlayerTotalValue(p);
+    }).join(',');
+    
+    if (gameState._lastPlayersHash === playersHash && !gameState.isSpinning) {
+        return;
+    }
+    gameState._lastPlayersHash = playersHash;
     
     wheel.innerHTML = '';
     
@@ -1344,8 +1244,9 @@ function updateHubCurrentPlayer() {
             '<div class="hub-status" id="hubStatus">Ожидание</div>';
     } else {
         var statusText = gameState.roundPhase === 'countdown' ? 'До вращения' : 'Ожидание';
+        var timerText = gameState.roundPhase === 'countdown' ? gameState.timeLeft : '—';
         hubContent.innerHTML = 
-            '<div class="hub-timer" id="hubTimer">' + gameState.timeLeft + '</div>' +
+            '<div class="hub-timer" id="hubTimer">' + timerText + '</div>' +
             '<div class="hub-status" id="hubStatus">' + statusText + '</div>';
     }
 }
@@ -1501,7 +1402,7 @@ async function saveRoundToDB(roundId, winnerName, prize, multiplier, playersCoun
 }
 
 // ============================================================
-// UI ОБНОВЛЕНИЯ (ПОЛНЫЙ БЛОК)
+// UI ОБНОВЛЕНИЯ
 // ============================================================
 
 function updateUI() {
@@ -1585,9 +1486,13 @@ function updatePlaceBetButton() {
         (user ? user.stars_balance : gameState.balance.stars);
     var min = gameState.selectedCurrency === 'ton' ? MIN_BET_TON : MIN_BET_STARS;
     
-    btn.disabled = isBetting || gameState.betAmount > max || gameState.betAmount < min || gameState.isSpinning || gameState.roundPhase === 'finished';
+    btn.disabled = isBetting || gameState.betAmount > max || gameState.betAmount < min || 
+                    gameState.isSpinning || gameState.roundPhase === 'finished' || 
+                    gameState._isPlacingBet;
     
-    if (isBetting) {
+    if (gameState._isPlacingBet) {
+        btn.textContent = '⏳ Обработка...';
+    } else if (isBetting) {
         btn.textContent = '⏳ Отправка...';
     } else if (gameState.isSpinning) {
         btn.textContent = '⏳ Колесо крутится...';
@@ -1745,38 +1650,7 @@ function updateWheelImmediately() {
     updateUI();
     updateRoomStatus();
     updateHubCurrentPlayer();
-    console.log('🔄 Wheel updated immediately');
-}
-
-function addDemoPlayers() {
-    var user = tg.initDataUnsafe?.user;
-    var demoPlayers = [
-        {
-            userId: user?.id || 1,
-            firstName: user?.first_name || 'Вы',
-            username: user?.username || 'you',
-            avatar: user?.photo_url || '',
-            color: '#0ceb0f',
-            bets: []
-        },
-        {
-            userId: 2,
-            firstName: 'Алексей',
-            username: 'alex_win',
-            avatar: '',
-            color: '#ff6b6b',
-            bets: []
-        },
-        {
-            userId: 3,
-            firstName: 'Мария',
-            username: 'maria_luck',
-            avatar: '',
-            color: '#4ecdc4',
-            bets: []
-        }
-    ];
-    gameState.players = demoPlayers;
+    console.log('🔄 Wheel updated');
 }
 
 function getRandomColor() {
@@ -1796,6 +1670,7 @@ async function startWaitingPhase() {
     gameState.isSpinning = false;
     gameState.winner = null;
     gameState.isResultLoaded = false;
+    gameState._isPlacingBet = false;
     
     if (gameState.timer) clearInterval(gameState.timer);
     
@@ -1806,7 +1681,10 @@ async function startWaitingPhase() {
     updateHub('status', 'Ожидание');
     
     var placeBtn = document.getElementById('placeBetBtn');
-    if (placeBtn) placeBtn.disabled = false;
+    if (placeBtn) {
+        placeBtn.disabled = false;
+        placeBtn.textContent = 'Сделать ставку';
+    }
     
     var winnerModal = document.getElementById('winnerModal');
     if (winnerModal) winnerModal.classList.remove('show');
@@ -1838,15 +1716,14 @@ function startCountdownFrom(timeLeft) {
     
     startForceResetTimer();
     
-    var syncCounter = 0;
     gameState.timer = setInterval(function() {
         gameState.timeLeft--;
         updateTimerUI();
         updateHub('timer', gameState.timeLeft);
         
-        syncCounter++;
-        if (syncCounter % 3 === 0) {
-            syncRoomStateToDB();
+        if (gameState.timeLeft <= 5) {
+            var timerEl = document.querySelector('.hub-timer');
+            if (timerEl) timerEl.classList.add('warning');
         }
         
         if (gameState.timeLeft <= 0) {
@@ -2290,11 +2167,11 @@ function toNano(amount) {
 }
 
 // ============================================================
-// СТАВКА - С БЛОКИРОВКОЙ ПОВТОРНЫХ НАЖАТИЙ
+// СТАВКА - С АТОМАРНОЙ ОБРАБОТКОЙ
 // ============================================================
 
 async function placeBet() {
-    if (isBetting) {
+    if (gameState._isPlacingBet) {
         return;
     }
     
@@ -2331,25 +2208,26 @@ async function placeBet() {
         return;
     }
     
-    isBetting = true;
+    gameState._isPlacingBet = true;
     var placeBtn = document.getElementById('placeBetBtn');
     if (placeBtn) {
         placeBtn.disabled = true;
-        placeBtn.textContent = '⏳ Отправка...';
+        placeBtn.textContent = '⏳ Обработка...';
     }
     
     try {
+        // ШАГ 1: Атомарное списание баланса
+        var balanceSuccess = false;
         if (UserManager) {
-            var success;
             if (currency === 'ton') {
-                success = await UserManager.subtractTon(amount, 'Bet in PvP');
+                balanceSuccess = await UserManager.subtractTon(amount, 'Bet in PvP');
             } else {
-                success = await UserManager.subtractStars(amount, 'Bet in PvP');
+                balanceSuccess = await UserManager.subtractStars(amount, 'Bet in PvP');
             }
             
-            if (!success) {
+            if (!balanceSuccess) {
                 tg.showAlert('❌ Не удалось списать средства');
-                isBetting = false;
+                gameState._isPlacingBet = false;
                 if (placeBtn) {
                     placeBtn.disabled = false;
                     placeBtn.textContent = 'Сделать ставку';
@@ -2363,6 +2241,7 @@ async function placeBet() {
             updatePvPBalanceUI();
         }
         
+        // ШАГ 2: Добавление ставки в комнату
         var roomSuccess = await PvPRoomManager.addBet(
             String(user.id),
             user.username || '',
@@ -2373,8 +2252,20 @@ async function placeBet() {
         );
         
         if (!roomSuccess) {
-            tg.showAlert('❌ Не удалось разместить ставку');
-            isBetting = false;
+            // Откат: возвращаем средства, если ставка не засчитана
+            tg.showAlert('❌ Не удалось разместить ставку. Средства возвращены.');
+            if (UserManager) {
+                if (currency === 'ton') {
+                    await UserManager.addTon(amount, '', 'Rollback bet');
+                } else {
+                    await UserManager.addStars(amount, 'Rollback bet');
+                }
+                var rolledBackUser = UserManager.getUser();
+                gameState.balance.ton = rolledBackUser.ton_balance;
+                gameState.balance.stars = rolledBackUser.stars_balance;
+                updatePvPBalanceUI();
+            }
+            gameState._isPlacingBet = false;
             if (placeBtn) {
                 placeBtn.disabled = false;
                 placeBtn.textContent = 'Сделать ставку';
@@ -2382,6 +2273,7 @@ async function placeBet() {
             return;
         }
         
+        // ШАГ 3: Обновление UI
         await syncRoomData();
         
         var player = gameState.players.find(function(p) { return p.userId === String(user.id); });
@@ -2414,16 +2306,18 @@ async function placeBet() {
             startCountdown();
         }
         
-        isBetting = false;
+        gameState._isPlacingBet = false;
         if (placeBtn) {
             placeBtn.disabled = false;
             placeBtn.textContent = 'Сделать ставку';
         }
         
+        tg.showAlert('✅ Ставка принята! ' + amount + ' ' + (currency === 'ton' ? 'TON' : 'Stars'));
+        
     } catch (error) {
         console.error('❌ Place bet error:', error);
         tg.showAlert('❌ Ошибка при размещении ставки');
-        isBetting = false;
+        gameState._isPlacingBet = false;
         if (placeBtn) {
             placeBtn.disabled = false;
             placeBtn.textContent = 'Сделать ставку';
@@ -2432,7 +2326,7 @@ async function placeBet() {
 }
 
 // ============================================================
-// СИНХРОНИЗАЦИЯ ДАННЫХ - ОПТИМИЗИРОВАННАЯ
+// СИНХРОНИЗАЦИЯ ДАННЫХ
 // ============================================================
 
 async function syncRoomData() {
@@ -2461,7 +2355,8 @@ async function syncRoomData() {
                 username: p.username,
                 avatar: p.photo_url,
                 color: p.color,
-                bets: p.bets || []
+                bets: p.bets || [],
+                _version: p._version || 0
             };
         });
         
@@ -2786,4 +2681,4 @@ window.pvpGame = {
     syncRoomStateToDB: syncRoomStateToDB
 };
 
-console.log('✅ PvP game loaded');
+console.log('✅ PvP game loaded (optimized)');
