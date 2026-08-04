@@ -5,6 +5,36 @@
 var tg = window.Telegram.WebApp;
 
 // ============================================================
+// ПОДКЛЮЧЕНИЕ USERMANAGER
+// ============================================================
+
+var UserManager = window.UserManager;
+
+function getUserData() {
+    if (UserManager && UserManager.getUser()) {
+        return UserManager.getUser();
+    }
+    return null;
+}
+
+function updateBalanceFromDB(user) {
+    if (!user) user = getUserData();
+    if (!user) return;
+    
+    gameState.balance.ton = user.ton_balance || 0;
+    gameState.balance.stars = user.stars_balance || 0;
+    updatePvPBalanceUI();
+}
+
+// Подписываемся на изменения из UserManager
+if (UserManager) {
+    UserManager.subscribe(function(user) {
+        console.log('🔄 PvP: Balance updated from DB');
+        updateBalanceFromDB(user);
+    });
+}
+
+// ============================================================
 // TON CONNECT - ИНИЦИАЛИЗАЦИЯ
 // ============================================================
 
@@ -68,7 +98,7 @@ function createTonConnectInstance() {
             }
         });
         
-        // ПОДНИМАЕМ TON CONNECT НАД ВСЕМИ МОДАЛКАМИ
+        // Поднимаем z-index
         ensureTonConnectZIndex();
         
         tonConnectUI.onStatusChange(function(wallet) {
@@ -105,7 +135,6 @@ function ensureTonConnectZIndex() {
         style = document.createElement('style');
         style.id = 'tc-z-index-style';
         style.textContent = `
-            /* TonConnect поверх всех модалок */
             .tc-root {
                 z-index: 99999 !important;
                 position: relative !important;
@@ -159,11 +188,10 @@ function updateWalletUI(connected, address) {
     var container = document.getElementById('ton-connect-container');
     if (!container) return;
     
-    // Убеждаемся, что z-index правильный
     ensureTonConnectZIndex();
     
     if (connected && address) {
-        // СКРЫВАЕМ КОНТЕЙНЕР ПОСЛЕ ПОДКЛЮЧЕНИЯ
+        // Скрываем после подключения
         container.style.display = 'none';
         container.innerHTML = '';
         console.log('✅ Wallet connected, container hidden');
@@ -201,16 +229,13 @@ function updateWalletUI(connected, address) {
                         tg.showAlert('❌ TON кошелек не загружен. Обновите страницу.');
                         return;
                     }
-                    
                     console.log('🔗 Opening TonConnect modal...');
-                    
                     tonConnectUI.openModal().catch(function(err) {
                         console.error('Open modal error:', err);
                         if (tonConnectUI.open) {
                             tonConnectUI.open();
                         }
                     });
-                    
                 } catch (error) {
                     console.error('Connection error:', error);
                     tg.showAlert('❌ Ошибка подключения кошелька');
@@ -221,226 +246,13 @@ function updateWalletUI(connected, address) {
 }
 
 // ============================================================
-// ПОДКЛЮЧЕНИЕ USERMANAGER
-// ============================================================
-
-// Используем глобальный UserManager из app.js
-var UserManager = window.UserManager;
-
-// ============================================================
-// ОБНОВЛЕННАЯ ФУНКЦИЯ ЗАГРУЗКИ БАЛАНСА
-// ============================================================
-
-function loadBalance() {
-    // Пытаемся загрузить из UserManager
-    if (UserManager && UserManager.getUser()) {
-        var user = UserManager.getUser();
-        gameState.balance.ton = user.ton_balance || 0;
-        gameState.balance.stars = user.stars_balance || 0;
-        updatePvPBalanceUI();
-        return;
-    }
-    
-    // Fallback на localStorage
-    var saved = localStorage.getItem('bets_data');
-    if (saved) {
-        var data = JSON.parse(saved);
-        gameState.balance.ton = data.balance || 0;
-        gameState.balance.stars = data.inventory || 0;
-    }
-    updatePvPBalanceUI();
-}
-
-function saveBalance() {
-    // Сохраняем в localStorage для обратной совместимости
-    localStorage.setItem('bets_data', JSON.stringify({
-        balance: gameState.balance.ton,
-        inventory: gameState.balance.stars
-    }));
-    updatePvPBalanceUI();
-}
-
-// Обновленная функция пополнения баланса
-function depositToBalance(amount, currency) {
-    if (depositState.step !== 'success') {
-        console.warn('Попытка пополнения без подтверждения оплаты');
-        return;
-    }
-    
-    // Обновляем через UserManager
-    if (UserManager) {
-        if (currency === 'ton') {
-            UserManager.addTonBalance(amount, '', 'Deposit from PvP');
-            // Обновляем локальное состояние
-            var user = UserManager.getUser();
-            if (user) {
-                gameState.balance.ton = user.ton_balance;
-            }
-        } else {
-            UserManager.addStarsBalance(amount, 'Deposit from PvP');
-            var user = UserManager.getUser();
-            if (user) {
-                gameState.balance.stars = user.stars_balance;
-            }
-        }
-    } else {
-        // Fallback на старый способ
-        if (currency === 'ton') {
-            gameState.balance.ton += amount;
-        } else {
-            gameState.balance.stars += amount;
-        }
-        saveBalance();
-    }
-    
-    updatePvPBalanceUI();
-    
-    // Обновляем баланс в главном меню
-    if (window.betsApp && window.betsApp.refreshBalance) {
-        window.betsApp.refreshBalance();
-    }
-    
-    var tonEl = document.getElementById('pvpTonBalance');
-    var starsEl = document.getElementById('pvpStarsBalance');
-    if (tonEl) tonEl.textContent = gameState.balance.ton.toFixed(2);
-    if (starsEl) starsEl.textContent = Math.floor(gameState.balance.stars);
-    
-    tg.showAlert('✅ ' + amount + ' ' + (currency === 'ton' ? 'TON' : 'Stars') + ' успешно пополнены!');
-}
-
-// Обновленная функция ставки с проверкой баланса через UserManager
-function placeBet() {
-    var user = tg.initDataUnsafe?.user;
-    if (!user) {
-        tg.showAlert('❌ Откройте приложение через Telegram');
-        return;
-    }
-    
-    if (gameState.roundPhase === 'finished') {
-        tg.showAlert('⏳ Раунд завершен! Начните новый раунд.');
-        return;
-    }
-    
-    if (gameState.isSpinning) {
-        tg.showAlert('⏳ Колесо крутится!');
-        return;
-    }
-    
-    var currency = gameState.selectedCurrency;
-    var amount = gameState.betAmount;
-    
-    // Получаем актуальный баланс из UserManager
-    var currentBalance = { ton: 0, stars: 0 };
-    if (UserManager && UserManager.getUser()) {
-        var userData = UserManager.getUser();
-        currentBalance.ton = userData.ton_balance || 0;
-        currentBalance.stars = userData.stars_balance || 0;
-        gameState.balance.ton = currentBalance.ton;
-        gameState.balance.stars = currentBalance.stars;
-        updatePvPBalanceUI();
-    }
-    
-    var max = currency === 'ton' ? currentBalance.ton : currentBalance.stars;
-    var min = currency === 'ton' ? MIN_BET_TON : MIN_BET_STARS;
-    
-    if (amount > max) {
-        tg.showAlert('❌ Недостаточно средств! Баланс: ' + max + ' ' + (currency === 'ton' ? 'TON' : 'Stars'));
-        return;
-    }
-    
-    if (amount < min) {
-        tg.showAlert('❌ Минимальная ставка: ' + min + ' ' + (currency === 'ton' ? 'TON' : 'Stars'));
-        return;
-    }
-    
-    // Списываем через UserManager
-    var success = false;
-    if (UserManager) {
-        if (currency === 'ton') {
-            success = await UserManager.subtractTonBalance(amount, 'Bet in PvP');
-        } else {
-            success = await UserManager.subtractStarsBalance(amount, 'Bet in PvP');
-        }
-        
-        if (success) {
-            var updatedUser = UserManager.getUser();
-            gameState.balance.ton = updatedUser.ton_balance;
-            gameState.balance.stars = updatedUser.stars_balance;
-            updatePvPBalanceUI();
-            
-            // Обновляем баланс в главном меню
-            if (window.betsApp && window.betsApp.refreshBalance) {
-                window.betsApp.refreshBalance();
-            }
-        } else {
-            tg.showAlert('❌ Не удалось списать средства');
-            return;
-        }
-    } else {
-        // Fallback на старый способ
-        if (currency === 'ton') {
-            if (gameState.balance.ton < amount) {
-                tg.showAlert('❌ Недостаточно средств!');
-                return;
-            }
-            gameState.balance.ton -= amount;
-        } else {
-            if (gameState.balance.stars < amount) {
-                tg.showAlert('❌ Недостаточно средств!');
-                return;
-            }
-            gameState.balance.stars -= amount;
-        }
-        saveBalance();
-    }
-    
-    var player = gameState.players.find(function(p) { return p.userId === user.id; });
-    if (!player) {
-        player = {
-            userId: user.id,
-            firstName: user.first_name || 'Игрок',
-            username: user.username || 'user',
-            avatar: user.photo_url || '',
-            color: getRandomColor(),
-            bets: []
-        };
-        gameState.players.push(player);
-    }
-    
-    player.bets.push({ amount: amount, currency: currency });
-    gameState.playerBets.push({ amount: amount, currency: currency });
-    
-    if (currency === 'ton') {
-        gameState.totalPoolTon += amount;
-    } else {
-        gameState.totalPoolStars += amount;
-    }
-    
-    var activePlayers = getActivePlayers();
-    if (activePlayers.length >= MIN_PLAYERS && (gameState.roundPhase === 'waiting' || gameState.roundPhase === 'countdown')) {
-        startCountdown();
-    }
-    
-    updateUI();
-    updateBetUI();
-    updateTimerUI();
-    updatePlaceBetButton();
-    
-    tg.showAlert('✅ Ставка ' + amount + ' ' + (currency === 'ton' ? 'TON' : 'Stars') + ' принята!');
-}
-
-// ============================================================
-// SUPABASE КОНФИГУРАЦИЯ
+// SUPABASE КОНФИГУРАЦИЯ (для pvp_rounds)
 // ============================================================
 var SUPABASE_URL = 'https://siibxynvgrrsktyihuby.supabase.co';
 var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNpaWJ4eW52Z3Jyc2t0eWlodWJ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU3MDE0MzUsImV4cCI6MjEwMTI3NzQzNX0.k8bdNQPeB8lDkw_1XKVtFB-u3NjyHmyr2L7zE4mhN6I';
 
 var supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-    auth: {
-        persistSession: false,
-        autoRefreshToken: false,
-        detectSessionInUrl: false
-    },
+    auth: { persistSession: false },
     global: {
         headers: {
             'Accept': 'application/json',
@@ -500,6 +312,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     initTonConnect();
     
+    // Загружаем баланс из UserManager
     loadBalance();
     loadHistoryFromDB();
     initializePvPUser();
@@ -515,6 +328,33 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
+// ============================================================
+// БАЛАНС - РАБОТА С БД ЧЕРЕЗ USERMANAGER
+// ============================================================
+
+function loadBalance() {
+    var user = getUserData();
+    if (user) {
+        gameState.balance.ton = user.ton_balance || 0;
+        gameState.balance.stars = user.stars_balance || 0;
+    } else {
+        var saved = localStorage.getItem('bets_data');
+        if (saved) {
+            var data = JSON.parse(saved);
+            gameState.balance.ton = data.balance || 0;
+            gameState.balance.stars = data.inventory || 0;
+        }
+    }
+    updatePvPBalanceUI();
+}
+
+function updatePvPBalanceUI() {
+    var tonEl = document.getElementById('pvpTonBalance');
+    var starsEl = document.getElementById('pvpStarsBalance');
+    if (tonEl) tonEl.textContent = gameState.balance.ton.toFixed(2);
+    if (starsEl) starsEl.textContent = Math.floor(gameState.balance.stars);
+}
 
 // ============================================================
 // ИСТОРИЯ - РАБОТА С БД (SUPABASE)
@@ -623,76 +463,6 @@ async function saveRoundToDB(roundId, winnerName, prize, multiplier, playersCoun
     }
 }
 
-async function updatePlayerStats(userId, username, firstName, totalBets, totalWins, totalPrize) {
-    try {
-        var { data: existing, error: checkError } = await supabaseClient
-            .from('pvp_players')
-            .select('id')
-            .eq('user_id', userId)
-            .maybeSingle();
-        
-        if (checkError) {
-            console.warn('updatePlayerStats check error:', checkError.message);
-            return;
-        }
-        
-        if (existing) {
-            var { error: updateError } = await supabaseClient
-                .from('pvp_players')
-                .update({
-                    username: username,
-                    first_name: firstName,
-                    total_bets: totalBets,
-                    total_wins: totalWins,
-                    total_prize: totalPrize,
-                    updated_at: new Date().toISOString()
-                })
-                .eq('user_id', userId);
-            
-            if (updateError) {
-                console.warn('updatePlayerStats update error:', updateError.message);
-            }
-        } else {
-            var { error: insertError } = await supabaseClient
-                .from('pvp_players')
-                .insert({
-                    user_id: userId,
-                    username: username,
-                    first_name: firstName,
-                    total_bets: totalBets,
-                    total_wins: totalWins,
-                    total_prize: totalPrize,
-                    created_at: new Date().toISOString()
-                });
-            
-            if (insertError) {
-                console.warn('updatePlayerStats insert error:', insertError.message);
-            }
-        }
-    } catch (error) {
-        console.warn('updatePlayerStats error:', error.message);
-    }
-}
-
-async function loadPlayerStats(userId) {
-    try {
-        var { data, error } = await supabaseClient
-            .from('pvp_players')
-            .select('*')
-            .eq('user_id', userId)
-            .maybeSingle();
-        
-        if (error) {
-            console.warn('loadPlayerStats error:', error.message);
-            return null;
-        }
-        return data;
-    } catch (error) {
-        console.warn('loadPlayerStats error:', error.message);
-        return null;
-    }
-}
-
 // ============================================================
 // ПОЛЬЗОВАТЕЛЬ
 // ============================================================
@@ -735,50 +505,11 @@ function initializePvPUser() {
                 };
             }
         }
-        
-        loadPlayerStats(user.id);
     } else {
         if (userNameDisplay) {
             userNameDisplay.textContent = 'Demo User';
         }
     }
-}
-
-// ============================================================
-// БАЛАНС
-// ============================================================
-
-function loadBalance() {
-    var saved = localStorage.getItem('bets_data');
-    if (saved) {
-        var data = JSON.parse(saved);
-        gameState.balance.ton = data.balance || 0;
-        gameState.balance.stars = data.inventory || 0;
-    }
-    updateBalanceUI();
-    updatePvPBalanceUI();
-}
-
-function saveBalance() {
-    localStorage.setItem('bets_data', JSON.stringify({
-        balance: gameState.balance.ton,
-        inventory: gameState.balance.stars
-    }));
-    updatePvPBalanceUI();
-}
-
-function updateBalanceUI() {
-    var tonEl = document.getElementById('tonBalanceSmall');
-    var starsEl = document.getElementById('starsBalanceSmall');
-    if (tonEl) tonEl.textContent = gameState.balance.ton.toFixed(2);
-    if (starsEl) starsEl.textContent = Math.floor(gameState.balance.stars);
-}
-
-function updatePvPBalanceUI() {
-    var tonEl = document.getElementById('pvpTonBalance');
-    var starsEl = document.getElementById('pvpStarsBalance');
-    if (tonEl) tonEl.textContent = gameState.balance.ton.toFixed(2);
-    if (starsEl) starsEl.textContent = Math.floor(gameState.balance.stars);
 }
 
 // ============================================================
@@ -961,7 +692,11 @@ function updateBetUI() {
 function updatePlaceBetButton() {
     var btn = document.getElementById('placeBetBtn');
     if (!btn) return;
-    var max = gameState.selectedCurrency === 'ton' ? gameState.balance.ton : gameState.balance.stars;
+    
+    var user = getUserData();
+    var max = gameState.selectedCurrency === 'ton' ? 
+        (user ? user.ton_balance : gameState.balance.ton) : 
+        (user ? user.stars_balance : gameState.balance.stars);
     var min = gameState.selectedCurrency === 'ton' ? MIN_BET_TON : MIN_BET_STARS;
     btn.disabled = gameState.betAmount > max || gameState.betAmount < min || gameState.isSpinning || gameState.roundPhase === 'finished';
 }
@@ -1110,7 +845,10 @@ function setupQuickBets() {
             var amount = parseFloat(this.dataset.amount);
             if (isNaN(amount) || amount <= 0) return;
             
-            var max = gameState.selectedCurrency === 'ton' ? gameState.balance.ton : gameState.balance.stars;
+            var user = getUserData();
+            var max = gameState.selectedCurrency === 'ton' ? 
+                (user ? user.ton_balance : gameState.balance.ton) : 
+                (user ? user.stars_balance : gameState.balance.stars);
             var min = gameState.selectedCurrency === 'ton' ? MIN_BET_TON : MIN_BET_STARS;
             
             var finalAmount = amount;
@@ -1179,7 +917,7 @@ function fromNano(nano) {
 }
 
 // ============================================================
-// ДЕПОЗИТЫ
+// ДЕПОЗИТЫ - С ИНТЕГРАЦИЕЙ USERMANAGER
 // ============================================================
 
 var depositState = {
@@ -1313,7 +1051,7 @@ function updateDepositModalUI() {
 }
 
 // ============================================================
-// ОБРАБОТЧИК ПОДТВЕРЖДЕНИЯ ДЕПОЗИТА
+// ОБРАБОТЧИК ПОДТВЕРЖДЕНИЯ ДЕПОЗИТА С USERMANAGER
 // ============================================================
 
 async function handleDepositConfirm() {
@@ -1356,10 +1094,32 @@ async function handleDepositConfirm() {
                 
                 await tonConnectUI.sendTransaction(transaction);
                 
+                // Успех - добавляем через UserManager
+                if (UserManager) {
+                    var added = await UserManager.addTon(amount, '', 'Deposit from PvP');
+                    if (added) {
+                        var updatedUser = UserManager.getUser();
+                        gameState.balance.ton = updatedUser.ton_balance;
+                        updatePvPBalanceUI();
+                        console.log('✅ TON balance updated to:', updatedUser.ton_balance);
+                    }
+                } else {
+                    // Fallback
+                    gameState.balance.ton += amount;
+                    localStorage.setItem('bets_data', JSON.stringify({
+                        balance: gameState.balance.ton,
+                        inventory: gameState.balance.stars
+                    }));
+                }
+                
                 depositState.step = 'success';
                 depositState.isProcessing = false;
                 updateDepositModalUI();
-                depositToBalance(amount, 'ton');
+                
+                var tonEl = document.getElementById('pvpTonBalance');
+                if (tonEl) tonEl.textContent = gameState.balance.ton.toFixed(2);
+                
+                tg.showAlert('✅ ' + amount + ' TON успешно пополнены!');
                 
             } catch (txError) {
                 console.error('Transaction error:', txError);
@@ -1396,9 +1156,33 @@ async function handleDepositConfirm() {
                     depositState.isProcessing = false;
                     
                     if (status === 'paid') {
+                        // Успех - добавляем через UserManager
+                        if (UserManager) {
+                            UserManager.addStars(amount, 'Deposit from PvP').then(function(added) {
+                                if (added) {
+                                    var updatedUser = UserManager.getUser();
+                                    gameState.balance.stars = updatedUser.stars_balance;
+                                    updatePvPBalanceUI();
+                                    console.log('✅ Stars balance updated to:', updatedUser.stars_balance);
+                                }
+                            });
+                        } else {
+                            // Fallback
+                            gameState.balance.stars += amount;
+                            localStorage.setItem('bets_data', JSON.stringify({
+                                balance: gameState.balance.ton,
+                                inventory: gameState.balance.stars
+                            }));
+                        }
+                        
                         depositState.step = 'success';
                         updateDepositModalUI();
-                        depositToBalance(amount, 'stars');
+                        
+                        var starsEl = document.getElementById('pvpStarsBalance');
+                        if (starsEl) starsEl.textContent = Math.floor(gameState.balance.stars);
+                        
+                        tg.showAlert('✅ ' + amount + ' Stars успешно пополнены!');
+                        
                     } else if (status === 'cancelled') {
                         depositState.error = 'Оплата отменена';
                         depositState.step = 'input';
@@ -1424,32 +1208,6 @@ async function handleDepositConfirm() {
         depositState.isProcessing = false;
         updateDepositModalUI();
     }
-}
-
-// ============================================================
-// ПОПОЛНЕНИЕ БАЛАНСА
-// ============================================================
-
-function depositToBalance(amount, currency) {
-    if (depositState.step !== 'success') {
-        console.warn('Попытка пополнения без подтверждения оплаты');
-        return;
-    }
-    
-    if (currency === 'ton') {
-        gameState.balance.ton += amount;
-    } else {
-        gameState.balance.stars += amount;
-    }
-    saveBalance();
-    updatePvPBalanceUI();
-    
-    var tonEl = document.getElementById('pvpTonBalance');
-    var starsEl = document.getElementById('pvpStarsBalance');
-    if (tonEl) tonEl.textContent = gameState.balance.ton.toFixed(2);
-    if (starsEl) starsEl.textContent = Math.floor(gameState.balance.stars);
-    
-    tg.showAlert('✅ ' + amount + ' ' + (currency === 'ton' ? 'TON' : 'Stars') + ' успешно пополнены!');
 }
 
 // ============================================================
@@ -1593,10 +1351,10 @@ function startCountdown() {
 }
 
 // ============================================================
-// СТАВКИ
+// СТАВКА - С ИНТЕГРАЦИЕЙ USERMANAGER
 // ============================================================
 
-function placeBet() {
+async function placeBet() {
     var user = tg.initDataUnsafe?.user;
     if (!user) {
         tg.showAlert('❌ Откройте приложение через Telegram');
@@ -1615,11 +1373,23 @@ function placeBet() {
     
     var currency = gameState.selectedCurrency;
     var amount = gameState.betAmount;
-    var max = currency === 'ton' ? gameState.balance.ton : gameState.balance.stars;
+    
+    // Получаем актуальный баланс из UserManager
+    var currentUser = getUserData();
+    var max = 0;
+    if (currentUser) {
+        max = currency === 'ton' ? currentUser.ton_balance : currentUser.stars_balance;
+        gameState.balance.ton = currentUser.ton_balance || 0;
+        gameState.balance.stars = currentUser.stars_balance || 0;
+        updatePvPBalanceUI();
+    } else {
+        max = currency === 'ton' ? gameState.balance.ton : gameState.balance.stars;
+    }
+    
     var min = currency === 'ton' ? MIN_BET_TON : MIN_BET_STARS;
     
     if (amount > max) {
-        tg.showAlert('❌ Недостаточно средств!');
+        tg.showAlert('❌ Недостаточно средств! Баланс: ' + max + ' ' + (currency === 'ton' ? 'TON' : 'Stars'));
         return;
     }
     
@@ -1628,6 +1398,54 @@ function placeBet() {
         return;
     }
     
+    // Списываем через UserManager
+    if (UserManager) {
+        var success;
+        if (currency === 'ton') {
+            success = await UserManager.subtractTon(amount, 'Bet in PvP');
+        } else {
+            success = await UserManager.subtractStars(amount, 'Bet in PvP');
+        }
+        
+        if (!success) {
+            tg.showAlert('❌ Не удалось списать средства');
+            return;
+        }
+        
+        // Обновляем локальный баланс
+        var updatedUser = UserManager.getUser();
+        gameState.balance.ton = updatedUser.ton_balance;
+        gameState.balance.stars = updatedUser.stars_balance;
+        updatePvPBalanceUI();
+        
+        // Обновляем главное меню
+        if (window.betsApp && window.betsApp.refreshBalance) {
+            window.betsApp.refreshBalance();
+        }
+        
+    } else {
+        // Fallback
+        if (currency === 'ton') {
+            if (gameState.balance.ton < amount) {
+                tg.showAlert('❌ Недостаточно средств!');
+                return;
+            }
+            gameState.balance.ton -= amount;
+        } else {
+            if (gameState.balance.stars < amount) {
+                tg.showAlert('❌ Недостаточно средств!');
+                return;
+            }
+            gameState.balance.stars -= amount;
+        }
+        localStorage.setItem('bets_data', JSON.stringify({
+            balance: gameState.balance.ton,
+            inventory: gameState.balance.stars
+        }));
+        updatePvPBalanceUI();
+    }
+    
+    // Добавляем игрока
     var player = gameState.players.find(function(p) { return p.userId === user.id; });
     if (!player) {
         player = {
@@ -1646,14 +1464,9 @@ function placeBet() {
     
     if (currency === 'ton') {
         gameState.totalPoolTon += amount;
-        gameState.balance.ton -= amount;
     } else {
         gameState.totalPoolStars += amount;
-        gameState.balance.stars -= amount;
     }
-    
-    saveBalance();
-    updateBalanceUI();
     
     var activePlayers = getActivePlayers();
     if (activePlayers.length >= MIN_PLAYERS && (gameState.roundPhase === 'waiting' || gameState.roundPhase === 'countdown')) {
@@ -1776,7 +1589,7 @@ function createWheelSegments() {
 }
 
 // ============================================================
-// ПОБЕДИТЕЛЬ
+// ПОБЕДИТЕЛЬ - С ИНТЕГРАЦИЕЙ USERMANAGER
 // ============================================================
 
 function selectWinner() {
@@ -1858,7 +1671,34 @@ async function showWinner(winner) {
             };
         }
         
+        // Добавляем выигрыш через UserManager
         var user = tg.initDataUnsafe?.user;
+        if (user && winner.userId === user.id && totalInTon > 0) {
+            if (UserManager) {
+                var added = await UserManager.addWin(totalInTon, 'ton', 'Win in PvP Round #' + gameState.roundId);
+                if (added) {
+                    var updatedUser = UserManager.getUser();
+                    gameState.balance.ton = updatedUser.ton_balance;
+                    updatePvPBalanceUI();
+                    console.log('🏆 Win added:', totalInTon, 'TON');
+                    
+                    // Обновляем главное меню
+                    if (window.betsApp && window.betsApp.refreshBalance) {
+                        window.betsApp.refreshBalance();
+                    }
+                }
+            } else {
+                // Fallback
+                gameState.balance.ton += totalInTon;
+                localStorage.setItem('bets_data', JSON.stringify({
+                    balance: gameState.balance.ton,
+                    inventory: gameState.balance.stars
+                }));
+                updatePvPBalanceUI();
+            }
+        }
+        
+        // Обновляем статистику игрока
         if (user) {
             var stats = await loadPlayerStats(user.id);
             var totalBets = (stats?.total_bets || 0) + gameState.playerBets.length;
@@ -1880,6 +1720,80 @@ async function showWinner(winner) {
     }
     
     modal.classList.add('show');
+}
+
+// ============================================================
+// СТАТИСТИКА ИГРОКОВ
+// ============================================================
+
+async function updatePlayerStats(userId, username, firstName, totalBets, totalWins, totalPrize) {
+    try {
+        var { data: existing, error: checkError } = await supabaseClient
+            .from('pvp_players')
+            .select('id')
+            .eq('user_id', userId)
+            .maybeSingle();
+        
+        if (checkError) {
+            console.warn('updatePlayerStats check error:', checkError.message);
+            return;
+        }
+        
+        if (existing) {
+            var { error: updateError } = await supabaseClient
+                .from('pvp_players')
+                .update({
+                    username: username,
+                    first_name: firstName,
+                    total_bets: totalBets,
+                    total_wins: totalWins,
+                    total_prize: totalPrize,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('user_id', userId);
+            
+            if (updateError) {
+                console.warn('updatePlayerStats update error:', updateError.message);
+            }
+        } else {
+            var { error: insertError } = await supabaseClient
+                .from('pvp_players')
+                .insert({
+                    user_id: userId,
+                    username: username,
+                    first_name: firstName,
+                    total_bets: totalBets,
+                    total_wins: totalWins,
+                    total_prize: totalPrize,
+                    created_at: new Date().toISOString()
+                });
+            
+            if (insertError) {
+                console.warn('updatePlayerStats insert error:', insertError.message);
+            }
+        }
+    } catch (error) {
+        console.warn('updatePlayerStats error:', error.message);
+    }
+}
+
+async function loadPlayerStats(userId) {
+    try {
+        var { data, error } = await supabaseClient
+            .from('pvp_players')
+            .select('*')
+            .eq('user_id', userId)
+            .maybeSingle();
+        
+        if (error) {
+            console.warn('loadPlayerStats error:', error.message);
+            return null;
+        }
+        return data;
+    } catch (error) {
+        console.warn('loadPlayerStats error:', error.message);
+        return null;
+    }
 }
 
 // ============================================================
@@ -1970,5 +1884,9 @@ window.pvpGame = {
     placeBet: placeBet,
     startNewRound: startNewRound,
     getActivePlayers: getActivePlayers,
-    updateUI: updateUI
+    updateUI: updateUI,
+    openDepositModal: openDepositModal,
+    updateBalanceFromDB: updateBalanceFromDB
 };
+
+console.log('✅ PvP game loaded');

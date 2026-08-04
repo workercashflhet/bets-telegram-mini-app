@@ -1,4 +1,4 @@
-// user.js - Модуль для работы с пользователями и балансом
+// user.js - Полный модуль управления пользователем и балансом
 
 // ============================================================
 // SUPABASE КОНФИГУРАЦИЯ
@@ -7,11 +7,7 @@ var SUPABASE_URL = 'https://siibxynvgrrsktyihuby.supabase.co';
 var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNpaWJ4eW52Z3Jyc2t0eWlodWJ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU3MDE0MzUsImV4cCI6MjEwMTI3NzQzNX0.k8bdNQPeB8lDkw_1XKVtFB-u3NjyHmyr2L7zE4mhN6I';
 
 var supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-    auth: {
-        persistSession: false,
-        autoRefreshToken: false,
-        detectSessionInUrl: false
-    },
+    auth: { persistSession: false },
     global: {
         headers: {
             'Accept': 'application/json',
@@ -22,50 +18,64 @@ var supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
 });
 
 // ============================================================
-// ПОЛЬЗОВАТЕЛЬ
+// USER MANAGER - ЕДИНЫЙ ИСТОЧНИК ПРАВДЫ
 // ============================================================
 
 var UserManager = {
-    currentUser: null,
+    _user: null,
+    _listeners: [],
     tg: window.Telegram?.WebApp || null,
 
-    // Получить данные пользователя из Telegram
+    // Получить данные из Telegram
     getTelegramUser: function() {
         if (!this.tg) return null;
         return this.tg.initDataUnsafe?.user || null;
     },
 
-    // Получить или создать пользователя в БД
-    getOrCreateUser: async function() {
-        try {
-            var tgUser = this.getTelegramUser();
-            if (!tgUser) {
-                console.warn('⚠️ No Telegram user found');
-                return null;
-            }
+    // Загрузить или создать пользователя
+    loadUser: async function() {
+        var tgUser = this.getTelegramUser();
+        if (!tgUser) {
+            console.warn('⚠️ No Telegram user');
+            return null;
+        }
 
-            var userId = String(tgUser.id);
-            
-            // Проверяем, есть ли пользователь в БД
-            var { data: existingUser, error: fetchError } = await supabaseClient
+        var userId = String(tgUser.id);
+
+        // Ищем в БД
+        var { data: existing, error } = await supabaseClient
+            .from('users')
+            .select('*')
+            .eq('user_id', userId)
+            .maybeSingle();
+
+        if (error) {
+            console.error('DB error:', error);
+            return null;
+        }
+
+        if (existing) {
+            // Обновляем данные из Telegram
+            var updates = {
+                username: tgUser.username || existing.username,
+                first_name: tgUser.first_name || existing.first_name,
+                last_name: tgUser.last_name || existing.last_name,
+                photo_url: tgUser.photo_url || existing.photo_url,
+                updated_at: new Date().toISOString()
+            };
+
+            var { error: updateError } = await supabaseClient
                 .from('users')
-                .select('*')
-                .eq('user_id', userId)
-                .maybeSingle();
+                .update(updates)
+                .eq('user_id', userId);
 
-            if (fetchError) {
-                console.error('Error fetching user:', fetchError);
-                return null;
+            if (!updateError) {
+                this._user = { ...existing, ...updates };
+            } else {
+                this._user = existing;
             }
-
-            if (existingUser) {
-                // Обновляем данные пользователя
-                this.currentUser = existingUser;
-                await this.updateUserData(tgUser);
-                return existingUser;
-            }
-
-            // Создаем нового пользователя
+        } else {
+            // Создаем нового
             var newUser = {
                 user_id: userId,
                 username: tgUser.username || '',
@@ -78,346 +88,279 @@ var UserManager = {
                 total_deposits_stars: 0
             };
 
-            var { data: createdUser, error: insertError } = await supabaseClient
+            var { data: created, error: insertError } = await supabaseClient
                 .from('users')
                 .insert(newUser)
                 .select()
                 .single();
 
             if (insertError) {
-                console.error('Error creating user:', insertError);
+                console.error('Create error:', insertError);
                 return null;
             }
 
-            this.currentUser = createdUser;
-            console.log('✅ User created:', createdUser);
-            return createdUser;
-
-        } catch (error) {
-            console.error('Error in getOrCreateUser:', error);
-            return null;
+            this._user = created;
+            console.log('✅ User created');
         }
+
+        // Уведомляем слушателей
+        this._notifyListeners();
+        return this._user;
     },
 
-    // Обновить данные пользователя
-    updateUserData: async function(tgUser) {
-        if (!tgUser || !this.currentUser) return;
-
-        try {
-            var updates = {
-                username: tgUser.username || this.currentUser.username,
-                first_name: tgUser.first_name || this.currentUser.first_name,
-                last_name: tgUser.last_name || this.currentUser.last_name,
-                photo_url: tgUser.photo_url || this.currentUser.photo_url,
-                updated_at: new Date().toISOString()
-            };
-
-            var { error: updateError } = await supabaseClient
-                .from('users')
-                .update(updates)
-                .eq('user_id', this.currentUser.user_id);
-
-            if (updateError) {
-                console.error('Error updating user:', updateError);
-            } else {
-                this.currentUser = { ...this.currentUser, ...updates };
-                console.log('✅ User updated');
-            }
-
-        } catch (error) {
-            console.error('Error in updateUserData:', error);
-        }
-    },
-
-    // Получить текущего пользователя
+    // Получить текущего пользователя (синхронно)
     getUser: function() {
-        return this.currentUser;
+        return this._user;
     },
 
-    // Получить баланс TON
-    getTonBalance: function() {
-        return this.currentUser?.ton_balance || 0;
+    // Подписаться на изменения
+    subscribe: function(callback) {
+        this._listeners.push(callback);
+        // Сразу вызываем с текущими данными
+        if (this._user) {
+            callback(this._user);
+        }
+        return function() {
+            this._listeners = this._listeners.filter(function(fn) { return fn !== callback; });
+        }.bind(this);
     },
 
-    // Получить баланс Stars
-    getStarsBalance: function() {
-        return this.currentUser?.stars_balance || 0;
+    _notifyListeners: function() {
+        if (!this._user) return;
+        this._listeners.forEach(function(fn) {
+            try { fn(this._user); } catch(e) {}
+        }.bind(this));
     },
 
-    // Добавить TON баланс
-    addTonBalance: async function(amount, txHash, description) {
-        if (!this.currentUser) return false;
+    // ============================================================
+    // ОПЕРАЦИИ С БАЛАНСОМ - МГНОВЕННОЕ ОБНОВЛЕНИЕ
+    // ============================================================
 
-        try {
-            var newBalance = this.currentUser.ton_balance + amount;
+    // Добавить TON
+    addTon: async function(amount, txHash, description) {
+        if (!this._user) return false;
+        if (amount <= 0) return false;
 
-            var { error: updateError } = await supabaseClient
-                .from('users')
-                .update({
-                    ton_balance: newBalance,
-                    total_deposits_ton: this.currentUser.total_deposits_ton + amount,
-                    updated_at: new Date().toISOString()
-                })
-                .eq('user_id', this.currentUser.user_id);
+        var newBalance = this._user.ton_balance + amount;
 
-            if (updateError) {
-                console.error('Error updating balance:', updateError);
-                return false;
-            }
+        var { error } = await supabaseClient
+            .from('users')
+            .update({
+                ton_balance: newBalance,
+                total_deposits_ton: this._user.total_deposits_ton + amount,
+                updated_at: new Date().toISOString()
+            })
+            .eq('user_id', this._user.user_id);
 
-            // Записываем транзакцию
-            await this.addTransaction({
-                user_id: this.currentUser.user_id,
-                type: 'deposit',
-                currency: 'ton',
-                amount: amount,
-                status: 'completed',
-                tx_hash: txHash || '',
-                description: description || 'Deposit TON'
-            });
-
-            this.currentUser.ton_balance = newBalance;
-            this.currentUser.total_deposits_ton += amount;
-            console.log('✅ TON balance updated:', newBalance);
-            return true;
-
-        } catch (error) {
-            console.error('Error in addTonBalance:', error);
+        if (error) {
+            console.error('Update error:', error);
             return false;
         }
+
+        // Мгновенно обновляем локальный кэш
+        this._user.ton_balance = newBalance;
+        this._user.total_deposits_ton += amount;
+
+        // Записываем транзакцию
+        await this._addTransaction('deposit', 'ton', amount, 'completed', txHash, description);
+
+        // Уведомляем всех
+        this._notifyListeners();
+        console.log('✅ TON added:', amount, 'New balance:', newBalance);
+        return true;
     },
 
-    // Добавить Stars баланс
-    addStarsBalance: async function(amount, description) {
-        if (!this.currentUser) return false;
+    // Добавить Stars
+    addStars: async function(amount, description) {
+        if (!this._user) return false;
+        if (amount <= 0) return false;
 
-        try {
-            var newBalance = this.currentUser.stars_balance + amount;
+        var newBalance = this._user.stars_balance + amount;
 
-            var { error: updateError } = await supabaseClient
-                .from('users')
-                .update({
-                    stars_balance: newBalance,
-                    total_deposits_stars: this.currentUser.total_deposits_stars + amount,
-                    updated_at: new Date().toISOString()
-                })
-                .eq('user_id', this.currentUser.user_id);
+        var { error } = await supabaseClient
+            .from('users')
+            .update({
+                stars_balance: newBalance,
+                total_deposits_stars: this._user.total_deposits_stars + amount,
+                updated_at: new Date().toISOString()
+            })
+            .eq('user_id', this._user.user_id);
 
-            if (updateError) {
-                console.error('Error updating stars balance:', updateError);
-                return false;
-            }
-
-            // Записываем транзакцию
-            await this.addTransaction({
-                user_id: this.currentUser.user_id,
-                type: 'deposit',
-                currency: 'stars',
-                amount: amount,
-                status: 'completed',
-                description: description || 'Deposit Stars'
-            });
-
-            this.currentUser.stars_balance = newBalance;
-            this.currentUser.total_deposits_stars += amount;
-            console.log('✅ Stars balance updated:', newBalance);
-            return true;
-
-        } catch (error) {
-            console.error('Error in addStarsBalance:', error);
+        if (error) {
+            console.error('Update error:', error);
             return false;
         }
+
+        this._user.stars_balance = newBalance;
+        this._user.total_deposits_stars += amount;
+
+        await this._addTransaction('deposit', 'stars', amount, 'completed', null, description);
+
+        this._notifyListeners();
+        console.log('✅ Stars added:', amount, 'New balance:', newBalance);
+        return true;
     },
 
-    // Снять TON баланс (для ставок)
-    subtractTonBalance: async function(amount, description) {
-        if (!this.currentUser) return false;
-        if (this.currentUser.ton_balance < amount) return false;
+    // Списать TON
+    subtractTon: async function(amount, description) {
+        if (!this._user) return false;
+        if (amount <= 0) return false;
+        if (this._user.ton_balance < amount) return false;
 
-        try {
-            var newBalance = this.currentUser.ton_balance - amount;
+        var newBalance = this._user.ton_balance - amount;
 
-            var { error: updateError } = await supabaseClient
-                .from('users')
-                .update({
-                    ton_balance: newBalance,
-                    updated_at: new Date().toISOString()
-                })
-                .eq('user_id', this.currentUser.user_id);
+        var { error } = await supabaseClient
+            .from('users')
+            .update({
+                ton_balance: newBalance,
+                updated_at: new Date().toISOString()
+            })
+            .eq('user_id', this._user.user_id);
 
-            if (updateError) {
-                console.error('Error subtracting TON:', updateError);
-                return false;
-            }
-
-            await this.addTransaction({
-                user_id: this.currentUser.user_id,
-                type: 'bet',
-                currency: 'ton',
-                amount: -amount,
-                status: 'completed',
-                description: description || 'Bet TON'
-            });
-
-            this.currentUser.ton_balance = newBalance;
-            console.log('✅ TON subtracted:', newBalance);
-            return true;
-
-        } catch (error) {
-            console.error('Error in subtractTonBalance:', error);
+        if (error) {
+            console.error('Update error:', error);
             return false;
         }
+
+        this._user.ton_balance = newBalance;
+        await this._addTransaction('bet', 'ton', -amount, 'completed', null, description);
+
+        this._notifyListeners();
+        console.log('✅ TON subtracted:', amount, 'New balance:', newBalance);
+        return true;
     },
 
-    // Снять Stars баланс (для ставок)
-    subtractStarsBalance: async function(amount, description) {
-        if (!this.currentUser) return false;
-        if (this.currentUser.stars_balance < amount) return false;
+    // Списать Stars
+    subtractStars: async function(amount, description) {
+        if (!this._user) return false;
+        if (amount <= 0) return false;
+        if (this._user.stars_balance < amount) return false;
 
-        try {
-            var newBalance = this.currentUser.stars_balance - amount;
+        var newBalance = this._user.stars_balance - amount;
 
-            var { error: updateError } = await supabaseClient
-                .from('users')
-                .update({
-                    stars_balance: newBalance,
-                    updated_at: new Date().toISOString()
-                })
-                .eq('user_id', this.currentUser.user_id);
+        var { error } = await supabaseClient
+            .from('users')
+            .update({
+                stars_balance: newBalance,
+                updated_at: new Date().toISOString()
+            })
+            .eq('user_id', this._user.user_id);
 
-            if (updateError) {
-                console.error('Error subtracting Stars:', updateError);
-                return false;
-            }
-
-            await this.addTransaction({
-                user_id: this.currentUser.user_id,
-                type: 'bet',
-                currency: 'stars',
-                amount: -amount,
-                status: 'completed',
-                description: description || 'Bet Stars'
-            });
-
-            this.currentUser.stars_balance = newBalance;
-            console.log('✅ Stars subtracted:', newBalance);
-            return true;
-
-        } catch (error) {
-            console.error('Error in subtractStarsBalance:', error);
+        if (error) {
+            console.error('Update error:', error);
             return false;
         }
+
+        this._user.stars_balance = newBalance;
+        await this._addTransaction('bet', 'stars', -amount, 'completed', null, description);
+
+        this._notifyListeners();
+        console.log('✅ Stars subtracted:', amount, 'New balance:', newBalance);
+        return true;
     },
 
     // Добавить выигрыш
     addWin: async function(amount, currency, description) {
-        if (!this.currentUser) return false;
+        if (!this._user) return false;
+        if (amount <= 0) return false;
 
-        try {
-            var updateData = {};
-            var transactionData = {
-                user_id: this.currentUser.user_id,
-                type: 'win',
-                currency: currency,
-                amount: amount,
-                status: 'completed',
-                description: description || 'Win'
-            };
+        var updateData = {};
+        var transactionData = {
+            type: 'win',
+            currency: currency,
+            amount: amount,
+            status: 'completed',
+            description: description || 'Win'
+        };
 
-            if (currency === 'ton') {
-                updateData.ton_balance = this.currentUser.ton_balance + amount;
-                this.currentUser.ton_balance = updateData.ton_balance;
-            } else {
-                updateData.stars_balance = this.currentUser.stars_balance + amount;
-                this.currentUser.stars_balance = updateData.stars_balance;
-            }
+        if (currency === 'ton') {
+            updateData.ton_balance = this._user.ton_balance + amount;
+            this._user.ton_balance = updateData.ton_balance;
+        } else {
+            updateData.stars_balance = this._user.stars_balance + amount;
+            this._user.stars_balance = updateData.stars_balance;
+        }
 
-            updateData.updated_at = new Date().toISOString();
+        updateData.updated_at = new Date().toISOString();
 
-            var { error: updateError } = await supabaseClient
-                .from('users')
-                .update(updateData)
-                .eq('user_id', this.currentUser.user_id);
+        var { error } = await supabaseClient
+            .from('users')
+            .update(updateData)
+            .eq('user_id', this._user.user_id);
 
-            if (updateError) {
-                console.error('Error adding win:', updateError);
-                return false;
-            }
-
-            await this.addTransaction(transactionData);
-            console.log('✅ Win added:', amount, currency);
-            return true;
-
-        } catch (error) {
-            console.error('Error in addWin:', error);
+        if (error) {
+            console.error('Update error:', error);
             return false;
         }
+
+        await this._addTransaction(transactionData.type, transactionData.currency, amount, 'completed', null, description);
+
+        this._notifyListeners();
+        console.log('✅ Win added:', amount, currency);
+        return true;
     },
 
-    // Добавить транзакцию
-    addTransaction: async function(transaction) {
+    // Внутренний метод для транзакций
+    _addTransaction: async function(type, currency, amount, status, txHash, description) {
         try {
-            var { error: insertError } = await supabaseClient
+            await supabaseClient
                 .from('transactions')
-                .insert(transaction);
-
-            if (insertError) {
-                console.error('Error adding transaction:', insertError);
-            }
-
+                .insert({
+                    user_id: this._user.user_id,
+                    type: type,
+                    currency: currency,
+                    amount: amount,
+                    status: status,
+                    tx_hash: txHash || '',
+                    description: description || ''
+                });
         } catch (error) {
-            console.error('Error in addTransaction:', error);
+            console.error('Transaction error:', error);
         }
     },
 
-    // Получить историю транзакций
+    // Получить историю
     getTransactions: async function(limit) {
-        if (!this.currentUser) return [];
+        if (!this._user) return [];
 
-        try {
-            var { data, error } = await supabaseClient
-                .from('transactions')
-                .select('*')
-                .eq('user_id', this.currentUser.user_id)
-                .order('created_at', { ascending: false })
-                .limit(limit || 20);
+        var { data, error } = await supabaseClient
+            .from('transactions')
+            .select('*')
+            .eq('user_id', this._user.user_id)
+            .order('created_at', { ascending: false })
+            .limit(limit || 20);
 
-            if (error) {
-                console.error('Error fetching transactions:', error);
-                return [];
-            }
-
-            return data || [];
-
-        } catch (error) {
-            console.error('Error in getTransactions:', error);
+        if (error) {
+            console.error('Transactions error:', error);
             return [];
         }
+
+        return data || [];
     },
 
-    // Обновить баланс из localStorage (для обратной совместимости)
-    syncFromLocalStorage: function() {
-        var saved = localStorage.getItem('bets_data');
-        if (saved && this.currentUser) {
-            try {
-                var data = JSON.parse(saved);
-                // Используем данные из БД как основной источник
-                // Но если в localStorage больше, можно обновить
-                if (data.balance > this.currentUser.ton_balance) {
-                    this.addTonBalance(data.balance - this.currentUser.ton_balance, '', 'Sync from localStorage');
-                }
-                if (data.inventory > this.currentUser.stars_balance) {
-                    this.addStarsBalance(data.inventory - this.currentUser.stars_balance, 'Sync from localStorage');
-                }
-            } catch (e) {
-                console.warn('Error syncing from localStorage:', e);
-            }
+    // Принудительно обновить из БД (для синхронизации)
+    refresh: async function() {
+        if (!this._user) return null;
+
+        var { data, error } = await supabaseClient
+            .from('users')
+            .select('*')
+            .eq('user_id', this._user.user_id)
+            .single();
+
+        if (error) {
+            console.error('Refresh error:', error);
+            return null;
         }
+
+        this._user = data;
+        this._notifyListeners();
+        return this._user;
     }
 };
 
 // ============================================================
-// ЭКСПОРТ
+// ГЛОБАЛЬНЫЙ ДОСТУП
 // ============================================================
 
 window.UserManager = UserManager;

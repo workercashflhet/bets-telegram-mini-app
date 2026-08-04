@@ -5,8 +5,6 @@ var tg = window.Telegram.WebApp;
 var state = {
     user: null,
     userId: null,
-    balance: 0.00,
-    inventory: 0,
     currentTab: 'promocodes',
     calcValue: '0',
     calcOperation: null,
@@ -15,43 +13,31 @@ var state = {
 
 // Initialize app
 document.addEventListener('DOMContentLoaded', function() {
-    // Показываем прелоадер минимум 3 секунды
     var preloader = document.getElementById('preloader');
     var app = document.getElementById('app');
     
-    // Расширяем приложение на весь экран
     tg.expand();
     
-    // Устанавливаем полноэкранный режим
     try {
         tg.requestFullscreen();
     } catch (e) {
         console.log('Fullscreen not available immediately');
     }
     
-    // Уведомляем Telegram, что приложение готово
     tg.ready();
-    
-    // Настройка внешнего вида
     tg.setBackgroundColor('#000000');
     tg.setHeaderColor('#000000');
     
-    // Показываем прелоадер минимум 3 секунды
     setTimeout(function() {
-        // Скрываем прелоадер
         preloader.classList.add('hidden');
-        
-        // Показываем приложение
         app.style.display = 'block';
-        
-        // Инициализируем приложение
         initializeApp();
     }, 3000);
 });
 
 function initializeApp() {
-    // Initialize user from DB first
-    initializeUserFromDB();
+    // Загружаем пользователя из БД
+    initializeUser();
     
     // Setup event listeners
     setupEventListeners();
@@ -59,14 +45,12 @@ function initializeApp() {
     // Инициализируем карусель
     initializeCarousel();
     
-    // Обработчик изменения размера
     window.addEventListener('resize', function() {
         if (tg.isExpanded) {
             tg.expand();
         }
     });
     
-    // Обработчик события изменения вьюпорта
     tg.onEvent('viewportChanged', function() {
         if (!tg.isExpanded) {
             tg.expand();
@@ -74,72 +58,69 @@ function initializeApp() {
     });
 }
 
-// Initialize user from Telegram and Supabase
-async function initializeUserFromDB() {
+// ============================================================
+// ПОЛЬЗОВАТЕЛЬ - ЗАГРУЗКА ИЗ БД
+// ============================================================
+
+async function initializeUser() {
     try {
         // Загружаем пользователя из БД
-        var userData = await UserManager.getOrCreateUser();
+        var user = await UserManager.loadUser();
         
-        if (userData) {
-            console.log('✅ User loaded from DB:', userData);
-            
-            // Обновляем состояние
-            state.user = userData;
-            state.userId = userData.user_id;
-            state.balance = userData.ton_balance;
-            state.inventory = userData.stars_balance;
-            
-            // Синхронизируем с localStorage
-            UserManager.syncFromLocalStorage();
+        if (user) {
+            console.log('✅ User loaded:', user);
+            state.user = user;
+            state.userId = user.user_id;
             
             // Обновляем UI
-            updateUserUI(userData);
-            updateBalanceUI();
+            updateUserUI(user);
+            updateBalanceUI(user);
         } else {
-            // Fallback на localStorage
-            console.warn('⚠️ Using localStorage fallback');
-            var savedUser = localStorage.getItem('bets_user');
-            if (savedUser) {
-                var userData = JSON.parse(savedUser);
-                state.userId = userData.userId;
-                var userNameDisplay = document.getElementById('userNameDisplay');
-                if (userNameDisplay) {
-                    userNameDisplay.textContent = userData.firstName || userData.username || 'User';
-                }
-            } else {
-                var userNameDisplay = document.getElementById('userNameDisplay');
-                if (userNameDisplay) {
-                    userNameDisplay.textContent = 'Demo User';
-                }
-                state.userId = Math.floor(Math.random() * 10000);
-            }
-            
-            // Загружаем баланс из localStorage
-            var saved = localStorage.getItem('bets_data');
-            if (saved) {
-                var data = JSON.parse(saved);
-                state.balance = data.balance || 0;
-                state.inventory = data.inventory || 0;
-                updateBalanceUI();
-            }
+            console.warn('⚠️ No user loaded, using fallback');
+            // Fallback для демо
+            var demoUser = {
+                user_id: 'demo_' + Date.now(),
+                username: 'demo_user',
+                first_name: 'Demo',
+                ton_balance: 0,
+                stars_balance: 0
+            };
+            state.user = demoUser;
+            state.userId = demoUser.user_id;
+            updateUserUI(demoUser);
+            updateBalanceUI(demoUser);
         }
         
+        // Подписываемся на изменения баланса
+        UserManager.subscribe(function(user) {
+            console.log('🔄 Balance updated:', user.ton_balance, user.stars_balance);
+            updateBalanceUI(user);
+            // Обновляем PvP если открыт
+            if (window.pvpGame) {
+                window.pvpGame.updateBalanceFromDB(user);
+            }
+        });
+        
     } catch (error) {
-        console.error('Error initializing user from DB:', error);
+        console.error('Error initializing user:', error);
     }
 }
 
-// Update user UI
-function updateUserUI(userData) {
+// ============================================================
+// UI ОБНОВЛЕНИЯ
+// ============================================================
+
+function updateUserUI(user) {
     var userNameDisplay = document.getElementById('userNameDisplay');
     var userAvatar = document.getElementById('userAvatar');
     var userNameElement = document.getElementById('userName');
     var userIdElement = document.getElementById('userId');
     
+    // Имя
     if (userNameDisplay) {
-        var firstName = userData.first_name || '';
-        var lastName = userData.last_name || '';
-        var username = userData.username || '';
+        var firstName = user.first_name || '';
+        var lastName = user.last_name || '';
+        var username = user.username || '';
         
         if (firstName) {
             userNameDisplay.textContent = firstName + (lastName ? ' ' + lastName : '');
@@ -150,66 +131,57 @@ function updateUserUI(userData) {
         }
     }
     
+    // Аватар
     if (userAvatar) {
-        if (userData.photo_url) {
-            userAvatar.src = userData.photo_url;
+        if (user.photo_url) {
+            userAvatar.src = user.photo_url;
         } else {
-            userAvatar.onerror = function() {
-                this.style.display = 'none';
-                var fallbackText = document.createElement('span');
-                fallbackText.className = 'user-avatar-fallback';
-                var firstLetter = (userData.first_name || userData.username || 'U')[0].toUpperCase();
-                fallbackText.textContent = firstLetter;
-                this.parentNode.insertBefore(fallbackText, this);
-                this.style.display = 'none';
-            };
+            // Пробуем загрузить через Telegram
+            var tgUser = UserManager.getTelegramUser();
+            if (tgUser && tgUser.id) {
+                var avatarUrl = 'https://t.me/i/userpic/320/' + tgUser.id + '.jpg';
+                userAvatar.src = avatarUrl;
+                userAvatar.onerror = function() {
+                    this.style.display = 'none';
+                    var fallback = document.createElement('span');
+                    fallback.className = 'user-avatar-fallback';
+                    var letter = (user.first_name || user.username || 'U')[0].toUpperCase();
+                    fallback.textContent = letter;
+                    this.parentNode.insertBefore(fallback, this);
+                };
+            }
         }
     }
     
+    // Username
     if (userNameElement) {
-        userNameElement.textContent = '@' + (userData.username || 'user');
+        userNameElement.textContent = '@' + (user.username || 'user');
     }
     
+    // ID
     if (userIdElement) {
-        userIdElement.textContent = 'id: ' + userData.user_id;
+        userIdElement.textContent = 'id: ' + (user.user_id || '');
     }
 }
 
-// Update balance UI
-function updateBalanceUI() {
+function updateBalanceUI(user) {
+    if (!user) return;
+    
     var tonBalanceEl = document.getElementById('tonBalance');
     var starsBalanceEl = document.getElementById('starsBalance');
     
     if (tonBalanceEl) {
-        tonBalanceEl.textContent = state.balance.toFixed(2);
+        tonBalanceEl.textContent = (user.ton_balance || 0).toFixed(2);
     }
     if (starsBalanceEl) {
-        starsBalanceEl.textContent = Math.floor(state.inventory);
-    }
-    
-    // Сохраняем в localStorage для обратной совместимости
-    localStorage.setItem('bets_data', JSON.stringify({
-        balance: state.balance,
-        inventory: state.inventory
-    }));
-}
-
-// Update balance from DB
-async function refreshBalance() {
-    try {
-        var userData = await UserManager.getOrCreateUser();
-        if (userData) {
-            state.balance = userData.ton_balance;
-            state.inventory = userData.stars_balance;
-            updateBalanceUI();
-            console.log('✅ Balance refreshed:', state.balance, state.inventory);
-        }
-    } catch (error) {
-        console.error('Error refreshing balance:', error);
+        starsBalanceEl.textContent = Math.floor(user.stars_balance || 0);
     }
 }
 
-// Carousel state
+// ============================================================
+// КАРУСЕЛЬ
+// ============================================================
+
 var currentSlide = 0;
 var totalSlides = 0;
 var autoPlayInterval = null;
@@ -218,7 +190,6 @@ var startX = 0;
 var currentX = 0;
 var isDragging = false;
 
-// Initialize carousel
 function initializeCarousel() {
     var track = document.getElementById('carouselTrack');
     var dots = document.querySelectorAll('.dot');
@@ -226,33 +197,24 @@ function initializeCarousel() {
     if (!track) return;
     
     totalSlides = track.children.length;
-    
-    // Set initial position
     updateCarousel(0);
-    
-    // Start autoplay
     startAutoPlay();
     
-    // Add touch/click events for dots
     dots.forEach(function(dot, index) {
         dot.addEventListener('click', function() {
             goToSlide(index);
         });
     });
     
-    // Touch events for swipe
     track.parentElement.addEventListener('touchstart', handleTouchStart, { passive: true });
     track.parentElement.addEventListener('touchmove', handleTouchMove, { passive: true });
     track.parentElement.addEventListener('touchend', handleTouchEnd, { passive: true });
-    
-    // Mouse events for desktop swipe
     track.parentElement.addEventListener('mousedown', handleMouseDown);
     track.parentElement.addEventListener('mouseleave', handleMouseLeave);
     track.parentElement.addEventListener('mouseup', handleMouseUp);
     track.parentElement.addEventListener('mousemove', handleMouseMove);
 }
 
-// Update carousel position
 function updateCarousel(index) {
     var track = document.getElementById('carouselTrack');
     var dots = document.querySelectorAll('.dot');
@@ -263,13 +225,11 @@ function updateCarousel(index) {
     var offset = -index * 100;
     track.style.transform = 'translateX(' + offset + '%)';
     
-    // Update dots
     dots.forEach(function(dot, i) {
         dot.classList.toggle('active', i === index);
     });
 }
 
-// Go to specific slide
 function goToSlide(index) {
     if (isTransitioning || index === currentSlide) return;
     if (index < 0) index = totalSlides - 1;
@@ -284,18 +244,15 @@ function goToSlide(index) {
     resetAutoPlay();
 }
 
-// Next slide
 function nextSlide() {
     goToSlide((currentSlide + 1) % totalSlides);
 }
 
-// Start autoplay
 function startAutoPlay() {
     stopAutoPlay();
     autoPlayInterval = setInterval(nextSlide, 7000);
 }
 
-// Stop autoplay
 function stopAutoPlay() {
     if (autoPlayInterval) {
         clearInterval(autoPlayInterval);
@@ -303,12 +260,10 @@ function stopAutoPlay() {
     }
 }
 
-// Reset autoplay
 function resetAutoPlay() {
     startAutoPlay();
 }
 
-// Touch handlers
 function handleTouchStart(e) {
     startX = e.touches[0].clientX;
     isDragging = true;
@@ -341,7 +296,6 @@ function handleTouchEnd(e) {
     currentX = 0;
 }
 
-// Mouse handlers for desktop
 function handleMouseDown(e) {
     startX = e.clientX;
     isDragging = true;
@@ -383,20 +337,20 @@ function handleMouseLeave() {
     }
 }
 
-// Show tab content
+// ============================================================
+// ВКЛАДКИ
+// ============================================================
+
 function showTab(page) {
-    // Скрываем все табы
     document.querySelectorAll('.tab-content').forEach(function(tab) {
         tab.classList.remove('active');
     });
     
-    // Показываем выбранный таб
     var targetTab = document.getElementById('tab-' + page);
     if (targetTab) {
         targetTab.classList.add('active');
     }
     
-    // Если переключились на вкладку Game, возобновляем автоплей
     if (page === 'game') {
         resetAutoPlay();
     } else {
@@ -404,20 +358,22 @@ function showTab(page) {
     }
 }
 
-// Setup event listeners
+// ============================================================
+// СОБЫТИЯ
+// ============================================================
+
 function setupEventListeners() {
-    // Bottom navigation
+    // Навигация
     document.querySelectorAll('.nav-item').forEach(function(item) {
         item.addEventListener('click', function(e) {
             document.querySelectorAll('.nav-item').forEach(function(i) { i.classList.remove('active'); });
             item.classList.add('active');
-            
             var page = item.dataset.page;
             showTab(page);
         });
     });
 
-    // Free spin button
+    // Бесплатный спин
     var freeSpinBtn = document.getElementById('freeSpinBtn');
     if (freeSpinBtn) {
         freeSpinBtn.addEventListener('click', function() {
@@ -436,15 +392,13 @@ function setupEventListeners() {
         });
     }
 
-    // Deposit button in balance island
+    // Депозит
     var depositBtn = document.getElementById('depositBtn');
     if (depositBtn) {
         depositBtn.addEventListener('click', function() {
-            // Открываем модалку депозита из pvp.js
             if (window.pvpGame && window.pvpGame.openDepositModal) {
                 window.pvpGame.openDepositModal();
             } else {
-                // Fallback: показываем попап
                 tg.showPopup({
                     title: '💰 Deposit',
                     message: 'Выберите способ пополнения',
@@ -464,25 +418,19 @@ function setupEventListeners() {
         });
     }
 
-    // Close app on back button
+    // Закрытие
     tg.onEvent('backButtonClicked', function() {
         tg.close();
     });
 }
 
-// Refresh balance periodically
-setInterval(function() {
-    refreshBalance();
-}, 30000); // Каждые 30 секунд
-
-// Export functions for debugging
+// Экспорт
 window.betsApp = {
     state: state,
     showTab: showTab,
     goToSlide: goToSlide,
     nextSlide: nextSlide,
-    initializeUserFromDB: initializeUserFromDB,
-    refreshBalance: refreshBalance,
+    initializeUser: initializeUser,
     UserManager: UserManager
 };
 
