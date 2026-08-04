@@ -566,6 +566,107 @@ function updateWheelImmediately() {
 }
 
 // ============================================================
+// ОЧИСТКА ИГРОКОВ В КОМНАТЕ
+// ============================================================
+
+async function clearRoomPlayers() {
+    try {
+        console.log('🧹 Clearing all players from room...');
+        
+        var result = await PvPRoomManager.clearAllPlayers();
+        
+        if (result) {
+            gameState.players = [];
+            gameState.totalPoolTon = 0;
+            gameState.totalPoolStars = 0;
+            gameState.playerBets = [];
+            gameState.winner = null;
+            gameState.wheelSegments = [];
+            
+            updateUI();
+            updatePlayersList();
+            updateWheelImmediately();
+            
+            console.log('✅ All players cleared successfully');
+        }
+        
+        return result;
+        
+    } catch (error) {
+        console.error('Clear room players error:', error);
+        return false;
+    }
+}
+
+// ============================================================
+// НОВЫЙ РАУНД - ПОЛНАЯ ОЧИСТКА
+// ============================================================
+
+function startNewRound() {
+    if (gameState.timer) clearInterval(gameState.timer);
+    if (gameState.spinTimer) clearTimeout(gameState.spinTimer);
+    
+    // Очищаем локальное состояние
+    gameState.players = [];
+    gameState.playerBets = [];
+    gameState.totalPoolTon = 0;
+    gameState.totalPoolStars = 0;
+    gameState.winner = null;
+    gameState.isSpinning = false;
+    gameState.wheelSegments = [];
+    gameState.roundPhase = 'waiting';
+    
+    // ОЧИЩАЕМ ВСЕХ ИГРОКОВ В БД
+    clearRoomPlayers().then(function() {
+        console.log('✅ Room cleared, ready for new round');
+    });
+    
+    // Обновляем центр колеса
+    var hubContent = document.getElementById('hubContent');
+    if (hubContent) {
+        hubContent.innerHTML = '<div class="hub-timer" id="hubTimer">20</div><div class="hub-status" id="hubStatus">Ожидание</div>';
+    }
+    
+    // Скрываем модалки
+    var winnerModal = document.getElementById('winnerModal');
+    if (winnerModal) winnerModal.classList.remove('show');
+    
+    var winnerSection = document.getElementById('winnerSection');
+    if (winnerSection) winnerSection.style.display = 'none';
+    
+    var spinningStatus = document.getElementById('spinningStatus');
+    if (spinningStatus) spinningStatus.style.display = 'none';
+    
+    var betSection = document.getElementById('betSection');
+    if (betSection) betSection.style.display = 'block';
+    
+    var placeBtn = document.getElementById('placeBetBtn');
+    if (placeBtn) placeBtn.disabled = false;
+    
+    // Обновляем колесо (показываем пустое)
+    var wheel = document.getElementById('wheel');
+    if (wheel) {
+        wheel.innerHTML = '<div style="width:100%;height:100%;border-radius:50%;background:#1a1a2e;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.1);font-size:14px;">Ожидание игроков</div>';
+        wheel.style.transform = 'rotate(0deg)';
+        wheel.classList.remove('waiting-spin', 'waiting-pattern', 'spinning');
+        wheel.style.transition = 'none';
+    }
+    
+    // Обновляем UI
+    updateUI();
+    updateBetUI();
+    updateTimerUI();
+    updatePlaceBetButton();
+    updatePlayersList();
+    updateRoomStatus();
+    
+    // Запускаем фазу ожидания
+    startWaitingPhase();
+    
+    tg.showAlert('🔄 Новый раунд начался! Делайте ставки!');
+}
+
+// ============================================================
 // КОЛЕСО - СЕГМЕНТЫ (ПРОПОРЦИОНАЛЬНОЕ РАСПРЕДЕЛЕНИЕ)
 // ============================================================
 
@@ -580,11 +681,9 @@ function createWheelSegments() {
         return;
     }
     
-    // Рассчитываем общую стоимость в Stars
     var totalValue = (gameState.totalPoolTon * TON_TO_STARS_RATE) + gameState.totalPoolStars;
     
     if (totalValue === 0) {
-        // Если пул пуст - равномерное распределение
         var equalAngle = 360 / activePlayers.length;
         var segmentsHTML = '';
         var currentAngle = 0;
@@ -611,7 +710,6 @@ function createWheelSegments() {
         return;
     }
     
-    // ПРОПОРЦИОНАЛЬНОЕ РАСПРЕДЕЛЕНИЕ
     var startAngle = 0;
     var segmentsHTML = '';
     var gradientColors = [];
@@ -624,7 +722,6 @@ function createWheelSegments() {
         var startPercent = (startAngle / 360) * 100;
         var endPercent = ((startAngle + angle) / 360) * 100;
         
-        // Сохраняем данные сегмента для определения победителя
         segmentData.push({
             player: player,
             startAngle: startAngle,
@@ -633,7 +730,6 @@ function createWheelSegments() {
             percentage: (playerValue / totalValue) * 100
         });
         
-        // Добавляем аватарку игрока в центр сегмента
         segmentsHTML += '<div class="wheel-avatar-container" style="transform: rotate(' + midAngle + 'deg);">' +
             '<div class="avatar-position">' +
             '<img src="' + getAvatarUrl(player) + '" alt="' + player.firstName + '" class="wheel-player-avatar">' +
@@ -643,7 +739,6 @@ function createWheelSegments() {
         startAngle += angle;
     });
     
-    // Сохраняем сегменты для определения победителя
     gameState.wheelSegments = segmentData;
     
     var gradient = 'conic-gradient(from 0deg, ' + gradientColors.join(', ') + ')';
@@ -654,7 +749,7 @@ function createWheelSegments() {
 }
 
 // ============================================================
-// ВРАЩЕНИЕ КОЛЕСА С ОСТАНОВКОЙ НА ПОБЕДИТЕЛЕ
+// ВРАЩЕНИЕ КОЛЕСА
 // ============================================================
 
 function startSpin() {
@@ -681,17 +776,13 @@ function startSpin() {
     
     updateHub('status', 'ИГРА');
     
-    // Создаем сегменты перед вращением
     createWheelSegments();
     
-    // ВЫБИРАЕМ ПОБЕДИТЕЛЯ (на основе процентов)
     var winner = selectWinnerBySegments();
     gameState.winner = winner;
     
-    // Рассчитываем угол для остановки на победителе
     var targetAngle = calculateTargetAngleForWinner(winner);
     
-    // Добавляем несколько полных оборотов для эффекта
     var spins = 5 + Math.random() * 5;
     var finalAngle = 360 * spins + targetAngle;
     gameState.rotationAngle += finalAngle;
@@ -704,8 +795,6 @@ function startSpin() {
     }
     
     updateHub('avatar', winner);
-    
-    // Обновляем центр колеса с именем текущего игрока под указателем
     updateHubCurrentPlayer();
     
     gameState.spinTimer = setTimeout(function() {
@@ -718,7 +807,6 @@ function startSpin() {
         
         if (spinningStatus) spinningStatus.style.display = 'none';
         
-        // Показываем победителя
         showWinner(winner);
         updateUI();
         updatePlaceBetButton();
@@ -737,7 +825,6 @@ function selectWinnerBySegments() {
         return activePlayers[Math.floor(Math.random() * activePlayers.length)];
     }
     
-    // Генерируем случайное число от 0 до totalValue
     var random = Math.random() * totalValue;
     var cumulative = 0;
     
@@ -765,9 +852,7 @@ function calculateTargetAngleForWinner(winner) {
         return 0;
     }
     
-    // Находим сегмент победителя
     var startAngle = 0;
-    var winnerAngle = 0;
     var winnerSegment = null;
     
     for (var i = 0; i < activePlayers.length; i++) {
@@ -791,27 +876,18 @@ function calculateTargetAngleForWinner(winner) {
         return 0;
     }
     
-    // Угол для указателя (сверху, 0 градусов)
-    // Нужно чтобы указатель указывал на середину сегмента победителя
-    // Угол поворота = 360 - (midAngle) + небольшое смещение
     var midAngle = winnerSegment.midAngle;
-    
-    // Добавляем небольшое случайное смещение внутри сегмента
     var segmentRange = winnerSegment.endAngle - winnerSegment.startAngle;
-    var randomOffset = (Math.random() * 0.6 + 0.2) * segmentRange; // 20-80% от сегмента
+    var randomOffset = (Math.random() * 0.6 + 0.2) * segmentRange;
     var targetPoint = winnerSegment.startAngle + randomOffset;
-    
-    // Угол для остановки: 360 - targetPoint (так как указатель сверху)
     var targetAngle = 360 - targetPoint;
-    
-    // Нормализуем угол
     targetAngle = ((targetAngle % 360) + 360) % 360;
     
     return targetAngle;
 }
 
 // ============================================================
-// ОБНОВЛЕНИЕ ЦЕНТРА КОЛЕСА (ИГРОК ПОД УКАЗАТЕЛЕМ)
+// ОБНОВЛЕНИЕ ЦЕНТРА КОЛЕСА
 // ============================================================
 
 function updateHubCurrentPlayer() {
@@ -825,16 +901,13 @@ function updateHubCurrentPlayer() {
         return;
     }
     
-    // Если есть победитель - показываем его
     if (gameState.winner) {
         hubContent.innerHTML = '<img src="' + getAvatarUrl(gameState.winner) + '" alt="' + gameState.winner.firstName + '" class="hub-avatar">' +
             '<div class="hub-player-name">' + gameState.winner.firstName + '</div>';
         return;
     }
     
-    // Если вращение - показываем случайного игрока (будет обновляться)
     if (gameState.isSpinning) {
-        // Показываем текущего игрока под указателем (расчет по текущему углу)
         var currentAngle = gameState.rotationAngle % 360;
         var player = getPlayerAtAngle(currentAngle);
         if (player) {
@@ -847,7 +920,6 @@ function updateHubCurrentPlayer() {
         return;
     }
     
-    // В режиме ожидания - показываем таймер
     hubContent.innerHTML = '<div class="hub-timer" id="hubTimer">' + gameState.timeLeft + '</div>' +
         '<div class="hub-status" id="hubStatus">Ожидание</div>';
 }
@@ -860,10 +932,9 @@ function getPlayerAtAngle(angle) {
         return null;
     }
     
-    // Нормализуем угол (указатель сверху = 0 градусов)
     var normalizedAngle = ((360 - angle) % 360 + 360) % 360;
-    
     var startAngle = 0;
+    
     for (var i = 0; i < activePlayers.length; i++) {
         var player = activePlayers[i];
         var playerValue = calculatePlayerTotalValue(player);
@@ -1174,7 +1245,6 @@ function startWaitingPhase() {
     
     if (gameState.timer) clearInterval(gameState.timer);
     
-    // Запускаем вращение в режиме ожидания
     startWaitingSpin();
     
     updateHub('timer', ROUND_DURATION);
@@ -1770,51 +1840,6 @@ async function placeBet() {
     if (activePlayers.length >= MIN_PLAYERS && gameState.roundPhase === 'waiting') {
         startCountdown();
     }
-}
-
-// ============================================================
-// НОВЫЙ РАУНД
-// ============================================================
-
-function startNewRound() {
-    if (gameState.timer) clearInterval(gameState.timer);
-    if (gameState.spinTimer) clearTimeout(gameState.spinTimer);
-    
-    gameState.players.forEach(function(p) { p.bets = []; });
-    gameState.playerBets = [];
-    gameState.totalPoolTon = 0;
-    gameState.totalPoolStars = 0;
-    gameState.winner = null;
-    gameState.isSpinning = false;
-    gameState.wheelSegments = [];
-    
-    var hubContent = document.getElementById('hubContent');
-    if (hubContent) {
-        hubContent.innerHTML = '<div class="hub-timer" id="hubTimer">20</div><div class="hub-status" id="hubStatus">Ожидание</div>';
-    }
-    
-    var winnerModal = document.getElementById('winnerModal');
-    if (winnerModal) winnerModal.classList.remove('show');
-    
-    var winnerSection = document.getElementById('winnerSection');
-    if (winnerSection) winnerSection.style.display = 'none';
-    
-    var spinningStatus = document.getElementById('spinningStatus');
-    if (spinningStatus) spinningStatus.style.display = 'none';
-    
-    var betSection = document.getElementById('betSection');
-    if (betSection) betSection.style.display = 'block';
-    
-    var placeBtn = document.getElementById('placeBetBtn');
-    if (placeBtn) placeBtn.disabled = false;
-    
-    startWaitingPhase();
-    updateUI();
-    updateBetUI();
-    updateTimerUI();
-    updatePlaceBetButton();
-    
-    tg.showAlert('🔄 Новый раунд начался! Делайте ставки!');
 }
 
 // ============================================================

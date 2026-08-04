@@ -141,7 +141,6 @@ var PvPRoomManager = {
                     this._players.push(newData);
                     this.updateTotalPool();
                     this.notifyListeners('player_added', newData);
-                    // ПРИНУДИТЕЛЬНОЕ ОБНОВЛЕНИЕ
                     this.forceUpdate();
                 }
                 break;
@@ -149,14 +148,12 @@ var PvPRoomManager = {
             case 'UPDATE':
                 var index = this._players.findIndex(p => p.user_id === newData.user_id);
                 if (index !== -1) {
-                    // Обновляем существующего игрока
                     this._players[index] = newData;
                 } else {
                     this._players.push(newData);
                 }
                 this.updateTotalPool();
                 this.notifyListeners('player_updated', newData);
-                // ПРИНУДИТЕЛЬНОЕ ОБНОВЛЕНИЕ
                 this.forceUpdate();
                 break;
                 
@@ -186,12 +183,10 @@ var PvPRoomManager = {
         this._roundId = newData.round_number || 0;
     },
 
-    // ПРИНУДИТЕЛЬНОЕ ОБНОВЛЕНИЕ
     forceUpdate: function() {
         var now = Date.now();
-        if (now - this._lastUpdate > 100) { // Не чаще чем раз в 100мс
+        if (now - this._lastUpdate > 100) {
             this._lastUpdate = now;
-            // Перезагружаем игроков и обновляем UI
             this.loadPlayers().then(function() {
                 console.log('🔄 Force update complete');
             });
@@ -281,13 +276,43 @@ var PvPRoomManager = {
             
             this.updateTotalPool();
             
-            // ПРИНУДИТЕЛЬНО ОБНОВЛЯЕМ СРАЗУ
             await this.loadPlayers();
             
             return true;
             
         } catch (error) {
             console.error('Add bet error:', error);
+            return false;
+        }
+    },
+
+    clearAllPlayers: async function() {
+        try {
+            var roomId = this._roomId;
+            console.log('🧹 Clearing all players from room:', roomId);
+            
+            var { error } = await supabaseClient
+                .from('pvp_room_players')
+                .delete()
+                .eq('room_id', roomId);
+            
+            if (error) {
+                console.error('Clear players error:', error);
+                return false;
+            }
+            
+            this._players = [];
+            this._totalPoolTon = 0;
+            this._totalPoolStars = 0;
+            
+            this.notifyListeners('players_updated', []);
+            this.notifyListeners('pool_updated', { ton: 0, stars: 0 });
+            
+            console.log('✅ All players cleared');
+            return true;
+            
+        } catch (error) {
+            console.error('Clear all players error:', error);
             return false;
         }
     },
