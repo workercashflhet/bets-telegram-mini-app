@@ -445,6 +445,7 @@ async function forceResetRound() {
         hubContent.innerHTML = '<div class="hub-timer" id="hubTimer">' + ROUND_DURATION + '</div><div class="hub-status" id="hubStatus">Ожидание</div>';
     }
     
+    // Очищаем игроков в комнате
     await clearRoomPlayers();
     await syncRoomStateToDB();
     
@@ -1860,7 +1861,7 @@ async function showWinner(winner) {
         };
     });
     
-    await saveRoundToDB(
+    var savedRound = await saveRoundToDB(
         gameState.roundId,
         winner.firstName,
         totalInTon,
@@ -1869,6 +1870,7 @@ async function showWinner(winner) {
         playerDetails
     );
     
+    // savedRound может быть null, поэтому обрабатываем это
     if (savedRound) {
         gameState.history.unshift({
             roundId: gameState.roundId,
@@ -1920,6 +1922,16 @@ async function showWinner(winner) {
         
         updateTopGameDisplay();
         updateHeaderInfo();
+    } else {
+        // Если не удалось сохранить в БД, всё равно добавляем в локальную историю
+        gameState.history.unshift({
+            roundId: gameState.roundId,
+            winner: winner.firstName,
+            prize: totalInTon,
+            multiplier: multiplier,
+            players: getActivePlayers().length,
+            timestamp: Date.now()
+        });
     }
     
     modal.classList.add('show');
@@ -1929,6 +1941,7 @@ async function showWinner(winner) {
         modal.classList.remove('show');
     }, 3000);
 }
+
 
 // ============================================================
 // СТАТИСТИКА ИГРОКОВ
