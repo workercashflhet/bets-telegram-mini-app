@@ -1,7 +1,5 @@
-// pvp.js - С СИНХРОНИЗАЦИЕЙ СОСТОЯНИЯ ЧЕРЕЗ БД
-
 // ============================================================
-// PvP КОЛЕСО - ПОЛНАЯ ЛОГИКА С СИНХРОНИЗАЦИЕЙ
+// PvP КОЛЕСО - С СЕРВЕРНЫМ ВЫБОРОМ ПОБЕДИТЕЛЯ
 // ============================================================
 
 var tg = window.Telegram.WebApp;
@@ -29,6 +27,23 @@ if (UserManager) {
         updatePvPBalanceUI();
     });
 }
+
+// ============================================================
+// SUPABASE КОНФИГУРАЦИЯ
+// ============================================================
+var SUPABASE_URL = 'https://siibxynvgrrsktyihuby.supabase.co';
+var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNpaWJ4eW52Z3Jyc2t0eWlodWJ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU3MDE0MzUsImV4cCI6MjEwMTI3NzQzNX0.k8bdNQPeB8lDkw_1XKVtFB-u3NjyHmyr2L7zE4mhN6I';
+
+var supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+    auth: { persistSession: false },
+    global: {
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'apikey': SUPABASE_KEY
+        }
+    }
+});
 
 // ============================================================
 // TON CONNECT - ИНИЦИАЛИЗАЦИЯ
@@ -66,6 +81,20 @@ function initTonConnect() {
 function createTonConnectInstance() {
     try {
         var TonConnectUI = window.TON_CONNECT_UI.TonConnectUI;
+        
+        fetch(MANIFEST_URL)
+            .then(function(response) {
+                if (!response.ok) {
+                    console.warn('⚠️ Manifest status:', response.status);
+                }
+                return response.json();
+            })
+            .then(function(data) {
+                console.log('✅ Manifest loaded:', data);
+            })
+            .catch(function(err) {
+                console.warn('⚠️ Manifest check error:', err.message);
+            });
         
         tonConnectUI = new TonConnectUI({
             manifestUrl: MANIFEST_URL,
@@ -177,21 +206,17 @@ function updateWalletUI(connected, address) {
 }
 
 // ============================================================
-// SUPABASE КОНФИГУРАЦИЯ
+// КОНСТАНТЫ
 // ============================================================
-var SUPABASE_URL = 'https://siibxynvgrrsktyihuby.supabase.co';
-var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNpaWJ4eW52Z3Jyc2t0eWlodWJ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU3MDE0MzUsImV4cCI6MjEwMTI3NzQzNX0.k8bdNQPeB8lDkw_1XKVtFB-u3NjyHmyr2L7zE4mhN6I';
-
-var supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-    auth: { persistSession: false },
-    global: {
-        headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-            'apikey': SUPABASE_KEY
-        }
-    }
-});
+var ROUND_DURATION = 15;
+var SPIN_DURATION = 4000;
+var NEW_ROUND_DELAY = 3000;
+var FORCE_RESET_TIMEOUT = 20000;
+var TON_TO_STARS_RATE = 76;
+var MIN_PLAYERS = 2;
+var MIN_BET_TON = 0.1;
+var MIN_BET_STARS = 10;
+var OWNER_WALLET = 'UQC5ZUl4Qobq69CgLi7tg-8y6aOwVilc5b82jJFZShtnetrw';
 
 // ============================================================
 // СОСТОЯНИЕ ИГРЫ
@@ -205,7 +230,7 @@ var gameState = {
     balance: { ton: 0.00, stars: 0 },
     playerBets: [],
     roundPhase: 'waiting',
-    timeLeft: 20,
+    timeLeft: ROUND_DURATION,
     timer: null,
     isSpinning: false,
     rotationAngle: 0,
@@ -217,21 +242,11 @@ var gameState = {
     topGame: null,
     currentRoundId: null,
     wheelSegments: [],
-    isSyncing: false
+    isSyncing: false,
+    isResultLoaded: false
 };
 
-var TON_TO_STARS_RATE = 76;
-var MIN_PLAYERS = 2;
-var MIN_BET_TON = 0.1;
-var MIN_BET_STARS = 10;
-var ROUND_DURATION = 15;  // Было 20, стало 15
-var SPIN_DURATION = 4000; // Было 5000, стало 4000
-var NEW_ROUND_DELAY = 3000; // Было 5000, стало 3000
-var FORCE_RESET_TIMEOUT = 20000; // Было 30000, стало 20000
-var SYNC_INTERVAL = 1000; 
 var forceResetTimer = null;
-
-var OWNER_WALLET = 'UQC5ZUl4Qobq69CgLi7tg-8y6aOwVilc5b82jJFZShtnetrw';
 
 // ============================================================
 // СИНХРОНИЗАЦИЯ СОСТОЯНИЯ С БД
@@ -244,10 +259,7 @@ async function syncRoomStateToDB() {
             .update({
                 phase: gameState.roundPhase,
                 time_left: gameState.timeLeft,
-                winner_id: gameState.winner ? gameState.winner.userId : null,
-                winner_name: gameState.winner ? gameState.winner.firstName : null,
-                prize: gameState.totalPoolTon + (gameState.totalPoolStars / TON_TO_STARS_RATE),
-                spin_end_time: gameState.isSpinning ? new Date(Date.now() + SPIN_DURATION).toISOString() : null,
+                round_number: gameState.roundId,
                 updated_at: new Date().toISOString()
             })
             .eq('room_id', 'pvp_main_room');
@@ -272,10 +284,116 @@ async function loadRoomStateFromDB() {
             console.error('Load state error:', error);
             return null;
         }
-        
         return data;
     } catch (error) {
         console.error('Load state error:', error);
+        return null;
+    }
+}
+
+// ============================================================
+// СЕРВЕРНЫЙ ВЫБОР ПОБЕДИТЕЛЯ
+// ============================================================
+
+async function selectWinnerOnServer() {
+    try {
+        console.log('🎯 Selecting winner on server...');
+        
+        var activePlayers = getActivePlayers();
+        if (activePlayers.length === 0) {
+            console.warn('No active players');
+            return null;
+        }
+        
+        var totalValue = 0;
+        var playerValues = activePlayers.map(function(player) {
+            var value = calculatePlayerTotalValue(player);
+            totalValue += value;
+            return {
+                player: player,
+                value: value
+            };
+        });
+        
+        if (totalValue === 0) {
+            var randomWinner = activePlayers[Math.floor(Math.random() * activePlayers.length)];
+            return randomWinner;
+        }
+        
+        var random = Math.random() * totalValue;
+        var cumulative = 0;
+        
+        for (var i = 0; i < playerValues.length; i++) {
+            cumulative += playerValues[i].value;
+            if (random <= cumulative) {
+                console.log('🎯 Winner selected:', playerValues[i].player.firstName);
+                return playerValues[i].player;
+            }
+        }
+        
+        return activePlayers[activePlayers.length - 1];
+        
+    } catch (error) {
+        console.error('Select winner error:', error);
+        return null;
+    }
+}
+
+async function saveSpinResultToDB(winner, prize, roundId, players) {
+    try {
+        var { error } = await supabaseClient
+            .from('pvp_rooms')
+            .update({
+                phase: 'finished',
+                winner_id: winner.userId,
+                winner_name: winner.firstName,
+                prize_amount: prize,
+                spin_result: {
+                    winner: winner,
+                    prize: prize,
+                    roundId: roundId,
+                    timestamp: new Date().toISOString()
+                },
+                round_players: players.map(function(p) {
+                    return {
+                        user_id: p.userId,
+                        name: p.firstName,
+                        bets: p.bets,
+                        value: calculatePlayerTotalValue(p)
+                    };
+                })
+            })
+            .eq('room_id', 'pvp_main_room');
+        
+        if (error) {
+            console.error('Save spin result error:', error);
+            return false;
+        }
+        
+        console.log('✅ Spin result saved to DB');
+        return true;
+        
+    } catch (error) {
+        console.error('Save spin result error:', error);
+        return false;
+    }
+}
+
+async function loadSpinResultFromDB() {
+    try {
+        var { data, error } = await supabaseClient
+            .from('pvp_rooms')
+            .select('winner_id, winner_name, prize_amount, spin_result, phase, round_number')
+            .eq('room_id', 'pvp_main_room')
+            .single();
+        
+        if (error) {
+            console.error('Load spin result error:', error);
+            return null;
+        }
+        return data;
+    } catch (error) {
+        console.error('Load spin result error:', error);
         return null;
     }
 }
@@ -286,7 +404,6 @@ async function loadRoomStateFromDB() {
 
 function startForceResetTimer() {
     clearForceResetTimer();
-    console.log('⏰ Starting force reset timer (' + FORCE_RESET_TIMEOUT + 'ms)');
     forceResetTimer = setTimeout(function() {
         console.log('⚠️ Force reset triggered - round stuck!');
         forceResetRound();
@@ -303,7 +420,6 @@ function clearForceResetTimer() {
 async function forceResetRound() {
     console.log('🔄 FORCE RESETTING ROUND');
     
-    // Останавливаем все таймеры
     if (gameState.timer) {
         clearInterval(gameState.timer);
         gameState.timer = null;
@@ -317,14 +433,12 @@ async function forceResetRound() {
         gameState.newRoundTimer = null;
     }
     
-    // Сбрасываем состояние
     gameState.isSpinning = false;
     gameState.roundPhase = 'waiting';
     gameState.winner = null;
     gameState.timeLeft = ROUND_DURATION;
     gameState.rotationAngle = 0;
     
-    // Скрываем индикаторы
     var spinningStatus = document.getElementById('spinningStatus');
     if (spinningStatus) spinningStatus.style.display = 'none';
     var winnerSection = document.getElementById('winnerSection');
@@ -336,7 +450,6 @@ async function forceResetRound() {
     var placeBtn = document.getElementById('placeBetBtn');
     if (placeBtn) placeBtn.disabled = false;
     
-    // Сбрасываем колесо
     var wheel = document.getElementById('wheel');
     if (wheel) {
         wheel.style.transform = 'rotate(0deg)';
@@ -346,19 +459,14 @@ async function forceResetRound() {
         wheel.classList.add('waiting-spin');
     }
     
-    // Обновляем центр колеса
     var hubContent = document.getElementById('hubContent');
     if (hubContent) {
         hubContent.innerHTML = '<div class="hub-timer" id="hubTimer">' + ROUND_DURATION + '</div><div class="hub-status" id="hubStatus">Ожидание</div>';
     }
     
-    // Очищаем игроков
     await clearRoomPlayers();
-    
-    // Синхронизируем состояние с БД
     await syncRoomStateToDB();
     
-    // Обновляем UI
     updateUI();
     updateBetUI();
     updateTimerUI();
@@ -401,51 +509,89 @@ document.addEventListener('DOMContentLoaded', function() {
         if (state) {
             console.log('📡 Loaded room state:', state);
             
-            // Восстанавливаем состояние
             gameState.roundPhase = state.phase || 'waiting';
             gameState.timeLeft = state.time_left || ROUND_DURATION;
             gameState.roundId = state.round_number || 0;
             
-            if (state.winner_id) {
-                gameState.winner = {
+            // Если раунд завершен - показываем победителя
+            if (state.phase === 'finished' && state.winner_id) {
+                gameState.isResultLoaded = true;
+                var winner = {
                     userId: state.winner_id,
                     firstName: state.winner_name || 'Winner'
                 };
-            }
-            
-            // Если раунд в процессе вращения, проверяем не истекло ли время
-            if (state.phase === 'spinning' && state.spin_end_time) {
-                var spinEnd = new Date(state.spin_end_time).getTime();
-                var now = Date.now();
-                if (now < spinEnd) {
-                    // Ещё крутится
-                    var remaining = spinEnd - now;
-                    gameState.isSpinning = true;
-                    updateUI();
-                    updateHub('status', 'ИГРА');
-                    document.getElementById('spinningStatus').style.display = 'block';
-                    document.getElementById('betSection').style.display = 'none';
-                    
-                    // Запускаем таймер для завершения
-                    gameState.spinTimer = setTimeout(function() {
-                        completeSpin();
-                    }, remaining);
-                } else {
-                    // Уже должно было завершиться
-                    completeSpin();
+                gameState.winner = winner;
+                gameState.roundPhase = 'finished';
+                
+                var totalInTon = state.prize_amount || 0;
+                
+                var winnerSection = document.getElementById('winnerSection');
+                if (winnerSection) {
+                    winnerSection.style.display = 'block';
+                    document.getElementById('winnerName').textContent = winner.firstName;
+                    document.getElementById('winnerPrize').innerHTML = totalInTon.toFixed(2) + ' <img src="assets/ton.png" alt="TON" class="winner-prize-icon">';
                 }
-            } else if (state.phase === 'finished' && state.winner_id) {
-                // Показываем победителя
-                showWinnerUI(state.winner_id, state.winner_name, state.prize || 0);
-            }
-            
-            // Если таймер запущен, восстанавливаем его
-            if (state.phase === 'countdown' && state.time_left > 0) {
+                
+                var modal = document.getElementById('winnerModal');
+                if (modal) {
+                    document.getElementById('winnerModalName').textContent = winner.firstName;
+                    document.getElementById('winnerModalPrize').innerHTML = totalInTon.toFixed(2) + ' <img src="assets/ton.png" alt="TON" class="winner-modal-icon-small">';
+                    modal.classList.add('show');
+                }
+                
+                var betSection = document.getElementById('betSection');
+                if (betSection) betSection.style.display = 'none';
+                
+                setTimeout(function() {
+                    startNewRound();
+                }, NEW_ROUND_DELAY);
+                
+            } else if (state.phase === 'spinning' && state.spin_result) {
+                // Если колесо крутится и есть результат - показываем победителя
+                gameState.isResultLoaded = true;
+                var winner = {
+                    userId: state.spin_result.winner.userId,
+                    firstName: state.spin_result.winner.firstName || 'Winner'
+                };
+                gameState.winner = winner;
+                gameState.roundPhase = 'finished';
+                
+                var totalInTon = state.spin_result.prize || 0;
+                
+                var winnerSection = document.getElementById('winnerSection');
+                if (winnerSection) {
+                    winnerSection.style.display = 'block';
+                    document.getElementById('winnerName').textContent = winner.firstName;
+                    document.getElementById('winnerPrize').innerHTML = totalInTon.toFixed(2) + ' <img src="assets/ton.png" alt="TON" class="winner-prize-icon">';
+                }
+                
+                var modal = document.getElementById('winnerModal');
+                if (modal) {
+                    document.getElementById('winnerModalName').textContent = winner.firstName;
+                    document.getElementById('winnerModalPrize').innerHTML = totalInTon.toFixed(2) + ' <img src="assets/ton.png" alt="TON" class="winner-modal-icon-small">';
+                    modal.classList.add('show');
+                }
+                
+                var betSection = document.getElementById('betSection');
+                if (betSection) betSection.style.display = 'none';
+                
+                setTimeout(function() {
+                    startNewRound();
+                }, NEW_ROUND_DELAY);
+                
+            } else if (state.phase === 'spinning') {
+                gameState.isSpinning = true;
+                gameState.roundPhase = 'spinning';
+                document.getElementById('spinningStatus').style.display = 'block';
+                document.getElementById('betSection').style.display = 'none';
+                document.getElementById('placeBetBtn').disabled = true;
+                
+                // Ждем результат от сервера через Realtime
+            } else if (state.phase === 'countdown' && state.time_left > 0) {
                 startCountdownFrom(state.time_left);
             }
         }
         
-        // Запускаем фазу ожидания если ничего не запущено
         if (gameState.roundPhase === 'waiting' || !gameState.roundPhase) {
             startWaitingPhase();
         }
@@ -460,7 +606,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Кнопка принудительного сброса
     var resetBtn = document.getElementById('forceResetBtn');
     if (resetBtn) {
         resetBtn.addEventListener('click', function() {
@@ -479,59 +624,6 @@ document.addEventListener('DOMContentLoaded', function() {
         adminSection.style.display = 'block';
     }
 });
-
-async function completeSpin() {
-    // Завершаем вращение - нужно получить победителя из БД или выбрать его
-    var state = await loadRoomStateFromDB();
-    if (state && state.winner_id) {
-        gameState.winner = {
-            userId: state.winner_id,
-            firstName: state.winner_name || 'Winner'
-        };
-        showWinnerUI(state.winner_id, state.winner_name, state.prize || 0);
-    } else {
-        // Если победитель не сохранен, выбираем случайного
-        var activePlayers = getActivePlayers();
-        if (activePlayers.length > 0) {
-            var winner = activePlayers[Math.floor(Math.random() * activePlayers.length)];
-            gameState.winner = winner;
-            showWinner(winner);
-        }
-    }
-}
-
-function showWinnerUI(userId, name, prize) {
-    gameState.isSpinning = false;
-    gameState.roundPhase = 'finished';
-    
-    var spinningStatus = document.getElementById('spinningStatus');
-    if (spinningStatus) spinningStatus.style.display = 'none';
-    
-    var winnerSection = document.getElementById('winnerSection');
-    if (winnerSection) {
-        winnerSection.style.display = 'block';
-        document.getElementById('winnerName').textContent = name || 'Winner';
-        document.getElementById('winnerPrize').innerHTML = prize.toFixed(2) + ' <img src="assets/ton.png" alt="TON" class="winner-prize-icon">';
-    }
-    
-    var modal = document.getElementById('winnerModal');
-    if (modal) {
-        document.getElementById('winnerModalName').textContent = name || 'Winner';
-        document.getElementById('winnerModalPrize').innerHTML = prize.toFixed(2) + ' <img src="assets/ton.png" alt="TON" class="winner-modal-icon-small">';
-        modal.classList.add('show');
-    }
-    
-    var betSection = document.getElementById('betSection');
-    if (betSection) betSection.style.display = 'none';
-    
-    // Запускаем новый раунд через 5 секунд
-    if (gameState.newRoundTimer) {
-        clearTimeout(gameState.newRoundTimer);
-    }
-    gameState.newRoundTimer = setTimeout(function() {
-        startNewRound();
-    }, NEW_ROUND_DELAY);
-}
 
 // ============================================================
 // ПОЛЬЗОВАТЕЛЬ
@@ -552,9 +644,11 @@ async function initializeUserInPvP() {
             gameState.balance.stars = user.stars_balance || 0;
             updatePvPBalanceUI();
             await initPvPRoom();
+            
             setTimeout(function() {
                 updateWheelImmediately();
             }, 500);
+            
             return user;
         }
         return null;
@@ -649,7 +743,7 @@ function setupRealtimeHandlers() {
                 break;
                 
             case 'room_finished':
-                handleRoomFinished(data);
+                handleRoomFinishedFromServer(data);
                 break;
                 
             case 'room_waiting':
@@ -753,28 +847,143 @@ function handleRoomSpin() {
     document.getElementById('placeBetBtn').disabled = true;
 }
 
-function handleRoomFinished(data) {
-    gameState.isSpinning = false;
-    gameState.roundPhase = 'finished';
-    document.getElementById('spinningStatus').style.display = 'none';
-    clearForceResetTimer();
+async function handleRoomFinishedFromServer(data) {
+    console.log('🏁 Room finished from server:', data);
     
-    setTimeout(function() {
+    if (gameState.roundPhase === 'finished' && gameState.winner) {
+        return;
+    }
+    
+    // Если данные пришли с данными победителя
+    if (data && data.winner_id) {
+        var winner = {
+            userId: data.winner_id,
+            firstName: data.winner_name || 'Winner'
+        };
+        var totalInTon = data.prize || 0;
+        
+        gameState.winner = winner;
+        gameState.isSpinning = false;
+        gameState.roundPhase = 'finished';
+        gameState.isResultLoaded = true;
+        
+        var spinningStatus = document.getElementById('spinningStatus');
+        if (spinningStatus) spinningStatus.style.display = 'none';
+        
+        var betSection = document.getElementById('betSection');
+        if (betSection) betSection.style.display = 'none';
+        
+        var placeBtn = document.getElementById('placeBetBtn');
+        if (placeBtn) placeBtn.disabled = true;
+        
+        var wheel = document.getElementById('wheel');
+        if (wheel) {
+            wheel.classList.remove('spinning');
+            wheel.style.transition = 'none';
+        }
+        
+        var winnerSection = document.getElementById('winnerSection');
+        if (winnerSection) {
+            winnerSection.style.display = 'block';
+            document.getElementById('winnerName').textContent = winner.firstName;
+            document.getElementById('winnerPrize').innerHTML = totalInTon.toFixed(2) + ' <img src="assets/ton.png" alt="TON" class="winner-prize-icon">';
+        }
+        
         var modal = document.getElementById('winnerModal');
         if (modal) {
-            modal.classList.remove('show');
+            document.getElementById('winnerModalName').textContent = winner.firstName;
+            document.getElementById('winnerModalPrize').innerHTML = totalInTon.toFixed(2) + ' <img src="assets/ton.png" alt="TON" class="winner-modal-icon-small">';
+            modal.classList.add('show');
         }
-    }, 3000);
-    
-    if (gameState.newRoundTimer) {
-        clearTimeout(gameState.newRoundTimer);
+        
+        updateUI();
+        updatePlayersList();
+        updateHubCurrentPlayer();
+        
+        // Добавляем выигрыш победителю
+        var user = tg.initDataUnsafe?.user;
+        if (user && winner.userId === String(user.id) && totalInTon > 0) {
+            if (UserManager) {
+                var added = await UserManager.addWin(totalInTon, 'ton', 'Win in PvP Round #' + gameState.roundId);
+                if (added) {
+                    var updatedUser = UserManager.getUser();
+                    gameState.balance.ton = updatedUser.ton_balance;
+                    updatePvPBalanceUI();
+                    if (window.betsApp && window.betsApp.refreshBalance) {
+                        window.betsApp.refreshBalance();
+                    }
+                }
+            }
+        }
+        
+        if (gameState.newRoundTimer) {
+            clearTimeout(gameState.newRoundTimer);
+        }
+        gameState.newRoundTimer = setTimeout(function() {
+            startNewRound();
+        }, NEW_ROUND_DELAY);
+        return;
     }
-    gameState.newRoundTimer = setTimeout(function() {
-        startNewRound();
-    }, NEW_ROUND_DELAY);
+    
+    // Если данных нет - загружаем из БД
+    var result = await loadSpinResultFromDB();
+    if (result && result.winner_id) {
+        var winner = {
+            userId: result.winner_id,
+            firstName: result.winner_name || 'Winner'
+        };
+        var totalInTon = result.prize_amount || 0;
+        
+        gameState.winner = winner;
+        gameState.isSpinning = false;
+        gameState.roundPhase = 'finished';
+        gameState.isResultLoaded = true;
+        
+        var spinningStatus = document.getElementById('spinningStatus');
+        if (spinningStatus) spinningStatus.style.display = 'none';
+        
+        var betSection = document.getElementById('betSection');
+        if (betSection) betSection.style.display = 'none';
+        
+        var placeBtn = document.getElementById('placeBetBtn');
+        if (placeBtn) placeBtn.disabled = true;
+        
+        var wheel = document.getElementById('wheel');
+        if (wheel) {
+            wheel.classList.remove('spinning');
+            wheel.style.transition = 'none';
+        }
+        
+        var winnerSection = document.getElementById('winnerSection');
+        if (winnerSection) {
+            winnerSection.style.display = 'block';
+            document.getElementById('winnerName').textContent = winner.firstName;
+            document.getElementById('winnerPrize').innerHTML = totalInTon.toFixed(2) + ' <img src="assets/ton.png" alt="TON" class="winner-prize-icon">';
+        }
+        
+        var modal = document.getElementById('winnerModal');
+        if (modal) {
+            document.getElementById('winnerModalName').textContent = winner.firstName;
+            document.getElementById('winnerModalPrize').innerHTML = totalInTon.toFixed(2) + ' <img src="assets/ton.png" alt="TON" class="winner-modal-icon-small">';
+            modal.classList.add('show');
+        }
+        
+        updateUI();
+        updatePlayersList();
+        updateHubCurrentPlayer();
+        
+        if (gameState.newRoundTimer) {
+            clearTimeout(gameState.newRoundTimer);
+        }
+        gameState.newRoundTimer = setTimeout(function() {
+            startNewRound();
+        }, NEW_ROUND_DELAY);
+    }
 }
 
 function handleRoomWaiting() {
+    if (gameState.isResultLoaded) return;
+    
     gameState.roundPhase = 'waiting';
     gameState.isSpinning = false;
     document.getElementById('betSection').style.display = 'block';
@@ -839,13 +1048,11 @@ async function startNewRound() {
     gameState.roundPhase = 'waiting';
     gameState.rotationAngle = 0;
     gameState.timeLeft = ROUND_DURATION;
+    gameState.isResultLoaded = false;
     
     await clearRoomPlayers();
-    
-    // Синхронизируем состояние с БД
     await syncRoomStateToDB();
     
-    // Возвращаем колесо к режиму ожидания
     var wheel = document.getElementById('wheel');
     if (wheel) {
         wheel.style.transform = 'rotate(0deg)';
@@ -883,7 +1090,6 @@ async function startNewRound() {
     
     startWaitingSpin();
     
-    // Уведомляем всех через Realtime
     PvPRoomManager.notifyListeners('room_waiting', { status: 'waiting' });
 }
 
@@ -938,7 +1144,6 @@ function createWheelSegments() {
     var startAngle = 0;
     var segmentsHTML = '';
     var gradientColors = [];
-    var segmentData = [];
     
     activePlayers.forEach(function(player) {
         var playerValue = calculatePlayerTotalValue(player);
@@ -946,14 +1151,6 @@ function createWheelSegments() {
         var midAngle = startAngle + angle / 2;
         var startPercent = (startAngle / 360) * 100;
         var endPercent = ((startAngle + angle) / 360) * 100;
-        
-        segmentData.push({
-            player: player,
-            startAngle: startAngle,
-            endAngle: startAngle + angle,
-            midAngle: midAngle,
-            percentage: (playerValue / totalValue) * 100
-        });
         
         segmentsHTML += '<div class="wheel-avatar-container" style="transform: rotate(' + midAngle + 'deg);">' +
             '<div class="avatar-position">' +
@@ -964,14 +1161,13 @@ function createWheelSegments() {
         startAngle += angle;
     });
     
-    gameState.wheelSegments = segmentData;
     var gradient = 'conic-gradient(from 0deg, ' + gradientColors.join(', ') + ')';
     wheel.innerHTML = '<div style="width:100%;height:100%;border-radius:50%;background:' + gradient + ';position:relative;">' +
         segmentsHTML + '</div>';
 }
 
 // ============================================================
-// ВРАЩЕНИЕ КОЛЕСА
+// ВРАЩЕНИЕ КОЛЕСА - С СЕРВЕРНЫМ ВЫБОРОМ
 // ============================================================
 
 async function startSpin() {
@@ -987,7 +1183,20 @@ async function startSpin() {
     gameState.roundId++;
     updateRoundDisplay();
     
-    // Сохраняем состояние в БД
+    // Выбираем победителя на сервере
+    var winner = await selectWinnerOnServer();
+    if (!winner) {
+        tg.showAlert('❌ Ошибка выбора победителя');
+        startWaitingPhase();
+        return;
+    }
+    
+    gameState.winner = winner;
+    
+    var totalInTon = gameState.totalPoolTon + (gameState.totalPoolStars / TON_TO_STARS_RATE);
+    
+    // Сохраняем результат в БД
+    await saveSpinResultToDB(winner, totalInTon, gameState.roundId, activePlayers);
     await syncRoomStateToDB();
     
     var placeBtn = document.getElementById('placeBetBtn');
@@ -999,9 +1208,6 @@ async function startSpin() {
     
     updateHub('status', 'ИГРА');
     createWheelSegments();
-    
-    var winner = selectWinnerBySegments();
-    gameState.winner = winner;
     
     var targetAngle = calculateTargetAngleForWinner(winner);
     var spins = 5 + Math.random() * 5;
@@ -1030,39 +1236,23 @@ async function startSpin() {
         }
         gameState.isSpinning = false;
         gameState.roundPhase = 'finished';
+        gameState.isResultLoaded = true;
         
         if (spinningStatus) spinningStatus.style.display = 'none';
         
-        // Сохраняем победителя в БД
-        await syncRoomStateToDB();
-        
-        showWinner(winner);
+        await showWinner(winner);
         updateUI();
         updatePlaceBetButton();
+        
+        // Уведомляем всех через Realtime
+        PvPRoomManager.notifyListeners('room_finished', {
+            winner_id: winner.userId,
+            winner_name: winner.firstName,
+            prize: totalInTon,
+            roundId: gameState.roundId
+        });
+        
     }, SPIN_DURATION);
-}
-
-function selectWinnerBySegments() {
-    var activePlayers = getActivePlayers();
-    var totalValue = (gameState.totalPoolTon * TON_TO_STARS_RATE) + gameState.totalPoolStars;
-    
-    if (totalValue === 0 || activePlayers.length === 0) {
-        return activePlayers[Math.floor(Math.random() * activePlayers.length)];
-    }
-    
-    var random = Math.random() * totalValue;
-    var cumulative = 0;
-    
-    for (var i = 0; i < activePlayers.length; i++) {
-        var player = activePlayers[i];
-        var playerValue = calculatePlayerTotalValue(player);
-        cumulative += playerValue;
-        if (random <= cumulative) {
-            return player;
-        }
-    }
-    
-    return activePlayers[activePlayers.length - 1];
 }
 
 function calculateTargetAngleForWinner(winner) {
@@ -1452,6 +1642,7 @@ async function startWaitingPhase() {
     gameState.timeLeft = ROUND_DURATION;
     gameState.isSpinning = false;
     gameState.winner = null;
+    gameState.isResultLoaded = false;
     
     if (gameState.timer) clearInterval(gameState.timer);
     
@@ -1494,17 +1685,14 @@ function startCountdownFrom(timeLeft) {
     
     startForceResetTimer();
     
-    // Вместо синхронизации каждый тик - синхронизируем раз в 5 секунд
     var syncCounter = 0;
-
     gameState.timer = setInterval(function() {
         gameState.timeLeft--;
         updateTimerUI();
         updateHub('timer', gameState.timeLeft);
         
-        // Синхронизируем раз в 5 секунд (не каждый тик)
         syncCounter++;
-        if (syncCounter % 5 === 0) {
+        if (syncCounter % 3 === 0) {
             syncRoomStateToDB();
         }
         
@@ -1527,44 +1715,7 @@ function startCountdown() {
     }
     
     stopWaitingSpin();
-    
-    gameState.roundPhase = 'countdown';
-    gameState.timeLeft = ROUND_DURATION;
-    
-    if (gameState.timer) clearInterval(gameState.timer);
-    
-    // Синхронизируем состояние при старте
-    syncRoomStateToDB();
-    
-    updateHub('timer', ROUND_DURATION);
-    updateHub('status', 'До вращения');
-    
-    var placeBtn = document.getElementById('placeBetBtn');
-    if (placeBtn) placeBtn.disabled = false;
-    
-    startForceResetTimer();
-    
-    var syncCounter = 0;
-    gameState.timer = setInterval(function() {
-        gameState.timeLeft--;
-        updateTimerUI();
-        updateHub('timer', gameState.timeLeft);
-        
-        // Синхронизируем раз в 3 секунды (не каждый тик)
-        syncCounter++;
-        if (syncCounter % 3 === 0) {
-            syncRoomStateToDB();
-        }
-        
-        if (gameState.timeLeft <= 0) {
-            clearInterval(gameState.timer);
-            clearForceResetTimer();
-            startSpin();
-        }
-    }, 1000);
-    
-    updateUI();
-    updateHubCurrentPlayer();
+    startCountdownFrom(ROUND_DURATION);
 }
 
 // ============================================================
@@ -1597,6 +1748,8 @@ function stopWaitingSpin() {
 // ============================================================
 
 async function showWinner(winner) {
+    if (!winner) return;
+    
     var modal = document.getElementById('winnerModal');
     if (!modal) return;
     
@@ -1614,6 +1767,13 @@ async function showWinner(winner) {
     if (roundEl) roundEl.textContent = '#' + String(gameState.roundId).padStart(4, '0');
     if (prizeEl) prizeEl.innerHTML = totalInTon.toFixed(2) + ' <img src="assets/ton.png" alt="TON" class="winner-modal-icon-small">';
     if (multiEl) multiEl.textContent = '×' + multiplier.toFixed(1);
+    
+    var winnerSection = document.getElementById('winnerSection');
+    if (winnerSection) {
+        winnerSection.style.display = 'block';
+        document.getElementById('winnerName').textContent = winner.firstName;
+        document.getElementById('winnerPrize').innerHTML = totalInTon.toFixed(2) + ' <img src="assets/ton.png" alt="TON" class="winner-prize-icon">';
+    }
     
     var playerDetails = getActivePlayers().map(function(p) {
         return {
@@ -1686,8 +1846,6 @@ async function showWinner(winner) {
     }
     
     modal.classList.add('show');
-    
-    // Сохраняем в БД статус finished
     await syncRoomStateToDB();
     
     setTimeout(function() {
@@ -2058,7 +2216,6 @@ async function placeBet() {
     player.bets.push({ amount: amount, currency: currency });
     gameState.playerBets.push({ amount: amount, currency: currency });
     
-    // Синхронизируем состояние с БД
     await syncRoomStateToDB();
     
     updateUI();
@@ -2174,11 +2331,6 @@ function getAvatarUrl(player) {
     if (!player) return '';
     if (player.avatar) return player.avatar;
     return 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + player.userId;
-}
-
-function getRandomColor() {
-    var colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#a29bfe', '#fd79a8', '#fdcb6e', '#e17055', '#00cec9'];
-    return colors[Math.floor(Math.random() * colors.length)];
 }
 
 // ============================================================

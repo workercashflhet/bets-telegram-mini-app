@@ -209,12 +209,18 @@ var PvPRoomManager = {
             if (newData.phase === 'spinning') {
                 this.notifyListeners('room_spinning', newData);
             } else if (newData.phase === 'finished') {
-                this.notifyListeners('room_finished', newData);
+                // Передаем полные данные о победителе
+                this.notifyListeners('room_finished', {
+                    winner_id: newData.winner_id,
+                    winner_name: newData.winner_name,
+                    prize: newData.prize_amount,
+                    roundId: newData.round_number,
+                    spin_result: newData.spin_result
+                });
             } else if (newData.phase === 'waiting' || newData.phase === 'countdown') {
                 this.notifyListeners('room_waiting', newData);
             }
             
-            // Обновляем roundId
             if (newData.round_number !== undefined) {
                 this._roundId = newData.round_number;
             }
@@ -491,6 +497,8 @@ var PvPRoomManager = {
         console.log('🔌 Disconnected');
     }
 };
+
+
 
 window.PvPRoomManager = PvPRoomManager;
 console.log('✅ PvPRoomManager loaded (optimized)');
