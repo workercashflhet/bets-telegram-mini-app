@@ -91,7 +91,7 @@ function createTonConnectInstance() {
         tonConnectUI = new TonConnectUI({
             manifestUrl: MANIFEST_URL,
             actionsConfiguration: {
-                twaReturnUrl: 'https://t.me/bets_mini_app_bot/app'
+                twaReturnUrl: 'https://t.me/betsgambles_bot/betsgambles'
             },
             uiPreferences: {
                 theme: 'DARK'
