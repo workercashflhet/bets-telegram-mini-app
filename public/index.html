@@ -7,7 +7,11 @@
     <script src="https://telegram.org/js/telegram-web-app.js?56"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="user.js"></script>
+    <!-- TON CONNECT - через CDN -->
+    <script src="https://unpkg.com/@tonconnect/ui@2.0.0/dist/tonconnect-ui.min.js"></script>
     <link rel="stylesheet" href="style.css">
+    <!-- Подключаем стили pvp для модалки -->
+    <link rel="stylesheet" href="pvp.css">
 </head>
 <body class="fullscreen-mode">
     <!-- Preloader -->
@@ -136,8 +140,20 @@
         </nav>
     </div>
 
-    <!-- Подключаем модальное окно депозита из pvp -->
-    <div id="depositModalContainer"></div>
+    <!-- Модальное окно депозита (как в pvp) -->
+    <div class="deposit-modal" id="depositModal">
+        <div class="deposit-modal-content">
+            <button class="deposit-modal-close" id="depositModalClose">✕</button>
+            <h2 class="deposit-modal-title" id="depositModalTitle">Пополнение баланса</h2>
+            <div class="deposit-modal-body" id="depositModalBody">
+                <!-- Содержимое генерируется динамически -->
+            </div>
+            <div id="ton-connect-container" style="display: none; margin: 12px 0; text-align: center;"></div>
+            <div class="deposit-modal-footer" id="depositModalFooter">
+                <!-- Кнопки генерируются динамически -->
+            </div>
+        </div>
+    </div>
 
     <script src="app.js"></script>
 </body>
