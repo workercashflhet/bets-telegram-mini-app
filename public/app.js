@@ -781,6 +781,19 @@ function initializeApp() {
     initializeCarousel();
     initSettings();
     
+    // Добавляем обработчики для карточек игр
+    var gameCards = document.querySelectorAll('.game-card');
+    if (gameCards.length >= 2) {
+        // game1 - PvP
+        gameCards[0].addEventListener('click', function() {
+            window.location.href = 'pvp.html';
+        });
+        // game2 - Ice Arena
+        gameCards[1].addEventListener('click', function() {
+            window.location.href = 'ice-arena.html';
+        });
+    }
+    
     var depositModalClose = document.getElementById('depositModalClose');
     if (depositModalClose) {
         depositModalClose.addEventListener('click', closeDepositModal);
