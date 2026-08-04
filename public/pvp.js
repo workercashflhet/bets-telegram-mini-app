@@ -2,26 +2,24 @@
 // PvP КОЛЕСО - ПОЛНАЯ ЛОГИКА С SUPABASE И TON CONNECT
 // ============================================================
 
-const tg = window.Telegram.WebApp;
+var tg = window.Telegram.WebApp;
 
 // ============================================================
 // TON CONNECT - ИНИЦИАЛИЗАЦИЯ
 // ============================================================
 
-const MANIFEST_URL = 'https://bets-telegram-mini-app.vercel.app/tonconnect-manifest.json';
+var MANIFEST_URL = 'https://bets-telegram-mini-app.vercel.app/tonconnect-manifest.json';
 
-let tonConnectUI = null;
-let isWalletConnected = false;
-let walletAddress = null;
+var tonConnectUI = null;
+var isWalletConnected = false;
+var walletAddress = null;
 
 // Инициализация TonConnect
 function initTonConnect() {
     try {
-        // Проверяем, загружен ли TonConnectUI
         if (typeof window.TON_CONNECT_UI === 'undefined') {
             console.warn('⚠️ TonConnectUI not loaded, waiting...');
-            // Пробуем загрузить через CDN
-            const script = document.createElement('script');
+            var script = document.createElement('script');
             script.src = 'https://unpkg.com/@tonconnect/ui@2.0.0/dist/tonconnect-ui.min.js';
             script.onload = function() {
                 console.log('✅ TonConnectUI loaded from CDN');
@@ -34,7 +32,6 @@ function initTonConnect() {
             document.head.appendChild(script);
             return;
         }
-        
         createTonConnectInstance();
     } catch (error) {
         console.error('❌ initTonConnect error:', error);
@@ -44,7 +41,22 @@ function initTonConnect() {
 
 function createTonConnectInstance() {
     try {
-        const TonConnectUI = window.TON_CONNECT_UI.TonConnectUI;
+        var TonConnectUI = window.TON_CONNECT_UI.TonConnectUI;
+        
+        // Проверяем манифест
+        fetch(MANIFEST_URL)
+            .then(function(response) {
+                if (!response.ok) {
+                    console.warn('⚠️ Manifest status:', response.status);
+                }
+                return response.json();
+            })
+            .then(function(data) {
+                console.log('✅ Manifest loaded:', data);
+            })
+            .catch(function(err) {
+                console.warn('⚠️ Manifest check error:', err.message);
+            });
         
         tonConnectUI = new TonConnectUI({
             manifestUrl: MANIFEST_URL,
@@ -56,12 +68,12 @@ function createTonConnectInstance() {
             }
         });
         
-        // Подписка на изменение статуса
-        tonConnectUI.onStatusChange((wallet) => {
+        tonConnectUI.onStatusChange(function(wallet) {
+            console.log('💰 Status change:', wallet ? 'connected' : 'disconnected');
             if (wallet) {
                 isWalletConnected = true;
                 walletAddress = wallet.account.address;
-                console.log('💰 Wallet connected:', walletAddress);
+                console.log('💰 Wallet address:', walletAddress);
                 updateWalletUI(true, walletAddress);
                 if (document.getElementById('depositModal').classList.contains('show')) {
                     updateDepositModalUI();
@@ -69,7 +81,6 @@ function createTonConnectInstance() {
             } else {
                 isWalletConnected = false;
                 walletAddress = null;
-                console.log('💰 Wallet disconnected');
                 updateWalletUI(false);
                 if (document.getElementById('depositModal').classList.contains('show')) {
                     updateDepositModalUI();
@@ -86,70 +97,77 @@ function createTonConnectInstance() {
 }
 
 function showTonConnectError() {
-    const container = document.getElementById('ton-connect-container');
+    var container = document.getElementById('ton-connect-container');
     if (container) {
-        container.innerHTML = `
-            <div style="color: #ff6b6b; padding: 12px; border: 1px solid rgba(255,107,107,0.2); border-radius: 8px; text-align: center;">
-                ⚠️ Не удалось загрузить TON кошелек<br>
-                <button onclick="location.reload()" style="
-                    margin-top: 8px;
-                    padding: 6px 16px;
-                    background: #0ceb0f;
-                    color: #000;
-                    border: none;
-                    border-radius: 6px;
-                    cursor: pointer;
-                ">Обновить</button>
-            </div>
-        `;
+        container.innerHTML = 
+            '<div style="color: #ff6b6b; padding: 12px; border: 1px solid rgba(255,107,107,0.2); border-radius: 8px; text-align: center;">' +
+                '⚠️ Не удалось загрузить TON кошелек<br>' +
+                '<button onclick="location.reload()" style="' +
+                    'margin-top: 8px;' +
+                    'padding: 6px 16px;' +
+                    'background: #0ceb0f;' +
+                    'color: #000;' +
+                    'border: none;' +
+                    'border-radius: 6px;' +
+                    'cursor: pointer;' +
+                '">Обновить</button>' +
+            '</div>';
         container.style.display = 'block';
     }
 }
 
-function updateWalletUI(connected, address = '') {
-    const container = document.getElementById('ton-connect-container');
+function updateWalletUI(connected, address) {
+    var container = document.getElementById('ton-connect-container');
     if (!container) return;
     
     if (connected && address) {
-        const shortAddr = address.slice(0, 4) + '...' + address.slice(-4);
-        container.innerHTML = `
-            <div style="color: #0ceb0f; padding: 10px; border: 1px solid rgba(12,235,15,0.2); border-radius: 8px; background: rgba(12,235,15,0.05); text-align: center;">
-                ✅ Кошелек подключен<br>
-                <span style="font-size: 13px; opacity: 0.7;">${shortAddr}</span>
-            </div>
-        `;
+        var shortAddr = address.slice(0, 4) + '...' + address.slice(-4);
+        container.innerHTML = 
+            '<div style="color: #0ceb0f; padding: 10px; border: 1px solid rgba(12,235,15,0.2); border-radius: 8px; background: rgba(12,235,15,0.05); text-align: center;">' +
+                '✅ Кошелек подключен<br>' +
+                '<span style="font-size: 13px; opacity: 0.7;">' + shortAddr + '</span>' +
+            '</div>';
         container.style.display = 'block';
     } else {
-        container.innerHTML = `
-            <button class="ton-connect-btn" id="tonConnectBtn" style="
-                width: 100%;
-                padding: 14px;
-                background: #0ceb0f;
-                color: #000000;
-                border: none;
-                border-radius: 12px;
-                font-size: 16px;
-                font-weight: 600;
-                cursor: pointer;
-                transition: all 0.3s ease;
-            ">
-                🔗 Подключить TON кошелек
-            </button>
-            <p style="font-size: 12px; color: rgba(255,255,255,0.35); margin-top: 8px; text-align: center;">
-                Подключите кошелек для пополнения в TON
-            </p>
-        `;
+        container.innerHTML = 
+            '<button class="ton-connect-btn" id="tonConnectBtn" style="' +
+                'width: 100%;' +
+                'padding: 14px;' +
+                'background: #0ceb0f;' +
+                'color: #000000;' +
+                'border: none;' +
+                'border-radius: 12px;' +
+                'font-size: 16px;' +
+                'font-weight: 600;' +
+                'cursor: pointer;' +
+                'transition: all 0.3s ease;' +
+                'display: flex;' +
+                'align-items: center;' +
+                'justify-content: center;' +
+                'gap: 8px;' +
+            '">' +
+                '🔗 Connect wallet' +
+            '</button>' +
+            '<p style="font-size: 12px; color: rgba(255,255,255,0.35); margin-top: 8px; text-align: center;">' +
+                'Подключите кошелек для пополнения в TON' +
+            '</p>';
         container.style.display = 'block';
         
-        const btn = document.getElementById('tonConnectBtn');
+        var btn = document.getElementById('tonConnectBtn');
         if (btn) {
-            btn.onclick = async function() {
+            btn.onclick = function() {
                 try {
                     if (!tonConnectUI) {
                         tg.showAlert('❌ TON кошелек не загружен. Обновите страницу.');
                         return;
                     }
-                    await tonConnectUI.openModal();
+                    console.log('🔗 Opening TonConnect modal...');
+                    tonConnectUI.openModal().catch(function(err) {
+                        console.error('Open modal error:', err);
+                        if (tonConnectUI.open) {
+                            tonConnectUI.open();
+                        }
+                    });
                 } catch (error) {
                     console.error('Connection error:', error);
                     tg.showAlert('❌ Ошибка подключения кошелька');
@@ -162,15 +180,28 @@ function updateWalletUI(connected, address = '') {
 // ============================================================
 // SUPABASE КОНФИГУРАЦИЯ
 // ============================================================
-const SUPABASE_URL = 'https://siibxynvgrrsktyihuby.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNpaWJ4eW52Z3Jyc2t0eWlodWJ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU3MDE0MzUsImV4cCI6MjEwMTI3NzQzNX0.k8bdNQPeB8lDkw_1XKVtFB-u3NjyHmyr2L7zE4mhN6I';
+var SUPABASE_URL = 'https://siibxynvgrrsktyihuby.supabase.co';
+var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNpaWJ4eW52Z3Jyc2t0eWlodWJ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU3MDE0MzUsImV4cCI6MjEwMTI3NzQzNX0.k8bdNQPeB8lDkw_1XKVtFB-u3NjyHmyr2L7zE4mhN6I';
 
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+var supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+    auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false
+    },
+    global: {
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'apikey': SUPABASE_KEY
+        }
+    }
+});
 
 // ============================================================
 // СОСТОЯНИЕ ИГРЫ
 // ============================================================
-const gameState = {
+var gameState = {
     players: [],
     totalPoolTon: 0,
     totalPoolStars: 0,
@@ -191,14 +222,14 @@ const gameState = {
     currentRoundId: null
 };
 
-const TON_TO_STARS_RATE = 76;
-const MIN_PLAYERS = 2;
-const MIN_BET_TON = 0.1;
-const MIN_BET_STARS = 10;
-const ROUND_DURATION = 20;
-const SPIN_DURATION = 5000;
+var TON_TO_STARS_RATE = 76;
+var MIN_PLAYERS = 2;
+var MIN_BET_TON = 0.1;
+var MIN_BET_STARS = 10;
+var ROUND_DURATION = 20;
+var SPIN_DURATION = 5000;
 
-const OWNER_WALLET = 'UQC5ZUl4Qobq69CgLi7tg-8y6aOwVilc5b82jJFZShtnetrw';
+var OWNER_WALLET = 'UQC5ZUl4Qobq69CgLi7tg-8y6aOwVilc5b82jJFZShtnetrw';
 
 // ============================================================
 // ИНИЦИАЛИЗАЦИЯ
@@ -215,7 +246,6 @@ document.addEventListener('DOMContentLoaded', function() {
         window.location.href = 'index.html';
     });
     
-    // Инициализируем TonConnect
     initTonConnect();
     
     loadBalance();
@@ -227,7 +257,7 @@ document.addEventListener('DOMContentLoaded', function() {
     updateUI();
     
     document.addEventListener('click', function(e) {
-        const input = document.getElementById('betInput');
+        var input = document.getElementById('betInput');
         if (input && e.target !== input) {
             input.blur();
         }
@@ -240,15 +270,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
 async function loadHistoryFromDB() {
     try {
-        const { data: lastRound, error: roundError } = await supabaseClient
+        var { data: lastRound, error: roundError } = await supabaseClient
             .from('pvp_rounds')
             .select('round_number')
             .order('round_number', { ascending: false })
             .limit(1)
-            .single();
+            .maybeSingle();
         
-        if (roundError && roundError.code !== 'PGRST116') {
-            console.error('Error loading last round:', roundError);
+        if (roundError) {
+            console.warn('Round error (using default):', roundError.message);
         }
         
         if (lastRound) {
@@ -257,14 +287,14 @@ async function loadHistoryFromDB() {
             gameState.roundId = 0;
         }
         
-        const { data: historyData, error: historyError } = await supabaseClient
+        var { data: historyData, error: historyError } = await supabaseClient
             .from('pvp_rounds')
             .select('*')
             .order('created_at', { ascending: false })
             .limit(50);
         
         if (historyError) {
-            console.error('Error loading history:', historyError);
+            console.warn('History error (using default):', historyError.message);
         }
         
         if (historyData) {
@@ -280,15 +310,15 @@ async function loadHistoryFromDB() {
             });
         }
         
-        const { data: topData, error: topError } = await supabaseClient
+        var { data: topData, error: topError } = await supabaseClient
             .from('pvp_rounds')
             .select('winner_name, prize, round_number')
             .order('prize', { ascending: false })
             .limit(1)
-            .single();
+            .maybeSingle();
         
-        if (topError && topError.code !== 'PGRST116') {
-            console.error('Error loading top game:', topError);
+        if (topError) {
+            console.warn('Top game error (using default):', topError.message);
         }
         
         if (topData) {
@@ -304,16 +334,19 @@ async function loadHistoryFromDB() {
         updateHeaderInfo();
         
     } catch (error) {
-        console.error('Error loading history from DB:', error);
+        console.warn('loadHistoryFromDB error (using defaults):', error.message);
         gameState.roundId = 0;
         gameState.history = [];
         gameState.topGame = null;
+        updateRoundDisplay();
+        updateTopGameDisplay();
+        updateHeaderInfo();
     }
 }
 
 async function saveRoundToDB(roundId, winnerName, prize, multiplier, playersCount, playerDetails) {
     try {
-        const { data, error } = await supabaseClient
+        var { data, error } = await supabaseClient
             .from('pvp_rounds')
             .insert({
                 round_number: roundId,
@@ -331,7 +364,6 @@ async function saveRoundToDB(roundId, winnerName, prize, multiplier, playersCoun
             console.error('Error saving round to DB:', error);
             return null;
         }
-        
         return data;
     } catch (error) {
         console.error('Error in saveRoundToDB:', error);
@@ -341,19 +373,19 @@ async function saveRoundToDB(roundId, winnerName, prize, multiplier, playersCoun
 
 async function updatePlayerStats(userId, username, firstName, totalBets, totalWins, totalPrize) {
     try {
-        const { data: existing, error: checkError } = await supabaseClient
+        var { data: existing, error: checkError } = await supabaseClient
             .from('pvp_players')
             .select('id')
             .eq('user_id', userId)
-            .single();
+            .maybeSingle();
         
-        if (checkError && checkError.code !== 'PGRST116') {
-            console.error('Error checking player:', checkError);
+        if (checkError) {
+            console.warn('updatePlayerStats check error:', checkError.message);
             return;
         }
         
         if (existing) {
-            const { error: updateError } = await supabaseClient
+            var { error: updateError } = await supabaseClient
                 .from('pvp_players')
                 .update({
                     username: username,
@@ -366,10 +398,10 @@ async function updatePlayerStats(userId, username, firstName, totalBets, totalWi
                 .eq('user_id', userId);
             
             if (updateError) {
-                console.error('Error updating player:', updateError);
+                console.warn('updatePlayerStats update error:', updateError.message);
             }
         } else {
-            const { error: insertError } = await supabaseClient
+            var { error: insertError } = await supabaseClient
                 .from('pvp_players')
                 .insert({
                     user_id: userId,
@@ -382,30 +414,29 @@ async function updatePlayerStats(userId, username, firstName, totalBets, totalWi
                 });
             
             if (insertError) {
-                console.error('Error creating player:', insertError);
+                console.warn('updatePlayerStats insert error:', insertError.message);
             }
         }
     } catch (error) {
-        console.error('Error in updatePlayerStats:', error);
+        console.warn('updatePlayerStats error:', error.message);
     }
 }
 
 async function loadPlayerStats(userId) {
     try {
-        const { data, error } = await supabaseClient
+        var { data, error } = await supabaseClient
             .from('pvp_players')
             .select('*')
             .eq('user_id', userId)
-            .single();
+            .maybeSingle();
         
-        if (error && error.code !== 'PGRST116') {
-            console.error('Error loading player stats:', error);
+        if (error) {
+            console.warn('loadPlayerStats error:', error.message);
             return null;
         }
-        
         return data;
     } catch (error) {
-        console.error('Error in loadPlayerStats:', error);
+        console.warn('loadPlayerStats error:', error.message);
         return null;
     }
 }
@@ -947,20 +978,25 @@ function updateDepositModalUI() {
             }
         }
         
-        bodyEl.innerHTML = '<div class="deposit-currency-toggle">' +
-            '<button class="deposit-currency-btn ' + (depositState.currency === 'ton' ? 'active' : '') + '" data-currency="ton">' +
-            '<img src="assets/ton.png" alt="TON" class="deposit-currency-icon"> TON</button>' +
-            '<button class="deposit-currency-btn ' + (depositState.currency === 'stars' ? 'active' : '') + '" data-currency="stars">' +
-            '<img src="assets/stars.png" alt="Stars" class="deposit-currency-icon"> Stars</button>' +
+        bodyEl.innerHTML = 
+            '<div class="deposit-currency-toggle">' +
+                '<button class="deposit-currency-btn ' + (depositState.currency === 'ton' ? 'active' : '') + '" data-currency="ton">' +
+                    '<img src="assets/ton.png" alt="TON" class="deposit-currency-icon"> TON' +
+                '</button>' +
+                '<button class="deposit-currency-btn ' + (depositState.currency === 'stars' ? 'active' : '') + '" data-currency="stars">' +
+                    '<img src="assets/stars.png" alt="Stars" class="deposit-currency-icon"> Stars' +
+                '</button>' +
             '</div>' +
             '<div class="deposit-balance-info">Ваш баланс: ' + (depositState.currency === 'ton' ? 
                 gameState.balance.ton.toFixed(1) + ' TON' : 
-                gameState.balance.stars.toFixed(0) + ' Stars') + '</div>' +
+                gameState.balance.stars.toFixed(0) + ' Stars') + 
+            '</div>' +
             '<input type="number" class="deposit-input" id="depositAmountInput" placeholder="Введите сумму в ' + (depositState.currency === 'ton' ? 'TON' : 'Stars') + '" min="0">' +
             (depositState.error ? '<div class="deposit-error">' + depositState.error + '</div>' : '');
         
-        footerEl.innerHTML = '<button class="deposit-button" id="depositConfirmBtn">' +
-            (depositState.currency === 'ton' ? '💰 Пополнить TON' : '⭐ Оплатить Stars') +
+        footerEl.innerHTML = 
+            '<button class="deposit-button" id="depositConfirmBtn">' +
+                (depositState.currency === 'ton' ? '💰 Пополнить TON' : '⭐ Оплатить Stars') +
             '</button>' +
             '<button class="deposit-cancel-btn" id="depositCancelBtn">Отмена</button>';
         
@@ -994,17 +1030,26 @@ function updateDepositModalUI() {
     } else if (depositState.step === 'sending') {
         if (tonContainer) tonContainer.style.display = 'none';
         titleEl.textContent = depositState.currency === 'ton' ? 'Подтверждение в кошельке' : 'Оплата Stars...';
-        bodyEl.innerHTML = '<div class="deposit-sending"><div class="deposit-spinner"></div><p>' + 
-            (depositState.currency === 'ton' 
-                ? 'Пожалуйста, подтвердите транзакцию в вашем TON кошельке...' 
-                : 'Открытие счета для оплаты Stars...') + '</p></div>';
+        bodyEl.innerHTML = 
+            '<div class="deposit-sending">' +
+                '<div class="deposit-spinner"></div>' +
+                '<p>' + (depositState.currency === 'ton' 
+                    ? 'Пожалуйста, подтвердите транзакцию в вашем TON кошельке...' 
+                    : 'Открытие счета для оплаты Stars...') + 
+                '</p>' +
+            '</div>';
         footerEl.innerHTML = '';
         
     } else if (depositState.step === 'success') {
         if (tonContainer) tonContainer.style.display = 'none';
         titleEl.textContent = 'Успешно!';
-        bodyEl.innerHTML = '<div class="deposit-success"><p>✅ Пополнено ' + depositState.amount + ' ' + (depositState.currency === 'ton' ? 'TON' : 'Stars') + '</p><p>Ваш баланс обновлен</p></div>';
-        footerEl.innerHTML = '<button class="deposit-close-btn" id="depositCloseBtn">Закрыть</button>';
+        bodyEl.innerHTML = 
+            '<div class="deposit-success">' +
+                '<p>✅ Пополнено ' + depositState.amount + ' ' + (depositState.currency === 'ton' ? 'TON' : 'Stars') + '</p>' +
+                '<p>Ваш баланс обновлен</p>' +
+            '</div>';
+        footerEl.innerHTML = 
+            '<button class="deposit-close-btn" id="depositCloseBtn">Закрыть</button>';
         
         setTimeout(function() {
             var closeBtn = document.getElementById('depositCloseBtn');
@@ -1066,9 +1111,9 @@ async function handleDepositConfirm() {
                 
             } catch (txError) {
                 console.error('Transaction error:', txError);
-                if (txError.message?.includes('cancelled') || txError.message?.includes('rejected')) {
+                if (txError.message && (txError.message.includes('cancelled') || txError.message.includes('rejected'))) {
                     depositState.error = 'Транзакция отменена';
-                } else if (txError.message?.includes('insufficient')) {
+                } else if (txError.message && txError.message.includes('insufficient')) {
                     depositState.error = 'Недостаточно средств на кошельке';
                 } else {
                     depositState.error = 'Транзакция не удалась. Попробуйте снова.';
