@@ -1346,7 +1346,6 @@ body {
     transform: scale(0.95);
 }
 
-/* Результаты поиска */
 .admin-results {
     margin-bottom: 16px;
     max-height: 200px;
@@ -1434,7 +1433,6 @@ body {
     background: #33ff36;
 }
 
-/* Форма пополнения */
 .admin-deposit-form {
     background: rgba(255, 255, 255, 0.04);
     border-radius: 12px;
@@ -1482,7 +1480,6 @@ body {
     color: #0ceb0f;
 }
 
-/* Переключатель валют */
 .admin-currency-toggle {
     display: flex;
     gap: 10px;
@@ -1543,7 +1540,6 @@ body {
     cursor: not-allowed;
 }
 
-/* Сообщения */
 .admin-message {
     margin-top: 12px;
     padding: 10px 14px;
@@ -1572,15 +1568,6 @@ body {
     color: #ffd700;
     border: 1px solid rgba(255, 215, 0, 0.15);
 }
-
-/* Скрытые элементы */
-.admin-hidden {
-    display: none !important;
-}
-
-/* ============================================================
-   АДАПТИВ ДЛЯ НАСТРОЕК
-   ============================================================ */
 
 @media (max-width: 430px) {
     .settings-content {

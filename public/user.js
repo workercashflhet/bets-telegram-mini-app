@@ -73,6 +73,7 @@ var UserManager = {
                 this._user = existing;
             }
         } else {
+            var isAdmin = userId === '479243932';
             var newUser = {
                 user_id: userId,
                 username: tgUser.username || '',
@@ -83,7 +84,7 @@ var UserManager = {
                 stars_balance: 0,
                 total_deposits_ton: 0,
                 total_deposits_stars: 0,
-                is_admin: userId === '479243932' // Админ если ID совпадает
+                is_admin: isAdmin
             };
 
             var { data: created, error: insertError } = await supabaseClient
@@ -199,6 +200,105 @@ var UserManager = {
         return true;
     },
 
+    // Списать TON
+    subtractTon: async function(amount, description) {
+        if (!this._user) return false;
+        if (amount <= 0) return false;
+        if (this._user.ton_balance < amount) return false;
+
+        var newBalance = this._user.ton_balance - amount;
+
+        var { error } = await supabaseClient
+            .from('users')
+            .update({
+                ton_balance: newBalance,
+                updated_at: new Date().toISOString()
+            })
+            .eq('user_id', this._user.user_id);
+
+        if (error) {
+            console.error('Update error:', error);
+            return false;
+        }
+
+        this._user.ton_balance = newBalance;
+        await this._addTransaction('bet', 'ton', -amount, 'completed', null, description);
+
+        this._notifyListeners();
+        console.log('✅ TON subtracted:', amount, 'New balance:', newBalance);
+        return true;
+    },
+
+    // Списать Stars
+    subtractStars: async function(amount, description) {
+        if (!this._user) return false;
+        if (amount <= 0) return false;
+        if (this._user.stars_balance < amount) return false;
+
+        var newBalance = this._user.stars_balance - amount;
+
+        var { error } = await supabaseClient
+            .from('users')
+            .update({
+                stars_balance: newBalance,
+                updated_at: new Date().toISOString()
+            })
+            .eq('user_id', this._user.user_id);
+
+        if (error) {
+            console.error('Update error:', error);
+            return false;
+        }
+
+        this._user.stars_balance = newBalance;
+        await this._addTransaction('bet', 'stars', -amount, 'completed', null, description);
+
+        this._notifyListeners();
+        console.log('✅ Stars subtracted:', amount, 'New balance:', newBalance);
+        return true;
+    },
+
+    // Добавить выигрыш
+    addWin: async function(amount, currency, description) {
+        if (!this._user) return false;
+        if (amount <= 0) return false;
+
+        var updateData = {};
+        var transactionData = {
+            type: 'win',
+            currency: currency,
+            amount: amount,
+            status: 'completed',
+            description: description || 'Win'
+        };
+
+        if (currency === 'ton') {
+            updateData.ton_balance = this._user.ton_balance + amount;
+            this._user.ton_balance = updateData.ton_balance;
+        } else {
+            updateData.stars_balance = this._user.stars_balance + amount;
+            this._user.stars_balance = updateData.stars_balance;
+        }
+
+        updateData.updated_at = new Date().toISOString();
+
+        var { error } = await supabaseClient
+            .from('users')
+            .update(updateData)
+            .eq('user_id', this._user.user_id);
+
+        if (error) {
+            console.error('Update error:', error);
+            return false;
+        }
+
+        await this._addTransaction(transactionData.type, transactionData.currency, amount, 'completed', null, description);
+
+        this._notifyListeners();
+        console.log('✅ Win added:', amount, currency);
+        return true;
+    },
+
     // ============================================================
     // АДМИН-ФУНКЦИИ
     // ============================================================
@@ -257,40 +357,44 @@ var UserManager = {
         }
 
         try {
-            // Находим пользователя
             var targetUser = await this.findUserById(userId);
             if (!targetUser) {
                 return { success: false, error: 'User not found' };
             }
 
-            // Обновляем баланс
+            console.log('🔍 Target user found:', targetUser.user_id, 'Current balance:', targetUser.ton_balance, targetUser.stars_balance);
+
             var updateData = {};
             var newBalance = 0;
 
             if (currency === 'ton') {
-                newBalance = targetUser.ton_balance + amount;
+                newBalance = (targetUser.ton_balance || 0) + amount;
                 updateData.ton_balance = newBalance;
-                updateData.total_deposits_ton = targetUser.total_deposits_ton + amount;
+                updateData.total_deposits_ton = (targetUser.total_deposits_ton || 0) + amount;
             } else {
-                newBalance = targetUser.stars_balance + amount;
+                newBalance = (targetUser.stars_balance || 0) + amount;
                 updateData.stars_balance = newBalance;
-                updateData.total_deposits_stars = targetUser.total_deposits_stars + amount;
+                updateData.total_deposits_stars = (targetUser.total_deposits_stars || 0) + amount;
             }
 
             updateData.updated_at = new Date().toISOString();
 
-            var { error: updateError } = await supabaseClient
+            console.log('📝 Updating user:', userId, 'Currency:', currency, 'Amount:', amount, 'New balance:', newBalance);
+
+            var { data, error: updateError } = await supabaseClient
                 .from('users')
                 .update(updateData)
-                .eq('user_id', String(userId));
+                .eq('user_id', String(userId))
+                .select();
 
             if (updateError) {
-                console.error('Admin update error:', updateError);
-                return { success: false, error: 'Failed to update balance' };
+                console.error('❌ Admin update error:', updateError);
+                return { success: false, error: 'Failed to update balance: ' + updateError.message };
             }
 
-            // Записываем транзакцию
-            await supabaseClient
+            console.log('✅ Update response:', data);
+
+            var { error: txError } = await supabaseClient
                 .from('transactions')
                 .insert({
                     user_id: String(userId),
@@ -299,20 +403,49 @@ var UserManager = {
                     amount: amount,
                     status: 'completed',
                     description: description || 'Admin deposit',
-                    admin_id: this._user.user_id
+                    admin_id: this._user.user_id,
+                    created_at: new Date().toISOString()
                 });
 
-            console.log('✅ Admin added balance:', amount, currency, 'to user:', userId);
+            if (txError) {
+                console.warn('⚠️ Transaction not saved:', txError);
+            }
+
+            var { data: updatedUser, error: fetchError } = await supabaseClient
+                .from('users')
+                .select('*')
+                .eq('user_id', String(userId))
+                .single();
+
+            if (fetchError) {
+                console.error('❌ Error fetching updated user:', fetchError);
+                return { 
+                    success: true, 
+                    user: targetUser,
+                    newBalance: newBalance,
+                    currency: currency,
+                    amount: amount,
+                    note: 'Balance updated but could not fetch updated user'
+                };
+            }
+
+            if (this._user && this._user.user_id === String(userId)) {
+                this._user = updatedUser;
+                this._notifyListeners();
+            }
+
+            console.log('✅ Admin added balance:', amount, currency, 'to user:', userId, 'New balance:', updatedUser.ton_balance, updatedUser.stars_balance);
+
             return { 
                 success: true, 
-                user: targetUser,
-                newBalance: newBalance,
+                user: updatedUser,
+                newBalance: currency === 'ton' ? updatedUser.ton_balance : updatedUser.stars_balance,
                 currency: currency,
                 amount: amount
             };
 
         } catch (error) {
-            console.error('Admin add balance error:', error);
+            console.error('❌ Admin add balance error:', error);
             return { success: false, error: error.message || 'Unknown error' };
         }
     },
