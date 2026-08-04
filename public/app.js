@@ -877,22 +877,34 @@ function updateUserUI(user) {
     }
     
     if (userAvatar) {
-        if (user.photo_url) {
+        var tgUser = UserManager.getTelegramUser();
+        
+        if (tgUser && tgUser.id) {
+            var avatarUrl = 'https://t.me/i/userpic/320/' + tgUser.id + '.jpg';
+            userAvatar.src = avatarUrl;
+            userAvatar.onerror = function() {
+                // Генерируем SVG аватар
+                var initial = (user.first_name || 'U')[0].toUpperCase();
+                var colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#a29bfe', '#fd79a8', '#fdcb6e', '#e17055', '#00cec9'];
+                var color = colors[Math.floor(Math.random() * colors.length)];
+                this.src = generateAvatarSVG(initial, color);
+                this.onerror = null;
+            };
+        } else if (user.photo_url) {
             userAvatar.src = user.photo_url;
+            userAvatar.onerror = function() {
+                var initial = (user.first_name || 'U')[0].toUpperCase();
+                var colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#a29bfe', '#fd79a8', '#fdcb6e', '#e17055', '#00cec9'];
+                var color = colors[Math.floor(Math.random() * colors.length)];
+                this.src = generateAvatarSVG(initial, color);
+                this.onerror = null;
+            };
         } else {
-            var tgUser = UserManager.getTelegramUser();
-            if (tgUser && tgUser.id) {
-                var avatarUrl = 'https://t.me/i/userpic/320/' + tgUser.id + '.jpg';
-                userAvatar.src = avatarUrl;
-                userAvatar.onerror = function() {
-                    this.style.display = 'none';
-                    var fallback = document.createElement('span');
-                    fallback.className = 'user-avatar-fallback';
-                    var letter = (user.first_name || user.username || 'U')[0].toUpperCase();
-                    fallback.textContent = letter;
-                    this.parentNode.insertBefore(fallback, this);
-                };
-            }
+            var initial = (user.first_name || 'U')[0].toUpperCase();
+            var colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#a29bfe', '#fd79a8', '#fdcb6e', '#e17055', '#00cec9'];
+            var color = colors[Math.floor(Math.random() * colors.length)];
+            userAvatar.src = generateAvatarSVG(initial, color);
+            userAvatar.onerror = null;
         }
     }
     
@@ -904,6 +916,17 @@ function updateUserUI(user) {
         userIdElement.textContent = 'id: ' + (user.user_id || '');
     }
 }
+
+// Функция генерации SVG аватара
+function generateAvatarSVG(initial, color) {
+    return 'data:image/svg+xml,' + encodeURIComponent(
+        '<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">' +
+            '<rect width="100" height="100" rx="50" fill="' + color + '"/>' +
+            '<text x="50" y="65" font-size="40" text-anchor="middle" fill="#fff" font-weight="bold">' + initial + '</text>' +
+        '</svg>'
+    );
+}
+
 
 function updateBalanceUI(user) {
     if (!user) return;

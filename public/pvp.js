@@ -643,20 +643,11 @@ function updatePvPUserUI() {
             var avatarUrl = 'https://t.me/i/userpic/320/' + tgUser.id + '.jpg';
             avatar.src = avatarUrl;
             avatar.onerror = function() {
-                // Используем dicebear как fallback
-                this.src = 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + tgUser.id;
-                this.onerror = function() {
-                    // Генерируем SVG с инициалами
-                    var initial = (user.first_name || 'U')[0].toUpperCase();
-                    var colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#a29bfe', '#fd79a8', '#fdcb6e'];
-                    var color = colors[Math.floor(Math.random() * colors.length)];
-                    this.src = 'data:image/svg+xml,' + encodeURIComponent(
-                        '<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">' +
-                            '<rect width="100" height="100" rx="50" fill="' + color + '"/>' +
-                            '<text x="50" y="65" font-size="40" text-anchor="middle" fill="#fff" font-weight="bold">' + initial + '</text>' +
-                        '</svg>'
-                    );
-                };
+                var initial = (user.first_name || 'U')[0].toUpperCase();
+                var colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#a29bfe', '#fd79a8', '#fdcb6e', '#e17055', '#00cec9'];
+                var color = colors[Math.floor(Math.random() * colors.length)];
+                this.src = generateAvatarSVG(initial, color);
+                this.onerror = null;
             };
             avatar.style.display = 'block';
             
@@ -667,7 +658,11 @@ function updatePvPUserUI() {
         } else if (user.photo_url) {
             avatar.src = user.photo_url;
             avatar.onerror = function() {
-                this.src = 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + user.user_id;
+                var initial = (user.first_name || 'U')[0].toUpperCase();
+                var colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#a29bfe', '#fd79a8', '#fdcb6e', '#e17055', '#00cec9'];
+                var color = colors[Math.floor(Math.random() * colors.length)];
+                this.src = generateAvatarSVG(initial, color);
+                this.onerror = null;
             };
             avatar.style.display = 'block';
             
@@ -676,16 +671,10 @@ function updatePvPUserUI() {
                 fallback.style.display = 'none';
             }
         } else {
-            // Генерируем SVG аватар
             var initial = (user.first_name || 'U')[0].toUpperCase();
-            var colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#a29bfe', '#fd79a8', '#fdcb6e'];
+            var colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#a29bfe', '#fd79a8', '#fdcb6e', '#e17055', '#00cec9'];
             var color = colors[Math.floor(Math.random() * colors.length)];
-            avatar.src = 'data:image/svg+xml,' + encodeURIComponent(
-                '<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">' +
-                    '<rect width="100" height="100" rx="50" fill="' + color + '"/>' +
-                    '<text x="50" y="65" font-size="40" text-anchor="middle" fill="#fff" font-weight="bold">' + initial + '</text>' +
-                '</svg>'
-            );
+            avatar.src = generateAvatarSVG(initial, color);
             avatar.style.display = 'block';
             
             var fallback = document.querySelector('.user-avatar-fallback');
@@ -1010,12 +999,7 @@ async function startNewRound() {
 
 function getAvatarUrl(player) {
     if (!player) {
-        return 'data:image/svg+xml,' + encodeURIComponent(
-            '<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">' +
-                '<rect width="100" height="100" rx="50" fill="#2c2c2e"/>' +
-                '<text x="50" y="65" font-size="40" text-anchor="middle" fill="#888">?</text>' +
-            '</svg>'
-        );
+        return generateAvatarSVG('?', '#2c2c2e');
     }
     
     if (player.avatar && player.avatar !== '' && player.avatar !== 'assets/avatar.png') return player.avatar;
@@ -1024,12 +1008,15 @@ function getAvatarUrl(player) {
         return 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + player.userId;
     }
     
-    // Fallback - генерируем SVG с инициалами
     var name = player.firstName || 'User';
     var initial = name.charAt(0).toUpperCase();
     var colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#a29bfe', '#fd79a8', '#fdcb6e', '#e17055', '#00cec9'];
     var color = colors[Math.floor(Math.random() * colors.length)];
     
+    return generateAvatarSVG(initial, color);
+}
+
+function generateAvatarSVG(initial, color) {
     return 'data:image/svg+xml,' + encodeURIComponent(
         '<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">' +
             '<rect width="100" height="100" rx="50" fill="' + color + '"/>' +
@@ -1037,6 +1024,7 @@ function getAvatarUrl(player) {
         '</svg>'
     );
 }
+
 
 function createWheelSegments() {
     var wheel = document.getElementById('wheel');
