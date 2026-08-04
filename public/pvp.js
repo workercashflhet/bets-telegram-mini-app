@@ -11,11 +11,16 @@ var tg = window.Telegram.WebApp;
 var UserManager = window.UserManager;
 
 // ФУНКЦИЯ ЗАГРУЗКИ ПОЛЬЗОВАТЕЛЯ - ТОЧНО ТАК ЖЕ КАК В APP.JS
-async function loadUserFromDB() {
+async function initializeUserInPvP() {
     try {
         var user = await UserManager.loadUser();
         if (user) {
             console.log('✅ User loaded in PvP:', user);
+            // Обновляем баланс
+            gameState.balance.ton = user.ton_balance || 0;
+            gameState.balance.stars = user.stars_balance || 0;
+            updatePvPBalanceUI();
+            console.log('💰 PvP balance updated:', gameState.balance.ton, gameState.balance.stars);
             return user;
         }
         return null;
@@ -317,19 +322,17 @@ document.addEventListener('DOMContentLoaded', function() {
     initTonConnect();
     
     // ============================================================
-    // ЗАГРУЗКА БАЛАНСА - ТОЧНО ТАК ЖЕ КАК В ГЛАВНОМ МЕНЮ
+    // ЗАГРУЗКА БАЛАНСА - ЗАГРУЖАЕМ ПОЛЬЗОВАТЕЛЯ КАК В APP.JS
     // ============================================================
     
     // Сначала загружаем пользователя из БД (как в app.js)
-    loadUserFromDB().then(function(user) {
+    initializeUserInPvP().then(function(user) {
         if (user) {
-            // Пользователь загружен, обновляем баланс
-            gameState.balance.ton = user.ton_balance || 0;
-            gameState.balance.stars = user.stars_balance || 0;
-            updatePvPBalanceUI();
-            console.log('💰 PvP balance loaded from DB:', gameState.balance.ton, gameState.balance.stars);
+            // Пользователь загружен, баланс уже обновлен в функции
+            console.log('✅ PvP balance loaded successfully');
         } else {
             // Если не загрузился - пробуем localStorage
+            console.warn('⚠️ User not loaded, trying localStorage');
             var saved = localStorage.getItem('bets_data');
             if (saved) {
                 var data = JSON.parse(saved);
