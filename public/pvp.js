@@ -1741,7 +1741,7 @@ function fromNano(nano) {
 }
 
 // ============================================================
-// СТАВКА - С ИНТЕГРАЦИЕЙ ROOM MANAGER
+// СТАВКА - С ИНТЕГРАЦИЕЙ ROOM MANAGER (БЕЗ АЛЕРТА)
 // ============================================================
 
 async function placeBet() {
@@ -1834,7 +1834,7 @@ async function placeBet() {
     updatePlayersList();
     updateWheelImmediately();
     
-    tg.showAlert('✅ Ставка ' + amount + ' ' + (currency === 'ton' ? 'TON' : 'Stars') + ' принята!');
+    // АЛЕРТ УДАЛЕН
     
     var activePlayers = getActivePlayers();
     if (activePlayers.length >= MIN_PLAYERS && gameState.roundPhase === 'waiting') {
