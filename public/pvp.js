@@ -2018,6 +2018,138 @@ async function handleDepositConfirm() {
 }
 
 // ============================================================
+// НЕМЕДЛЕННОЕ ОБНОВЛЕНИЕ КОЛЕСА
+// ============================================================
+
+// Функция для немедленного обновления колеса
+function updateWheelImmediately() {
+    // Создаем сегменты колеса
+    createWheelSegments();
+    
+    // Обновляем список игроков
+    updatePlayersList();
+    
+    // Обновляем статистику
+    updateUI();
+    
+    // Обновляем статус комнаты
+    updateRoomStatus();
+    
+    console.log('🔄 Wheel updated immediately');
+}
+
+// Переопределяем обработчик изменений игроков
+function setupRealtimeHandlers() {
+    if (!PvPRoomManager) return;
+    
+    // Отписываемся от старых подписок
+    if (window._pvpUnsubscribe) {
+        window._pvpUnsubscribe();
+    }
+    
+    // Подписываемся на изменения
+    window._pvpUnsubscribe = PvPRoomManager.subscribe(function(event, data) {
+        console.log('📡 Room event:', event, data);
+        
+        switch(event) {
+            case 'players_loaded':
+            case 'players_updated':
+                // Обновляем игроков
+                updatePlayersFromRoom(data);
+                // НЕМЕДЛЕННО ОБНОВЛЯЕМ КОЛЕСО
+                updateWheelImmediately();
+                break;
+                
+            case 'pool_updated':
+                gameState.totalPoolTon = data.ton;
+                gameState.totalPoolStars = data.stars;
+                updateUI();
+                // НЕМЕДЛЕННО ОБНОВЛЯЕМ КОЛЕСО
+                updateWheelImmediately();
+                break;
+                
+            case 'player_added':
+            case 'player_updated':
+                // Добавляем или обновляем игрока
+                updateUI();
+                // НЕМЕДЛЕННО ОБНОВЛЯЕМ КОЛЕСО
+                updateWheelImmediately();
+                break;
+                
+            case 'room_spinning':
+                handleRoomSpin();
+                break;
+                
+            case 'room_finished':
+                handleRoomFinished(data);
+                break;
+                
+            case 'room_waiting':
+                handleRoomWaiting();
+                break;
+        }
+    });
+}
+
+// Обновленная функция инициализации комнаты
+async function initPvPRoom() {
+    try {
+        var user = UserManager.getUser();
+        if (!user) {
+            console.warn('⚠️ No user for room');
+            return false;
+        }
+        
+        await PvPRoomManager.initRoom();
+        
+        // Настраиваем обработчики реального времени
+        setupRealtimeHandlers();
+        
+        var players = PvPRoomManager.getPlayers();
+        var pool = PvPRoomManager.getPool();
+        
+        gameState.players = players.map(function(p) {
+            return {
+                userId: p.user_id,
+                firstName: p.first_name,
+                username: p.username,
+                avatar: p.photo_url,
+                color: p.color,
+                bets: p.bets || []
+            };
+        });
+        
+        gameState.totalPoolTon = pool.ton;
+        gameState.totalPoolStars = pool.stars;
+        
+        // Обновляем все UI
+        updateUI();
+        updatePlayersList();
+        updateWheelImmediately();
+        
+        console.log('✅ PvP Room initialized');
+        return true;
+        
+    } catch (error) {
+        console.error('Init room error:', error);
+        return false;
+    }
+}
+
+// Периодическое обновление для синхронизации (каждые 3 секунды)
+setInterval(function() {
+    if (PvPRoomManager && PvPRoomManager._isConnected) {
+        // Проверяем, изменился ли пул
+        var currentPool = PvPRoomManager.getPool();
+        if (currentPool.ton !== gameState.totalPoolTon || 
+            currentPool.stars !== gameState.totalPoolStars) {
+            console.log('🔄 Periodic sync: pool changed');
+            updateWheelImmediately();
+        }
+    }
+}, 3000);
+
+// ============================================================
 // ЭКСПОРТ
 // ============================================================
 

@@ -35,8 +35,8 @@ var PvPRoomManager = {
     _isConnected: false,
     _totalPoolTon: 0,
     _totalPoolStars: 0,
+    _lastUpdate: 0,
 
-    // Инициализация комнаты
     initRoom: async function() {
         try {
             var roomId = this._roomId;
@@ -107,7 +107,7 @@ var PvPRoomManager = {
                     filter: 'room_id=eq.' + roomId
                 },
                 function(payload) {
-                    console.log('📡 Player change:', payload);
+                    console.log('📡 Player change:', payload.eventType, payload.new || payload.old);
                     PvPRoomManager.handlePlayerChange(payload);
                 }
             )
@@ -135,32 +135,36 @@ var PvPRoomManager = {
         var newData = payload.new;
         var oldData = payload.old;
         
-        console.log('📡 Player event:', eventType, newData || oldData);
-        
         switch(eventType) {
             case 'INSERT':
                 if (!this._players.find(p => p.user_id === newData.user_id)) {
                     this._players.push(newData);
                     this.updateTotalPool();
                     this.notifyListeners('player_added', newData);
+                    // ПРИНУДИТЕЛЬНОЕ ОБНОВЛЕНИЕ
+                    this.forceUpdate();
                 }
                 break;
                 
             case 'UPDATE':
                 var index = this._players.findIndex(p => p.user_id === newData.user_id);
                 if (index !== -1) {
+                    // Обновляем существующего игрока
                     this._players[index] = newData;
                 } else {
                     this._players.push(newData);
                 }
                 this.updateTotalPool();
                 this.notifyListeners('player_updated', newData);
+                // ПРИНУДИТЕЛЬНОЕ ОБНОВЛЕНИЕ
+                this.forceUpdate();
                 break;
                 
             case 'DELETE':
                 this._players = this._players.filter(p => p.user_id !== oldData.user_id);
                 this.updateTotalPool();
                 this.notifyListeners('player_removed', oldData);
+                this.forceUpdate();
                 break;
         }
         
@@ -180,6 +184,18 @@ var PvPRoomManager = {
         }
         
         this._roundId = newData.round_number || 0;
+    },
+
+    // ПРИНУДИТЕЛЬНОЕ ОБНОВЛЕНИЕ
+    forceUpdate: function() {
+        var now = Date.now();
+        if (now - this._lastUpdate > 100) { // Не чаще чем раз в 100мс
+            this._lastUpdate = now;
+            // Перезагружаем игроков и обновляем UI
+            this.loadPlayers().then(function() {
+                console.log('🔄 Force update complete');
+            });
+        }
     },
 
     loadPlayers: async function() {
@@ -265,9 +281,8 @@ var PvPRoomManager = {
             
             this.updateTotalPool();
             
-            setTimeout(function() {
-                PvPRoomManager.loadPlayers();
-            }, 500);
+            // ПРИНУДИТЕЛЬНО ОБНОВЛЯЕМ СРАЗУ
+            await this.loadPlayers();
             
             return true;
             
