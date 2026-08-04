@@ -1,0 +1,1487 @@
+/* ============================================================
+   ICE ARENA - СТИЛИ
+   ============================================================ */
+
+body {
+    background: #000000 !important;
+}
+
+#app {
+    background: #000000 !important;
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 0 12px 0px;
+    min-height: 100vh;
+    position: relative;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+}
+
+#app::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
+}
+
+#app {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+/* ============================================================
+   ОСТРОВКИ
+   ============================================================ */
+
+.islands-container {
+    position: fixed;
+    top: 120px;
+    left: 0;
+    right: 0;
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 0 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 1000;
+    pointer-events: none;
+    height: auto;
+    box-sizing: border-box;
+}
+
+.islands-container > * {
+    pointer-events: auto;
+}
+
+.user-island {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 10px;
+    padding: 6px 16px 6px 10px;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    height: 44px;
+    min-height: 44px;
+    box-sizing: border-box;
+    width: auto;
+    flex-shrink: 0;
+}
+
+.user-avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: none;
+    flex-shrink: 0;
+}
+
+.user-avatar-fallback {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #0ceb0f;
+    color: #000000;
+    font-size: 16px;
+    font-weight: 700;
+    flex-shrink: 0;
+    border: none;
+}
+
+.user-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: #ffffff;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.balance-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0px;
+    height: 32px;
+    flex-shrink: 0;
+}
+
+.balance-island {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0px;
+    padding: 4px 10px 4px 10px;
+    background: #131313;
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(12, 235, 15, 0.15);
+    border-radius: 12px 0 0 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 0 30px rgba(12, 235, 15, 0.03);
+    animation: floatGlow 4s ease-in-out infinite;
+    height: 32px;
+    min-height: 32px;
+    box-sizing: border-box;
+    width: auto;
+}
+
+.balance-item {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    flex-shrink: 0;
+}
+
+.balance-item:last-child {
+    gap: 2px;
+}
+
+.balance-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: #ffffff;
+    letter-spacing: 0.5px;
+    min-width: auto;
+    order: 1;
+    padding-right: 0px;
+    white-space: nowrap;
+}
+
+.balance-icon {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+    order: 2;
+    flex-shrink: 0;
+    transform: translateY(0.5px);
+}
+
+.balance-divider {
+    width: 1px;
+    height: 24px;
+    background: rgba(255, 255, 255, 0.1);
+    margin: 0 8px 0 6px;
+    flex-shrink: 0;
+}
+
+.balance-deposit-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    min-height: 32px;
+    background: #0ceb0f;
+    border: 1px solid rgba(12, 235, 15, 0.15);
+    border-left: none;
+    border-radius: 0 12px 12px 0;
+    color: #000000;
+    font-size: 24px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    line-height: 1;
+    padding: 0;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    flex-shrink: 0;
+    text-align: center;
+}
+
+.balance-deposit-btn:active {
+    transform: scale(0.92);
+}
+
+@keyframes floatGlow {
+    0%, 100% {
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 0 30px rgba(12, 235, 15, 0.03);
+    }
+    50% {
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 0 50px rgba(12, 235, 15, 0.08);
+    }
+}
+
+/* ============================================================
+   ВЕРХНИЙ БАР
+   ============================================================ */
+
+.arena-header-wrapper {
+    position: relative;
+    margin-top: 162px;
+    padding-top: 0;
+    overflow: visible !important;
+}
+
+.arena-header-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.header-left, .header-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.header-btn {
+    background: rgba(255,255,255,0.05);
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: rgba(255,255,255,0.6);
+}
+
+.header-btn:active {
+    transform: scale(0.9);
+    background: rgba(255,255,255,0.1);
+}
+
+.info-block {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    background: rgba(255,255,255,0.03);
+    padding: 4px 10px;
+    border-radius: 8px;
+    min-width: 80px;
+    border: 1px solid rgba(255,255,255,0.04);
+}
+
+.header-right .info-block {
+    align-items: flex-end;
+}
+
+.info-label {
+    font-size: 8px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.3);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.info-value {
+    font-size: 11px;
+    font-weight: 600;
+    color: #ffffff;
+    white-space: nowrap;
+    max-width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.info-value.win {
+    color: #0ceb0f;
+}
+
+.info-value.loss {
+    color: #ff453a;
+}
+
+/* ============================================================
+   СТАТИСТИКА
+   ============================================================ */
+
+.arena-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.stat-box {
+    background: rgba(255,255,255,0.03);
+    border-radius: 12px;
+    padding: 10px;
+    text-align: center;
+    border: 1px solid rgba(255,255,255,0.04);
+}
+
+.stat-label {
+    font-size: 10px;
+    color: #888888;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+}
+
+.stat-value {
+    font-size: 16px;
+    font-weight: 700;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+}
+
+.pool-icon {
+    width: 18px;
+    height: 18px;
+    vertical-align: middle;
+    display: inline-block;
+    margin-left: 2px;
+    transform: translateY(-1px);
+}
+
+/* ============================================================
+   ИГРОВОЕ ПОЛЕ
+   ============================================================ */
+
+.arena-field-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0;
+    position: relative;
+    margin-top: 0;
+}
+
+.arena-field {
+    position: relative;
+    width: 400px;
+    height: 400px;
+    margin: 0 auto;
+    background: #0a0a0a;
+    border-radius: 20px;
+    border: 2px solid rgba(5, 255, 38, 0.2);
+    overflow: hidden;
+    box-shadow: 0 0 60px rgba(5, 255, 38, 0.05), inset 0 0 60px rgba(0, 0, 0, 0.5);
+}
+
+/* Зоны игроков */
+.arena-zones {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 0;
+}
+
+.arena-zone {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(5, 255, 38, 0.1);
+    transition: all 0.3s ease;
+    cursor: default;
+}
+
+.arena-zone .zone-label {
+    font-size: 14px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.8);
+    text-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
+    z-index: 2;
+    pointer-events: none;
+}
+
+.arena-zone .zone-bet {
+    position: absolute;
+    bottom: 8px;
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.3);
+    pointer-events: none;
+}
+
+.arena-zone.winner-zone {
+    border-color: #FFD700;
+    box-shadow: 0 0 40px rgba(255, 215, 0, 0.3), inset 0 0 40px rgba(255, 215, 0, 0.1);
+}
+
+.arena-zone.highlight {
+    animation: zonePulse 0.5s ease-in-out 3;
+}
+
+@keyframes zonePulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); box-shadow: 0 0 60px rgba(5, 255, 38, 0.2); }
+}
+
+/* Шайба */
+.arena-puck {
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #ffffff, #cccccc);
+    box-shadow: 0 0 30px rgba(255, 255, 255, 0.2), 0 0 60px rgba(255, 255, 255, 0.1);
+    z-index: 10;
+    transition: none;
+    pointer-events: none;
+    display: none;
+}
+
+.arena-puck.sliding {
+    transition: all 0.05s linear;
+}
+
+.puck-arrow {
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-bottom: 20px solid #FFD700;
+    filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.5));
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.puck-arrow.visible {
+    opacity: 1;
+}
+
+@keyframes puckGlow {
+    0%, 100% {
+        box-shadow: 0 0 30px rgba(255, 255, 255, 0.2), 0 0 60px rgba(255, 255, 255, 0.1);
+    }
+    50% {
+        box-shadow: 0 0 50px rgba(255, 215, 0, 0.3), 0 0 80px rgba(255, 215, 0, 0.15);
+    }
+}
+
+.arena-puck.spinning {
+    animation: puckGlow 0.3s ease-in-out infinite alternate;
+}
+
+/* Центр поля */
+.arena-center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100px;
+    height: 100px;
+    z-index: 5;
+    background: rgba(0, 0, 0, 0.7);
+    border-radius: 50%;
+    border: 1px solid rgba(5, 255, 38, 0.1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(10px);
+}
+
+.arena-timer {
+    font-size: 32px;
+    font-weight: 700;
+    color: #ffffff;
+    line-height: 1;
+    text-shadow: 0 0 20px rgba(255,255,255,0.1);
+}
+
+.arena-timer.warning {
+    color: #ff453a;
+    animation: timePulse 0.8s infinite;
+}
+
+.arena-status {
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.6);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 4px;
+}
+
+@keyframes timePulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.95); }
+}
+
+/* ============================================================
+   СТАТУС ИГРЫ
+   ============================================================ */
+
+.spinning-status {
+    text-align: center;
+    padding: 12px;
+    background: rgba(255, 215, 0, 0.06);
+    border-radius: 12px;
+    margin-top: 16px;
+    margin-bottom: 12px;
+}
+
+.spinning-text {
+    font-size: 16px;
+    font-weight: 600;
+    color: #FFD700;
+    animation: spinPulse 0.5s infinite;
+}
+
+@keyframes spinPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+/* ============================================================
+   ПОБЕДИТЕЛЬ
+   ============================================================ */
+
+.winner-section {
+    text-align: center;
+    padding: 16px;
+    background: rgba(255, 215, 0, 0.06);
+    border-radius: 12px;
+    margin-top: 12px;
+    margin-bottom: 12px;
+    border: 1px solid rgba(255, 215, 0, 0.1);
+}
+
+.winner-crown {
+    font-size: 36px;
+    margin-bottom: 4px;
+}
+
+.winner-announcement {
+    font-size: 18px;
+    font-weight: 700;
+    color: #FFD700;
+    margin-bottom: 4px;
+}
+
+.winner-prize {
+    font-size: 16px;
+    font-weight: 700;
+    color: #0ceb0f;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+}
+
+.winner-prize-icon {
+    width: 18px;
+    height: 18px;
+    vertical-align: middle;
+    display: inline-block;
+    margin-left: 2px;
+    transform: translateY(-1px);
+}
+
+/* ============================================================
+   СТАВКИ
+   ============================================================ */
+
+.bet-section {
+    background: rgba(255,255,255,0.02);
+    border-radius: 16px;
+    padding: 14px 16px;
+    margin-top: 16px;
+    border: 1px solid rgba(255,255,255,0.04);
+}
+
+.currency-toggle {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.currency-btn {
+    flex: 1;
+    padding: 8px;
+    border: 2px solid rgba(255,255,255,0.06);
+    border-radius: 10px;
+    background: rgba(255,255,255,0.02);
+    color: rgba(255,255,255,0.5);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.currency-icon {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.currency-btn.active {
+    border-color: #0ceb0f;
+    background: rgba(12, 235, 15, 0.06);
+    color: #ffffff;
+}
+
+.bet-input-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.bet-adjust {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.06);
+    background: rgba(255,255,255,0.02);
+    color: #ffffff;
+    font-size: 18px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.bet-adjust:active {
+    background: rgba(255,255,255,0.08);
+    transform: scale(0.95);
+}
+
+.bet-input {
+    flex: 1;
+    height: 36px;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 8px;
+    color: #ffffff;
+    text-align: center;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.bet-input:focus {
+    outline: none;
+    border-color: #0ceb0f;
+}
+
+.bet-input::placeholder {
+    color: rgba(255,255,255,0.2);
+}
+
+.quick-bets {
+    display: flex;
+    gap: 8px;
+    margin: 8px 0 12px 0;
+    justify-content: center;
+}
+
+.quick-bet-btn {
+    flex: 1;
+    padding: 8px 4px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px;
+    color: rgba(255,255,255,0.6);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    min-height: 32px;
+}
+
+.quick-bet-btn:active {
+    transform: scale(0.95);
+    background: rgba(12, 235, 15, 0.15);
+    border-color: rgba(12, 235, 15, 0.3);
+    color: #ffffff;
+}
+
+.quick-bet-btn.active {
+    background: rgba(12, 235, 15, 0.12);
+    border-color: rgba(12, 235, 15, 0.25);
+    color: #ffffff;
+}
+
+.quick-bet-icon {
+    width: 14px;
+    height: 14px;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+
+.place-bet-button {
+    width: 100%;
+    padding: 12px;
+    background: #0ceb0f;
+    color: #000000;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.place-bet-button:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.place-bet-button:active:not(:disabled) {
+    transform: scale(0.97);
+}
+
+/* ============================================================
+   СПИСОК ИГРОКОВ
+   ============================================================ */
+
+.players-compact {
+    margin-top: 16px;
+    background: rgba(255,255,255,0.02);
+    border-radius: 12px;
+    padding: 10px 14px;
+    border: 1px solid rgba(255,255,255,0.04);
+    margin-bottom: 80px;
+}
+
+.players-header {
+    display: flex;
+    justify-content: flex-start;
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.3);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.players-list-compact {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-height: 200px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.players-list-compact::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
+}
+
+.players-list-compact {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.player-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+    animation: playerFadeIn 0.3s ease;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.player-row:last-child {
+    border-bottom: none;
+}
+
+@keyframes playerFadeIn {
+    from {
+        opacity: 0;
+        transform: translateX(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.player-row.winner-row {
+    background: rgba(255, 215, 0, 0.08);
+    border-radius: 6px;
+    padding: 4px 6px;
+}
+
+.player-row-avatar {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+    background: #2c2c2e;
+}
+
+.player-row-color {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.player-row-name {
+    font-size: 12px;
+    font-weight: 500;
+    color: #ffffff;
+    flex: 1;
+}
+
+.player-row-bet {
+    font-size: 11px;
+    color: rgba(255,255,255,0.3);
+}
+
+.player-row-share {
+    font-size: 11px;
+    font-weight: 600;
+    color: #0ceb0f;
+    min-width: 36px;
+    text-align: right;
+}
+
+.no-players-compact {
+    font-size: 12px;
+    color: rgba(255,255,255,0.2);
+    text-align: center;
+    padding: 8px 0;
+}
+
+/* ============================================================
+   РООМ СТАТУС
+   ============================================================ */
+
+.room-status {
+    text-align: center;
+    padding: 8px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+    margin-top: 4px;
+}
+
+.room-status .room-id {
+    color: #0ceb0f;
+    font-weight: 600;
+}
+
+.room-status .players-count {
+    color: #ffffff;
+    font-weight: 600;
+}
+
+/* ============================================================
+   МОИ СТАВКИ
+   ============================================================ */
+
+.my-bets-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 14px;
+    background: rgba(12, 235, 15, 0.06);
+    border: 1px solid rgba(12, 235, 15, 0.1);
+    border-radius: 10px;
+    margin-top: 4px;
+    margin-bottom: 12px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #ffffff;
+}
+
+.bets-count {
+    font-size: 14px;
+    font-weight: 700;
+    color: #0ceb0f;
+}
+
+/* ============================================================
+   WINNER MODAL
+   ============================================================ */
+
+.winner-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.85);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+}
+
+.winner-modal.show {
+    display: flex;
+}
+
+.winner-modal-content {
+    background: #1a1a1e;
+    border-radius: 24px;
+    padding: 32px 24px 24px;
+    max-width: 340px;
+    width: 100%;
+    text-align: center;
+    border: 1px solid rgba(255,215,0,0.1);
+    box-shadow: 0 0 60px rgba(255,215,0,0.05);
+}
+
+.winner-modal-icon {
+    font-size: 48px;
+    margin-bottom: 8px;
+}
+
+.winner-modal-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.3);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 4px;
+}
+
+.winner-modal-name {
+    font-size: 22px;
+    font-weight: 700;
+    color: #FFD700;
+    margin-bottom: 16px;
+}
+
+.winner-modal-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.winner-stat {
+    background: rgba(255,255,255,0.03);
+    border-radius: 10px;
+    padding: 10px 8px;
+}
+
+.winner-stat-label {
+    font-size: 9px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.3);
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.winner-stat-value {
+    font-size: 16px;
+    font-weight: 700;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+}
+
+.winner-prize {
+    color: #0ceb0f !important;
+}
+
+.winner-multiplier {
+    color: #FFD700 !important;
+}
+
+.winner-modal-icon-small {
+    width: 16px;
+    height: 16px;
+    vertical-align: middle;
+    display: inline-block;
+    margin-left: 2px;
+    transform: translateY(-1px);
+}
+
+/* ============================================================
+   АДАПТИВ
+   ============================================================ */
+
+@media (max-width: 430px) {
+    .islands-container {
+        top: 96px;
+    }
+    
+    .user-island {
+        padding: 5px 12px 5px 8px;
+        gap: 8px;
+        height: 36px;
+        min-height: 36px;
+    }
+    
+    .user-avatar {
+        width: 26px;
+        height: 26px;
+        border: none;
+    }
+    
+    .user-name {
+        font-size: 14px;
+        max-width: 80px;
+    }
+    
+    .balance-wrapper {
+        height: 28px;
+    }
+    
+    .balance-island {
+        padding: 4px 8px 4px 8px;
+        height: 28px;
+        min-height: 28px;
+        border-radius: 10px 0 0 10px;
+    }
+    
+    .balance-value {
+        font-size: 15px;
+    }
+    
+    .balance-icon {
+        width: 16px;
+        height: 16px;
+    }
+    
+    .balance-divider {
+        height: 20px;
+        margin: 0 6px 0 4px;
+    }
+    
+    .balance-deposit-btn {
+        width: 28px;
+        height: 28px;
+        min-height: 28px;
+        font-size: 20px;
+        border-radius: 0 10px 10px 0;
+    }
+    
+    .arena-header-wrapper {
+        margin-top: 134px;
+    }
+    
+    .arena-field {
+        width: 320px;
+        height: 320px;
+    }
+    
+    .arena-center {
+        width: 80px;
+        height: 80px;
+    }
+    
+    .arena-timer {
+        font-size: 24px;
+    }
+    
+    .arena-status {
+        font-size: 10px;
+    }
+    
+    .arena-puck {
+        width: 24px;
+        height: 24px;
+    }
+    
+    .arena-zone .zone-label {
+        font-size: 12px;
+    }
+    
+    .spinning-status {
+        margin-top: 12px;
+    }
+    
+    .bet-section {
+        margin-top: 12px;
+    }
+    
+    .players-compact {
+        margin-top: 12px;
+        margin-bottom: 60px;
+    }
+    
+    .info-value {
+        font-size: 10px;
+        max-width: 60px;
+    }
+    
+    .info-label {
+        font-size: 7px;
+    }
+    
+    .puck-arrow {
+        border-left: 6px solid transparent;
+        border-right: 6px solid transparent;
+        border-bottom: 16px solid #FFD700;
+        top: -16px;
+    }
+}
+
+@media (max-width: 375px) {
+    .islands-container {
+        top: 82px;
+    }
+    
+    .arena-field {
+        width: 280px;
+        height: 280px;
+    }
+    
+    .arena-center {
+        width: 70px;
+        height: 70px;
+    }
+    
+    .arena-timer {
+        font-size: 20px;
+    }
+    
+    .arena-puck {
+        width: 20px;
+        height: 20px;
+    }
+    
+    .arena-zone .zone-label {
+        font-size: 10px;
+    }
+    
+    .bet-section {
+        padding: 10px 12px;
+    }
+    
+    .quick-bet-btn {
+        font-size: 11px;
+        padding: 6px 4px;
+        min-height: 28px;
+    }
+    
+    .players-compact {
+        margin-bottom: 50px;
+    }
+}
+
+/* ============================================================
+   TON CONNECT
+   ============================================================ */
+
+.tc-root {
+    z-index: 99999 !important;
+    position: relative !important;
+}
+
+.tc-wallets-modal,
+.tc-modal-overlay,
+.tc-actions-modal,
+.ton-connect-modal,
+.ton-connect-modal-overlay,
+[data-tc-modal="true"],
+[data-tc-wallets-modal-container="true"],
+[data-tc-actions-modal-container="true"] {
+    z-index: 99999 !important;
+}
+
+.deposit-modal {
+    z-index: 1000 !important;
+}
+
+.deposit-modal.show {
+    z-index: 1000 !important;
+}
+
+.winner-modal {
+    z-index: 9000 !important;
+}
+
+/* ============================================================
+   ДЕПОЗИТ МОДАЛ
+   ============================================================ */
+
+.deposit-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.95);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1001;
+    padding: 20px;
+}
+
+.deposit-modal.show {
+    display: flex;
+}
+
+.deposit-modal-content {
+    background: #000000;
+    border-radius: 24px;
+    padding: 24px;
+    width: 100%;
+    max-width: 400px;
+    position: relative;
+    border: 1px solid rgba(12, 235, 15, 0.12);
+    box-shadow: 0 0 60px rgba(0, 0, 0, 0.8), 0 0 40px rgba(12, 235, 15, 0.03);
+}
+
+.deposit-modal-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.3);
+    font-size: 20px;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    transition: all 0.2s;
+}
+
+.deposit-modal-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.deposit-modal-body {
+    margin-bottom: 16px;
+}
+
+.deposit-currency-toggle {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.deposit-currency-btn {
+    flex: 1;
+    padding: 12px;
+    border: 2px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.02);
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.deposit-currency-btn.active {
+    border-color: #0ceb0f;
+    background: rgba(12, 235, 15, 0.06);
+    color: #ffffff;
+}
+
+.deposit-currency-icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    object-fit: contain;
+}
+
+.deposit-balance-info {
+    text-align: center;
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 14px;
+    margin-bottom: 16px;
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 10px;
+}
+
+.deposit-input {
+    width: 100%;
+    padding: 14px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    color: #ffffff;
+    font-size: 18px;
+    text-align: center;
+    margin-bottom: 16px;
+    box-sizing: border-box;
+    outline: none;
+    transition: border-color 0.3s ease;
+}
+
+.deposit-input:focus {
+    border-color: #0ceb0f;
+}
+
+.deposit-error {
+    background: rgba(255, 69, 58, 0.08);
+    color: #ff453a;
+    padding: 10px 14px;
+    border-radius: 10px;
+    text-align: center;
+    font-size: 13px;
+    margin-bottom: 12px;
+    border: 1px solid rgba(255, 69, 58, 0.06);
+}
+
+.deposit-modal-footer {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.deposit-button {
+    width: 100%;
+    padding: 14px;
+    background: #0ceb0f;
+    color: #000000;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.deposit-button:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.deposit-cancel-btn {
+    width: 100%;
+    padding: 12px;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.deposit-close-btn {
+    width: 100%;
+    padding: 14px;
+    background: rgba(255, 255, 255, 0.03);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.deposit-sending {
+    text-align: center;
+    padding: 30px 0;
+}
+
+.deposit-spinner {
+    width: 44px;
+    height: 44px;
+    border: 3px solid rgba(12, 235, 15, 0.08);
+    border-top-color: #0ceb0f;
+    border-radius: 50%;
+    animation: depositSpin 1s linear infinite;
+    margin: 0 auto 16px;
+}
+
+@keyframes depositSpin {
+    to { transform: rotate(360deg); }
+}
+
+.deposit-sending p {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 14px;
+}
+
+.deposit-success {
+    text-align: center;
+    padding: 30px 0;
+}
+
+.deposit-success p {
+    color: rgba(255, 255, 255, 0.7);
+    margin: 8px 0;
+    font-size: 16px;
+}
+
+.deposit-success p:first-child {
+    font-weight: 700;
+    color: #0ceb0f;
+    font-size: 20px;
+}
+
+/* ============================================================
+   ВСПОМОГАТЕЛЬНЫЕ КЛАССЫ
+   ============================================================ */
+
+.hidden {
+    display: none !important;
+}
+
+.visible {
+    display: block !important;
+}
+
+/* ============================================================
+   ГЛОБАЛЬНОЕ СКРЫТИЕ СКРОЛЛБАРА
+   ============================================================ */
+::-webkit-scrollbar {
+    display: none;
+    width: 0;
+}
+
+* {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+html, body {
+    touch-action: manipulation;
+}
+
+body {
+    touch-action: pan-y pinch-zoom;
+}
+
+.arena-field-wrapper,
+.players-list-compact,
+.arena-header-wrapper {
+    touch-action: pan-y;
+}
+
+@supports (padding: max(0px)) {
+    .bottom-nav {
+        bottom: max(40px, env(safe-area-inset-bottom, 40px));
+    }
+}

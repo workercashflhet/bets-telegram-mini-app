@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Ice Arena</title>
+    <script src="https://telegram.org/js/telegram-web-app.js?56"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="user.js"></script>
+    <script src="ice-arena-realtime.js"></script>
+    
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="ice-arena.css">
+</head>
+<body class="fullscreen-mode">
+    <div id="app">
+        <!-- ФИКСИРОВАННЫЙ КОНТЕЙНЕР ДЛЯ ОСТРОВКОВ -->
+        <div class="islands-container">
+            <div class="user-island">
+                <img src="assets/avatar.png" alt="Avatar" class="user-avatar" id="arenaUserAvatar">
+                <span class="user-name" id="arenaUserNameDisplay">User</span>
+            </div>
+            <div class="balance-wrapper">
+                <div class="balance-island">
+                    <div class="balance-item">
+                        <span class="balance-value" id="arenaTonBalance">0.00</span>
+                        <img src="assets/ton.png" alt="TON" class="balance-icon">
+                    </div>
+                    <div class="balance-divider"></div>
+                    <div class="balance-item">
+                        <span class="balance-value" id="arenaStarsBalance">0</span>
+                        <img src="assets/stars.png" alt="Stars" class="balance-icon">
+                    </div>
+                </div>
+                <button class="balance-deposit-btn" id="arenaDepositBtn" title="Deposit">+</button>
+            </div>
+        </div>
+
+        <!-- Верхний бар -->
+        <div class="arena-header-wrapper">
+            <div class="arena-header-bar">
+                <div class="header-left">
+                    <button class="header-btn" id="historyBtn" title="История">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                            <path d="M12 8v4l3 3M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z"/>
+                        </svg>
+                    </button>
+                    <div class="info-block">
+                        <span class="info-label">ПРЕД. ИГРА</span>
+                        <span class="info-value" id="prevGameText">—</span>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <div class="info-block">
+                        <span class="info-label">ТОП ИГРА</span>
+                        <span class="info-value" id="topGameText">—</span>
+                    </div>
+                    <button class="header-btn" id="chatBtn" title="Чат">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Статус комнаты -->
+        <div class="room-status" id="roomStatus">
+            <span>Комната: <span class="room-id" id="roomId">—</span></span>
+            <span> | Игроков: <span class="players-count" id="roomPlayersCount">0</span></span>
+        </div>
+
+        <!-- Мои ставки -->
+        <div class="my-bets-bar hidden" id="myBetsBar">
+            <span id="myBetsText">My bets: 0 TON + 0 Stars</span>
+            <span class="bets-count" id="winChance">0%</span>
+        </div>
+
+        <!-- Статистика -->
+        <div class="arena-stats">
+            <div class="stat-box">
+                <div class="stat-label">Pool</div>
+                <div class="stat-value" id="poolTotal">
+                    0.00 <img src="assets/ton.png" alt="TON" class="pool-icon">
+                </div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Players</div>
+                <div class="stat-value" id="playersCount">0</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Round</div>
+                <div class="stat-value" id="roundNumber">#0</div>
+            </div>
+        </div>
+
+        <!-- Игровое поле -->
+        <div class="arena-field-wrapper">
+            <div class="arena-field" id="arenaField">
+                <!-- Зоны игроков -->
+                <div class="arena-zones" id="arenaZones">
+                    <!-- Зоны будут добавлены динамически -->
+                </div>
+                <!-- Шайба -->
+                <div class="arena-puck" id="arenaPuck" style="display: none;">
+                    <div class="puck-arrow" id="puckArrow"></div>
+                </div>
+                <!-- Центр поля -->
+                <div class="arena-center" id="arenaCenter">
+                    <div class="arena-timer" id="arenaTimer">20</div>
+                    <div class="arena-status" id="arenaStatus">Ожидание</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Статус игры -->
+        <div class="spinning-status hidden" id="gameStatus">
+            <div class="spinning-text">🏒 Шайба в движении...</div>
+        </div>
+
+        <!-- Победитель -->
+        <div class="winner-section hidden" id="winnerSection">
+            <div class="winner-crown">🏆</div>
+            <div class="winner-announcement" id="winnerName">Игрок</div>
+            <div class="winner-prize" id="winnerPrize">
+                0.00 <img src="assets/ton.png" alt="TON" class="winner-prize-icon">
+            </div>
+        </div>
+
+        <!-- Секция ставок -->
+        <div class="bet-section" id="betSection">
+            <div class="currency-toggle">
+                <button class="currency-btn active" data-currency="ton">
+                    <img src="assets/ton.png" alt="TON" class="currency-icon">
+                    TON
+                </button>
+                <button class="currency-btn" data-currency="stars">
+                    <img src="assets/stars.png" alt="Stars" class="currency-icon">
+                    Stars
+                </button>
+            </div>
+
+            <div class="bet-input-group">
+                <button class="bet-adjust" id="betDec">−</button>
+                <input type="text" class="bet-input" id="betInput" value="1.0" inputmode="decimal" placeholder="0.0">
+                <button class="bet-adjust" id="betInc">+</button>
+            </div>
+
+            <div class="quick-bets" id="quickBets">
+                <button class="quick-bet-btn" data-amount="0.1">0.1</button>
+                <button class="quick-bet-btn" data-amount="0.5">0.5</button>
+                <button class="quick-bet-btn" data-amount="1.0">1.0</button>
+            </div>
+
+            <button class="place-bet-button" id="placeBetBtn">Сделать ставку</button>
+        </div>
+
+        <!-- Список игроков -->
+        <div class="players-compact">
+            <div class="players-header">
+                <span>Игроки в комнате</span>
+            </div>
+            <div class="players-list-compact" id="playersListCompact">
+                <div class="no-players-compact">Нет игроков в комнате</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно победителя -->
+    <div class="winner-modal" id="winnerModal">
+        <div class="winner-modal-content">
+            <div class="winner-modal-icon">🏆</div>
+            <div class="winner-modal-title">ПОБЕДИТЕЛЬ</div>
+            <div class="winner-modal-name" id="winnerModalName">Игрок</div>
+            <div class="winner-modal-stats">
+                <div class="winner-stat">
+                    <span class="winner-stat-label">Раунд</span>
+                    <span class="winner-stat-value" id="winnerModalRound">#0000</span>
+                </div>
+                <div class="winner-stat">
+                    <span class="winner-stat-label">Выигрыш</span>
+                    <span class="winner-stat-value winner-prize" id="winnerModalPrize">
+                        0.00 <img src="assets/ton.png" alt="TON" class="winner-modal-icon-small">
+                    </span>
+                </div>
+                <div class="winner-stat">
+                    <span class="winner-stat-label">Зона</span>
+                    <span class="winner-stat-value winner-multiplier" id="winnerModalZone">—</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно депозита -->
+    <div class="deposit-modal" id="depositModal">
+        <div class="deposit-modal-content">
+            <button class="deposit-modal-close" id="depositModalClose">✕</button>
+            <h2 class="deposit-modal-title" id="depositModalTitle">Пополнение баланса</h2>
+            <div class="deposit-modal-body" id="depositModalBody"></div>
+            <div id="ton-connect-container" style="display: none; margin: 12px 0; text-align: center;"></div>
+            <div class="deposit-modal-footer" id="depositModalFooter"></div>
+        </div>
+    </div>
+
+    <script src="ice-arena.js"></script>
+</body>
+</html>
