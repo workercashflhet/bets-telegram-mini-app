@@ -5,34 +5,24 @@
 var tg = window.Telegram.WebApp;
 
 // ============================================================
-// ПОДКЛЮЧЕНИЕ И ЗАГРУЗКА USERMANAGER
+// ПОДКЛЮЧЕНИЕ USERMANAGER - ТАК ЖЕ КАК В ГЛАВНОМ МЕНЮ
 // ============================================================
 
 var UserManager = window.UserManager;
 
-// Принудительная загрузка пользователя в PvP
-async function ensureUserLoaded() {
-    // Если UserManager уже есть и пользователь загружен
-    if (UserManager && UserManager.getUser()) {
-        console.log('✅ User already loaded in PvP');
-        return UserManager.getUser();
-    }
-    
-    // Если UserManager есть, но пользователь не загружен - загружаем
-    if (UserManager) {
-        console.log('🔄 Loading user in PvP...');
-        try {
-            var user = await UserManager.loadUser();
-            if (user) {
-                console.log('✅ User loaded in PvP:', user);
-                return user;
-            }
-        } catch (error) {
-            console.error('❌ Failed to load user in PvP:', error);
+// ФУНКЦИЯ ЗАГРУЗКИ ПОЛЬЗОВАТЕЛЯ - ТОЧНО ТАК ЖЕ КАК В APP.JS
+async function loadUserFromDB() {
+    try {
+        var user = await UserManager.loadUser();
+        if (user) {
+            console.log('✅ User loaded in PvP:', user);
+            return user;
         }
+        return null;
+    } catch (error) {
+        console.error('Error loading user in PvP:', error);
+        return null;
     }
-    
-    return null;
 }
 
 function getUserData() {
@@ -42,7 +32,7 @@ function getUserData() {
     return null;
 }
 
-// Подписываемся на изменения из UserManager
+// Подписываемся на изменения из UserManager (как в app.js)
 if (UserManager) {
     UserManager.subscribe(function(user) {
         console.log('🔄 PvP: Balance updated from UserManager');
@@ -326,9 +316,29 @@ document.addEventListener('DOMContentLoaded', function() {
     
     initTonConnect();
     
-    // Загружаем баланс с ожиданием UserManager
-    ensureUserLoaded().then(function() {
-        loadBalance();
+    // ============================================================
+    // ЗАГРУЗКА БАЛАНСА - ТОЧНО ТАК ЖЕ КАК В ГЛАВНОМ МЕНЮ
+    // ============================================================
+    
+    // Сначала загружаем пользователя из БД (как в app.js)
+    loadUserFromDB().then(function(user) {
+        if (user) {
+            // Пользователь загружен, обновляем баланс
+            gameState.balance.ton = user.ton_balance || 0;
+            gameState.balance.stars = user.stars_balance || 0;
+            updatePvPBalanceUI();
+            console.log('💰 PvP balance loaded from DB:', gameState.balance.ton, gameState.balance.stars);
+        } else {
+            // Если не загрузился - пробуем localStorage
+            var saved = localStorage.getItem('bets_data');
+            if (saved) {
+                var data = JSON.parse(saved);
+                gameState.balance.ton = data.balance || 0;
+                gameState.balance.stars = data.inventory || 0;
+                updatePvPBalanceUI();
+                console.log('💰 PvP balance loaded from localStorage:', gameState.balance.ton, gameState.balance.stars);
+            }
+        }
     });
     
     loadHistoryFromDB();
@@ -347,36 +357,8 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ============================================================
-// БАЛАНС - СИНХРОНИЗАЦИЯ С USERMANAGER
+// БАЛАНС - ОБНОВЛЕНИЕ UI
 // ============================================================
-
-function loadBalance() {
-    var user = getUserData();
-    
-    if (user) {
-        gameState.balance.ton = user.ton_balance || 0;
-        gameState.balance.stars = user.stars_balance || 0;
-        console.log('💰 Balance loaded from UserManager:', gameState.balance.ton, gameState.balance.stars);
-        updatePvPBalanceUI();
-        return;
-    }
-    
-    console.warn('⚠️ UserManager not ready, loading from localStorage');
-    
-    // Пробуем загрузить из localStorage как fallback
-    var saved = localStorage.getItem('bets_data');
-    if (saved) {
-        var data = JSON.parse(saved);
-        gameState.balance.ton = data.balance || 0;
-        gameState.balance.stars = data.inventory || 0;
-        updatePvPBalanceUI();
-        console.log('💰 Balance loaded from localStorage:', gameState.balance.ton, gameState.balance.stars);
-    } else {
-        gameState.balance.ton = 0;
-        gameState.balance.stars = 0;
-        updatePvPBalanceUI();
-    }
-}
 
 function updatePvPBalanceUI() {
     var tonEl = document.getElementById('pvpTonBalance');
@@ -386,9 +368,11 @@ function updatePvPBalanceUI() {
     console.log('📊 PvP Balance UI updated:', gameState.balance.ton, gameState.balance.stars);
 }
 
-// Обновление баланса из UserManager (вызывается из app.js)
+// Обновление баланса из UserManager (вызывается из app.js через подписку)
 function updateBalanceFromDB(user) {
-    if (!user) user = getUserData();
+    if (!user) {
+        user = getUserData();
+    }
     if (!user) return;
     
     gameState.balance.ton = user.ton_balance || 0;
@@ -1011,7 +995,7 @@ function updateDepositModalUI() {
             }
         }
         
-        var user = UserManager.getUser();
+        var user = UserManager ? UserManager.getUser() : null;
         bodyEl.innerHTML = 
             '<div class="deposit-currency-toggle">' +
                 '<button class="deposit-currency-btn ' + (depositState.currency === 'ton' ? 'active' : '') + '" data-currency="ton">' +
