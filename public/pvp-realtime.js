@@ -1,4 +1,4 @@
-// pvp-realtime.js - ФИНАЛЬНАЯ ВЕРСИЯ С ДЕТАЛЬНЫМИ ЛОГАМИ
+// pvp-realtime.js - ОПТИМИЗИРОВАННАЯ ВЕРСИЯ
 
 // ============================================================
 // SUPABASE КОНФИГУРАЦИЯ
@@ -6,21 +6,30 @@
 var SUPABASE_URL = 'https://siibxynvgrrsktyihuby.supabase.co';
 var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNpaWJ4eW52Z3Jyc2t0eWlodWJ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU3MDE0MzUsImV4cCI6MjEwMTI3NzQzNX0.k8bdNQPeB8lDkw_1XKVtFB-u3NjyHmyr2L7zE4mhN6I';
 
-var supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-    auth: { persistSession: false },
-    global: {
-        headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-            'apikey': SUPABASE_KEY
-        }
-    },
-    realtime: {
-        params: {
-            eventsPerSecond: 20
-        }
+// ============================================================
+// ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ ДЛЯ REST ЗАПРОСОВ
+// ============================================================
+function supabaseRestRequest(path, method, body) {
+    var url = SUPABASE_URL + '/rest/v1/' + path;
+    var headers = {
+        'apikey': SUPABASE_KEY,
+        'Authorization': 'Bearer ' + SUPABASE_KEY,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Prefer': 'return=representation'
+    };
+    
+    var options = {
+        method: method,
+        headers: headers
+    };
+    
+    if (body) {
+        options.body = JSON.stringify(body);
     }
-});
+    
+    return fetch(url, options);
+}
 
 // ============================================================
 // PVP ROOM MANAGER
@@ -37,43 +46,48 @@ var PvPRoomManager = {
     _totalPoolStars: 0,
     _lastUpdate: 0,
     _isLoading: false,
+    _syncInterval: null,
 
     initRoom: async function() {
         try {
             var roomId = this._roomId;
             console.log('🔄 Initializing room:', roomId);
             
-            // Проверяем/создаем комнату
-            var { data: existingRoom, error: findError } = await supabaseClient
-                .from('pvp_rooms')
-                .select('*')
-                .eq('room_id', roomId)
-                .maybeSingle();
+            // Проверяем/создаем комнату через REST
+            var checkResponse = await supabaseRestRequest(
+                'pvp_rooms?room_id=eq.' + roomId,
+                'GET'
+            );
             
-            if (findError) {
-                console.error('Find room error:', findError);
+            if (!checkResponse.ok) {
+                console.error('Check room error:', await checkResponse.text());
                 return false;
             }
             
-            if (!existingRoom) {
-                var { data: newRoom, error: createError } = await supabaseClient
-                    .from('pvp_rooms')
-                    .insert({
+            var existingRooms = await checkResponse.json();
+            
+            if (!existingRooms || existingRooms.length === 0) {
+                console.log('📝 Creating room...');
+                var createResponse = await supabaseRestRequest(
+                    'pvp_rooms',
+                    'POST',
+                    {
                         room_id: roomId,
                         status: 'waiting',
-                        round_number: 0
-                    })
-                    .select()
-                    .single();
+                        round_number: 0,
+                        time_left: 20,
+                        phase: 'waiting'
+                    }
+                );
                 
-                if (createError) {
-                    console.error('Create room error:', createError);
+                if (!createResponse.ok) {
+                    console.error('Create room error:', await createResponse.text());
                     return false;
                 }
                 console.log('✅ Room created');
             } else {
-                console.log('✅ Room exists, status:', existingRoom.status);
-                this._roundId = existingRoom.round_number || 0;
+                console.log('✅ Room exists, status:', existingRooms[0].status);
+                this._roundId = existingRooms[0].round_number || 0;
             }
             
             this.subscribeToRoom();
@@ -97,6 +111,23 @@ var PvPRoomManager = {
         var roomId = this._roomId;
         console.log('📡 Subscribing to room:', roomId);
         
+        // Создаем клиент для Realtime
+        var supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+            auth: { persistSession: false },
+            global: {
+                headers: {
+                    'apikey': SUPABASE_KEY,
+                    'Authorization': 'Bearer ' + SUPABASE_KEY
+                }
+            },
+            realtime: {
+                params: {
+                    eventsPerSecond: 20,
+                    heartbeatIntervalMs: 3000
+                }
+            }
+        });
+        
         this._channel = supabaseClient
             .channel('pvp_room_' + roomId)
             .on(
@@ -115,13 +146,13 @@ var PvPRoomManager = {
             .on(
                 'postgres_changes',
                 {
-                    event: 'UPDATE',
+                    event: '*',
                     schema: 'public',
                     table: 'pvp_rooms',
                     filter: 'room_id=eq.' + roomId
                 },
                 function(payload) {
-                    console.log('📡 Room change:', payload);
+                    console.log('📡 Room change:', payload.eventType);
                     PvPRoomManager.handleRoomChange(payload);
                 }
             )
@@ -171,17 +202,23 @@ var PvPRoomManager = {
 
     handleRoomChange: function(payload) {
         var newData = payload.new;
-        console.log('📡 Room status:', newData.status);
+        console.log('📡 Room change:', newData);
         
-        if (newData.status === 'spinning') {
-            this.notifyListeners('room_spinning', newData);
-        } else if (newData.status === 'finished') {
-            this.notifyListeners('room_finished', newData);
-        } else if (newData.status === 'waiting') {
-            this.notifyListeners('room_waiting', newData);
+        if (newData) {
+            // Уведомляем о смене статуса комнаты
+            if (newData.phase === 'spinning') {
+                this.notifyListeners('room_spinning', newData);
+            } else if (newData.phase === 'finished') {
+                this.notifyListeners('room_finished', newData);
+            } else if (newData.phase === 'waiting' || newData.phase === 'countdown') {
+                this.notifyListeners('room_waiting', newData);
+            }
+            
+            // Обновляем roundId
+            if (newData.round_number !== undefined) {
+                this._roundId = newData.round_number;
+            }
         }
-        
-        this._roundId = newData.round_number || 0;
     },
 
     loadPlayers: async function() {
@@ -189,42 +226,42 @@ var PvPRoomManager = {
         this._isLoading = true;
         
         try {
-            console.log('📥 Loading players for room:', this._roomId);
+            var response = await supabaseRestRequest(
+                'pvp_room_players?room_id=eq.' + this._roomId + '&order=total_value.desc',
+                'GET'
+            );
             
-            var { data, error } = await supabaseClient
-                .from('pvp_room_players')
-                .select('*')
-                .eq('room_id', this._roomId)
-                .order('total_value', { ascending: false });
-            
-            if (error) {
-                console.error('Load players error:', error);
+            if (!response.ok) {
+                console.error('Load players error:', await response.text());
                 this._isLoading = false;
                 return;
             }
             
-            var newPlayers = data || [];
+            var newPlayers = await response.json();
             
-            // Проверяем изменения
+            // Быстрая проверка изменений
             if (newPlayers.length !== this._players.length) {
                 this._players = newPlayers;
                 this.updateTotalPool();
                 this.notifyListeners('players_loaded', this._players);
-                console.log('👥 Players loaded:', this._players.length);
             } else {
+                // Проверяем только последнюю ставку для экономии
                 var changed = false;
-                for (var i = 0; i < newPlayers.length; i++) {
-                    if (newPlayers[i].user_id !== this._players[i]?.user_id ||
-                        JSON.stringify(newPlayers[i].bets) !== JSON.stringify(this._players[i]?.bets)) {
-                        changed = true;
-                        break;
+                var lastIndex = newPlayers.length - 1;
+                if (lastIndex >= 0) {
+                    var oldLast = this._players[lastIndex];
+                    var newLast = newPlayers[lastIndex];
+                    if (oldLast && newLast) {
+                        if (oldLast.user_id !== newLast.user_id ||
+                            JSON.stringify(oldLast.bets) !== JSON.stringify(newLast.bets)) {
+                            changed = true;
+                        }
                     }
                 }
                 if (changed) {
                     this._players = newPlayers;
                     this.updateTotalPool();
                     this.notifyListeners('players_loaded', this._players);
-                    console.log('👥 Players updated:', this._players.length);
                 }
             }
             
@@ -240,60 +277,47 @@ var PvPRoomManager = {
             clearInterval(this._syncInterval);
         }
         
+        // Синхронизация каждую секунду (было 3 секунды)
         this._syncInterval = setInterval(function() {
             if (PvPRoomManager._isConnected) {
                 PvPRoomManager.loadPlayers();
             }
-        }, 3000);
+        }, 1000);
     },
 
     // ============================================================
-    // addBet - С ДЕТАЛЬНЫМИ ЛОГАМИ
+    // addBet - ОПТИМИЗИРОВАННАЯ ВЕРСИЯ
     // ============================================================
     addBet: async function(userId, username, firstName, photoUrl, amount, currency) {
         try {
             console.log('💰 Adding bet:', userId, amount, currency);
-            console.log('📝 User data:', { username, firstName, photoUrl });
             
-            // Проверяем существование игрока
-            var { data: existingPlayers, error: fetchError } = await supabaseClient
-                .from('pvp_room_players')
-                .select('*')
-                .eq('room_id', this._roomId)
-                .eq('user_id', userId);
-            
-            if (fetchError) {
-                console.error('❌ Fetch player error:', fetchError);
-                return false;
-            }
-            
-            var existingPlayer = existingPlayers && existingPlayers.length > 0 ? existingPlayers[0] : null;
+            // Быстрая проверка - используем локальный кэш
+            var existingPlayer = this._players.find(p => p.user_id === userId);
             var newBet = { amount: amount, currency: currency };
             
             if (existingPlayer) {
-                console.log('🔄 Updating existing player:', userId);
-                console.log('📊 Current bets:', existingPlayer.bets);
-                
                 var bets = existingPlayer.bets || [];
                 bets.push(newBet);
                 var totalValue = this.calculatePlayerValue(bets);
                 
-                console.log('📊 New bets:', bets);
-                console.log('📊 Total value:', totalValue);
-                
-                var { error: updateError } = await supabaseClient
-                    .from('pvp_room_players')
-                    .update({
+                var updateResponse = await supabaseRestRequest(
+                    'pvp_room_players?room_id=eq.pvp_main_room&user_id=eq.' + userId,
+                    'PATCH',
+                    {
                         bets: bets,
                         total_value: totalValue
-                    })
-                    .eq('room_id', this._roomId)
-                    .eq('user_id', userId);
+                    }
+                );
                 
-                if (updateError) {
-                    console.error('❌ Update player error:', updateError);
+                if (!updateResponse.ok) {
+                    console.error('❌ Update player error:', await updateResponse.text());
                     return false;
                 }
+                
+                // Обновляем локальный кэш сразу
+                existingPlayer.bets = bets;
+                existingPlayer.total_value = totalValue;
                 
                 console.log('✅ Player updated:', userId);
                 
@@ -315,26 +339,27 @@ var PvPRoomManager = {
                     total_value: totalValue
                 };
                 
-                console.log('📝 New player data:', newPlayer);
+                var insertResponse = await supabaseRestRequest(
+                    'pvp_room_players',
+                    'POST',
+                    newPlayer
+                );
                 
-                var { error: insertError } = await supabaseClient
-                    .from('pvp_room_players')
-                    .insert(newPlayer);
-                
-                if (insertError) {
-                    console.error('❌ Insert player error:', insertError);
+                if (!insertResponse.ok) {
+                    console.error('❌ Insert player error:', await insertResponse.text());
                     return false;
                 }
+                
+                // Добавляем в локальный кэш
+                this._players.push(newPlayer);
                 
                 console.log('✅ New player added:', userId);
             }
             
-            // Обновляем пул и уведомляем
-            await this.loadPlayers();
+            // Обновляем пул
             this.updateTotalPool();
             this.notifyListeners('players_updated', this._players);
             
-            console.log('✅ Bet placed successfully!');
             return true;
             
         } catch (error) {
@@ -345,16 +370,15 @@ var PvPRoomManager = {
 
     clearAllPlayers: async function() {
         try {
-            var roomId = this._roomId;
-            console.log('🧹 Clearing all players from room:', roomId);
+            console.log('🧹 Clearing all players from room:', this._roomId);
             
-            var { error } = await supabaseClient
-                .from('pvp_room_players')
-                .delete()
-                .eq('room_id', roomId);
+            var response = await supabaseRestRequest(
+                'pvp_room_players?room_id=eq.' + this._roomId,
+                'DELETE'
+            );
             
-            if (error) {
-                console.error('Clear players error:', error);
+            if (!response.ok) {
+                console.error('Clear players error:', await response.text());
                 return false;
             }
             
@@ -388,8 +412,6 @@ var PvPRoomManager = {
                 }
             });
         });
-        
-        console.log('💰 Pool updated:', this._totalPoolTon, 'TON +', this._totalPoolStars, 'Stars');
         
         this.notifyListeners('pool_updated', {
             ton: this._totalPoolTon,
@@ -429,23 +451,24 @@ var PvPRoomManager = {
 
     subscribe: function(callback) {
         this._subscriptions.push(callback);
-        console.log('📡 Subscribed, total listeners:', this._subscriptions.length);
         return function() {
             var index = this._subscriptions.indexOf(callback);
             if (index !== -1) {
                 this._subscriptions.splice(index, 1);
-                console.log('📡 Unsubscribed, remaining:', this._subscriptions.length);
             }
         }.bind(this);
     },
 
     notifyListeners: function(event, data) {
-        this._subscriptions.forEach(function(callback) {
-            try {
-                callback(event, data);
-            } catch (error) {
-                console.error('Listener error:', error);
-            }
+        // Используем requestAnimationFrame для плавности
+        requestAnimationFrame(function() {
+            PvPRoomManager._subscriptions.forEach(function(callback) {
+                try {
+                    callback(event, data);
+                } catch (error) {
+                    console.error('Listener error:', error);
+                }
+            });
         });
     },
 
@@ -470,4 +493,4 @@ var PvPRoomManager = {
 };
 
 window.PvPRoomManager = PvPRoomManager;
-console.log('✅ PvPRoomManager loaded');
+console.log('✅ PvPRoomManager loaded (optimized)');

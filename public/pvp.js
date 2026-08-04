@@ -224,10 +224,11 @@ var TON_TO_STARS_RATE = 76;
 var MIN_PLAYERS = 2;
 var MIN_BET_TON = 0.1;
 var MIN_BET_STARS = 10;
-var ROUND_DURATION = 20;
-var SPIN_DURATION = 5000;
-var NEW_ROUND_DELAY = 5000;
-var FORCE_RESET_TIMEOUT = 30000;
+var ROUND_DURATION = 15;  // Было 20, стало 15
+var SPIN_DURATION = 4000; // Было 5000, стало 4000
+var NEW_ROUND_DELAY = 3000; // Было 5000, стало 3000
+var FORCE_RESET_TIMEOUT = 20000; // Было 30000, стало 20000
+var SYNC_INTERVAL = 1000; 
 var forceResetTimer = null;
 
 var OWNER_WALLET = 'UQC5ZUl4Qobq69CgLi7tg-8y6aOwVilc5b82jJFZShtnetrw';
@@ -1493,10 +1494,19 @@ function startCountdownFrom(timeLeft) {
     
     startForceResetTimer();
     
+    // Вместо синхронизации каждый тик - синхронизируем раз в 5 секунд
+    var syncCounter = 0;
+
     gameState.timer = setInterval(function() {
         gameState.timeLeft--;
         updateTimerUI();
         updateHub('timer', gameState.timeLeft);
+        
+        // Синхронизируем раз в 5 секунд (не каждый тик)
+        syncCounter++;
+        if (syncCounter % 5 === 0) {
+            syncRoomStateToDB();
+        }
         
         if (gameState.timeLeft <= 0) {
             clearInterval(gameState.timer);
@@ -1517,7 +1527,44 @@ function startCountdown() {
     }
     
     stopWaitingSpin();
-    startCountdownFrom(ROUND_DURATION);
+    
+    gameState.roundPhase = 'countdown';
+    gameState.timeLeft = ROUND_DURATION;
+    
+    if (gameState.timer) clearInterval(gameState.timer);
+    
+    // Синхронизируем состояние при старте
+    syncRoomStateToDB();
+    
+    updateHub('timer', ROUND_DURATION);
+    updateHub('status', 'До вращения');
+    
+    var placeBtn = document.getElementById('placeBetBtn');
+    if (placeBtn) placeBtn.disabled = false;
+    
+    startForceResetTimer();
+    
+    var syncCounter = 0;
+    gameState.timer = setInterval(function() {
+        gameState.timeLeft--;
+        updateTimerUI();
+        updateHub('timer', gameState.timeLeft);
+        
+        // Синхронизируем раз в 3 секунды (не каждый тик)
+        syncCounter++;
+        if (syncCounter % 3 === 0) {
+            syncRoomStateToDB();
+        }
+        
+        if (gameState.timeLeft <= 0) {
+            clearInterval(gameState.timer);
+            clearForceResetTimer();
+            startSpin();
+        }
+    }, 1000);
+    
+    updateUI();
+    updateHubCurrentPlayer();
 }
 
 // ============================================================
