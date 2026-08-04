@@ -92,7 +92,7 @@ var isBetting = false;
 var isSyncing = false;
 
 // ============================================================
-// TON CONNECT - ИНИЦИАЛИЗАЦИЯ (ОПТИМИЗИРОВАННАЯ)
+// TON CONNECT - ИНИЦИАЛИЗАЦИЯ
 // ============================================================
 
 var MANIFEST_URL = 'https://bets-telegram-mini-app.vercel.app/tonconnect-manifest.json';
@@ -236,7 +236,7 @@ function showTonConnectError() {
 }
 
 // ============================================================
-// СИНХРОНИЗАЦИЯ СОСТОЯНИЯ С БД (ОПТИМИЗИРОВАННАЯ)
+// СИНХРОНИЗАЦИЯ СОСТОЯНИЯ С БД
 // ============================================================
 
 async function syncRoomStateToDB() {
@@ -445,7 +445,6 @@ async function forceResetRound() {
         hubContent.innerHTML = '<div class="hub-timer" id="hubTimer">' + ROUND_DURATION + '</div><div class="hub-status" id="hubStatus">Ожидание</div>';
     }
     
-    // Очищаем игроков в комнате
     await clearRoomPlayers();
     await syncRoomStateToDB();
     
@@ -480,7 +479,6 @@ document.addEventListener('DOMContentLoaded', function() {
         window.location.href = 'index.html';
     });
     
-    // Загружаем TonConnect асинхронно
     setTimeout(initTonConnect, 500);
     
     initializeUserInPvP();
@@ -825,52 +823,6 @@ function updatePlayersFromRoom(players) {
     }
 }
 
-function updatePlayersList() {
-    var list = document.getElementById('playersListCompact');
-    if (!list) return;
-    
-    var activePlayers = getActivePlayers();
-    if (activePlayers.length === 0) {
-        list.innerHTML = '<div class="no-players-compact">Нет игроков в комнате</div>';
-        return;
-    }
-    
-    activePlayers.sort(function(a, b) {
-        var aValue = calculatePlayerTotalValue(a);
-        var bValue = calculatePlayerTotalValue(b);
-        return bValue - aValue;
-    });
-    
-    var totalValue = gameState.totalPoolTon * TON_TO_STARS_RATE + gameState.totalPoolStars;
-    
-    list.innerHTML = activePlayers.map(function(player) {
-        var isWinner = gameState.winner && gameState.winner.userId === player.userId;
-        var betText = formatPlayerBets(player);
-        var share = totalValue > 0 ? ((calculatePlayerTotalValue(player) / totalValue) * 100).toFixed(1) + '%' : '0%';
-        
-        return '<div class="player-row ' + (isWinner ? 'winner-row' : '') + '">' +
-            '<div class="player-row-color" style="background-color: ' + player.color + '"></div>' +
-            '<img src="' + getAvatarUrl(player) + '" alt="' + player.firstName + '" class="player-row-avatar">' +
-            '<span class="player-row-name">' + player.firstName + (isWinner ? ' 👑' : '') + '</span>' +
-            '<span class="player-row-bet">' + betText + '</span>' +
-            '<span class="player-row-share">' + share + '</span>' +
-            '</div>';
-    }).join('');
-}
-
-function calculatePlayerTotalValue(player) {
-    if (!player || !player.bets) return 0;
-    var value = 0;
-    player.bets.forEach(function(bet) {
-        if (bet.currency === 'ton') {
-            value += bet.amount * TON_TO_STARS_RATE;
-        } else {
-            value += bet.amount;
-        }
-    });
-    return value;
-}
-
 function updateRoomStatus() {
     var roomIdEl = document.getElementById('roomId');
     var playersCountEl = document.getElementById('roomPlayersCount');
@@ -1055,14 +1007,6 @@ function handleRoomWaiting() {
     document.getElementById('spinningStatus').style.display = 'none';
 }
 
-function updateWheelImmediately() {
-    createWheelSegments();
-    updatePlayersList();
-    updateUI();
-    updateRoomStatus();
-    updateHubCurrentPlayer();
-}
-
 // ============================================================
 // ОЧИСТКА ИГРОКОВ
 // ============================================================
@@ -1165,8 +1109,9 @@ function createWheelSegments() {
     var activePlayers = getActivePlayers();
     if (!wheel) return;
     
+    wheel.innerHTML = '';
+    
     if (activePlayers.length === 0) {
-        wheel.innerHTML = '';
         wheel.classList.add('waiting-pattern');
         wheel.classList.add('waiting-spin');
         wheel.style.transition = 'none';
@@ -1177,56 +1122,50 @@ function createWheelSegments() {
     wheel.classList.remove('waiting-spin');
     
     var totalValue = (gameState.totalPoolTon * TON_TO_STARS_RATE) + gameState.totalPoolStars;
-    
-    if (totalValue === 0) {
-        var equalAngle = 360 / activePlayers.length;
-        var segmentsHTML = '';
-        var currentAngle = 0;
-        
-        activePlayers.forEach(function(player, index) {
-            var midAngle = currentAngle + equalAngle / 2;
-            segmentsHTML += '<div class="wheel-avatar-container" style="transform: rotate(' + midAngle + 'deg);">' +
-                '<div class="avatar-position">' +
-                '<img src="' + getAvatarUrl(player) + '" alt="' + player.firstName + '" class="wheel-player-avatar">' +
-                '</div></div>';
-            currentAngle += equalAngle;
-        });
-        
-        var gradientColors = activePlayers.map(function(player, index) {
-            var startPercent = (index / activePlayers.length) * 100;
-            var endPercent = ((index + 1) / activePlayers.length) * 100;
-            return player.color + ' ' + startPercent + '% ' + endPercent + '%';
-        });
-        
-        var gradient = 'conic-gradient(from 0deg, ' + gradientColors.join(', ') + ')';
-        wheel.innerHTML = '<div style="width:100%;height:100%;border-radius:50%;background:' + gradient + ';position:relative;">' +
-            segmentsHTML + '</div>';
-        return;
-    }
-    
-    var startAngle = 0;
     var segmentsHTML = '';
     var gradientColors = [];
     
-    activePlayers.forEach(function(player) {
-        var playerValue = calculatePlayerTotalValue(player);
-        var angle = (playerValue / totalValue) * 360;
-        var midAngle = startAngle + angle / 2;
-        var startPercent = (startAngle / 360) * 100;
-        var endPercent = ((startAngle + angle) / 360) * 100;
+    if (totalValue === 0) {
+        var equalAngle = 360 / activePlayers.length;
+        var currentAngle = 0;
         
-        segmentsHTML += '<div class="wheel-avatar-container" style="transform: rotate(' + midAngle + 'deg);">' +
-            '<div class="avatar-position">' +
-            '<img src="' + getAvatarUrl(player) + '" alt="' + player.firstName + '" class="wheel-player-avatar">' +
-            '</div></div>';
+        activePlayers.forEach(function(player, index) {
+            var startPercent = (index / activePlayers.length) * 100;
+            var endPercent = ((index + 1) / activePlayers.length) * 100;
+            gradientColors.push(player.color + ' ' + startPercent + '% ' + endPercent + '%');
+            
+            var midAngle = currentAngle + equalAngle / 2;
+            segmentsHTML += '<div class="wheel-avatar-container" style="transform: rotate(' + midAngle + 'deg);">' +
+                '<div class="avatar-position">' +
+                '<img src="' + getAvatarUrl(player) + '" alt="' + player.firstName + '" class="wheel-player-avatar" onerror="this.src=\'assets/avatar.png\'">' +
+                '</div></div>';
+            currentAngle += equalAngle;
+        });
+    } else {
+        var startAngle = 0;
         
-        gradientColors.push(player.color + ' ' + startPercent + '% ' + endPercent + '%');
-        startAngle += angle;
-    });
+        activePlayers.forEach(function(player) {
+            var playerValue = calculatePlayerTotalValue(player);
+            var angle = (playerValue / totalValue) * 360;
+            var midAngle = startAngle + angle / 2;
+            var startPercent = (startAngle / 360) * 100;
+            var endPercent = ((startAngle + angle) / 360) * 100;
+            
+            gradientColors.push(player.color + ' ' + startPercent + '% ' + endPercent + '%');
+            
+            segmentsHTML += '<div class="wheel-avatar-container" style="transform: rotate(' + midAngle + 'deg);">' +
+                '<div class="avatar-position">' +
+                '<img src="' + getAvatarUrl(player) + '" alt="' + player.firstName + '" class="wheel-player-avatar" onerror="this.src=\'assets/avatar.png\'">' +
+                '</div></div>';
+            
+            startAngle += angle;
+        });
+    }
     
     var gradient = 'conic-gradient(from 0deg, ' + gradientColors.join(', ') + ')';
     wheel.innerHTML = '<div style="width:100%;height:100%;border-radius:50%;background:' + gradient + ';position:relative;">' +
-        segmentsHTML + '</div>';
+        segmentsHTML +
+        '</div>';
 }
 
 // ============================================================
@@ -1374,14 +1313,11 @@ function updateHubCurrentPlayer() {
     if (!hubContent) return;
     
     var activePlayers = getActivePlayers();
-    if (activePlayers.length === 0) {
-        hubContent.innerHTML = '<div class="hub-timer" id="hubTimer">' + gameState.timeLeft + '</div>' +
-            '<div class="hub-status" id="hubStatus">Ожидание</div>';
-        return;
-    }
     
     if (gameState.winner) {
-        hubContent.innerHTML = '<img src="' + getAvatarUrl(gameState.winner) + '" alt="' + gameState.winner.firstName + '" class="hub-avatar">' +
+        var winnerAvatar = getAvatarUrl(gameState.winner);
+        hubContent.innerHTML = 
+            '<img src="' + winnerAvatar + '" alt="' + gameState.winner.firstName + '" class="hub-avatar" onerror="this.src=\'assets/avatar.png\'">' +
             '<div class="hub-player-name">' + gameState.winner.firstName + '</div>';
         return;
     }
@@ -1390,39 +1326,54 @@ function updateHubCurrentPlayer() {
         var currentAngle = gameState.rotationAngle % 360;
         var player = getPlayerAtAngle(currentAngle);
         if (player) {
-            hubContent.innerHTML = '<img src="' + getAvatarUrl(player) + '" alt="' + player.firstName + '" class="hub-avatar">' +
+            var avatarUrl = getAvatarUrl(player);
+            hubContent.innerHTML = 
+                '<img src="' + avatarUrl + '" alt="' + player.firstName + '" class="hub-avatar" onerror="this.src=\'assets/avatar.png\'">' +
                 '<div class="hub-player-name">' + player.firstName + '</div>';
         } else {
-            hubContent.innerHTML = '<div class="hub-timer" id="hubTimer">' + gameState.timeLeft + '</div>' +
+            hubContent.innerHTML = 
+                '<div class="hub-timer" id="hubTimer">' + gameState.timeLeft + '</div>' +
                 '<div class="hub-status" id="hubStatus">Вращение...</div>';
         }
         return;
     }
     
-    hubContent.innerHTML = '<div class="hub-timer" id="hubTimer">' + gameState.timeLeft + '</div>' +
-        '<div class="hub-status" id="hubStatus">Ожидание</div>';
+    if (activePlayers.length === 0) {
+        hubContent.innerHTML = 
+            '<div class="hub-timer" id="hubTimer">' + gameState.timeLeft + '</div>' +
+            '<div class="hub-status" id="hubStatus">Ожидание</div>';
+    } else {
+        var statusText = gameState.roundPhase === 'countdown' ? 'До вращения' : 'Ожидание';
+        hubContent.innerHTML = 
+            '<div class="hub-timer" id="hubTimer">' + gameState.timeLeft + '</div>' +
+            '<div class="hub-status" id="hubStatus">' + statusText + '</div>';
+    }
 }
 
 function getPlayerAtAngle(angle) {
     var activePlayers = getActivePlayers();
-    var totalValue = (gameState.totalPoolTon * TON_TO_STARS_RATE) + gameState.totalPoolStars;
+    if (activePlayers.length === 0) return null;
     
-    if (totalValue === 0 || activePlayers.length === 0) {
-        return null;
+    var totalValue = (gameState.totalPoolTon * TON_TO_STARS_RATE) + gameState.totalPoolStars;
+    var normalizedAngle = ((360 - angle) % 360 + 360) % 360;
+    
+    if (totalValue === 0) {
+        var segmentAngle = 360 / activePlayers.length;
+        var index = Math.floor(normalizedAngle / segmentAngle);
+        if (index >= activePlayers.length) index = activePlayers.length - 1;
+        return activePlayers[index];
     }
     
-    var normalizedAngle = ((360 - angle) % 360 + 360) % 360;
-    var startAngle = 0;
-    
+    var cumulativeAngle = 0;
     for (var i = 0; i < activePlayers.length; i++) {
         var player = activePlayers[i];
         var playerValue = calculatePlayerTotalValue(player);
         var segmentAngle = (playerValue / totalValue) * 360;
         
-        if (normalizedAngle >= startAngle && normalizedAngle < startAngle + segmentAngle) {
+        if (normalizedAngle >= cumulativeAngle && normalizedAngle < cumulativeAngle + segmentAngle) {
             return player;
         }
-        startAngle += segmentAngle;
+        cumulativeAngle += segmentAngle;
     }
     
     return activePlayers[activePlayers.length - 1];
@@ -1550,7 +1501,7 @@ async function saveRoundToDB(roundId, winnerName, prize, multiplier, playersCoun
 }
 
 // ============================================================
-// UI ОБНОВЛЕНИЯ
+// UI ОБНОВЛЕНИЯ (ПОЛНЫЙ БЛОК)
 // ============================================================
 
 function updateUI() {
@@ -1568,30 +1519,43 @@ function updateUI() {
     updateRoomStatus();
     updatePlayersList();
     
-    var list = document.getElementById('playersListCompact');
-    if (list) {
-        if (activePlayers.length === 0) {
-            list.innerHTML = '<div class="no-players-compact">Нет игроков в комнате</div>';
-        } else {
-            list.innerHTML = activePlayers.map(function(player) {
-                var isWinner = gameState.winner && gameState.winner.userId === player.userId;
-                var betText = formatPlayerBets(player);
-                var share = calculateWinChance(player);
-                
-                return '<div class="player-row ' + (isWinner ? 'winner-row' : '') + '">' +
-                    '<div class="player-row-color" style="background-color: ' + player.color + '"></div>' +
-                    '<img src="' + getAvatarUrl(player) + '" alt="' + player.firstName + '" class="player-row-avatar">' +
-                    '<span class="player-row-name">' + player.firstName + (isWinner ? ' 👑' : '') + '</span>' +
-                    '<span class="player-row-bet">' + betText + '</span>' +
-                    '<span class="player-row-share">' + share + '</span>' +
-                    '</div>';
-            }).join('');
-        }
-    }
-    
     updateHeaderInfo();
     updateTopGameDisplay();
     updateHubCurrentPlayer();
+}
+
+function updatePlayersList() {
+    var list = document.getElementById('playersListCompact');
+    if (!list) return;
+    
+    var activePlayers = getActivePlayers();
+    if (activePlayers.length === 0) {
+        list.innerHTML = '<div class="no-players-compact">Нет игроков в комнате</div>';
+        return;
+    }
+    
+    activePlayers.sort(function(a, b) {
+        var aValue = calculatePlayerTotalValue(a);
+        var bValue = calculatePlayerTotalValue(b);
+        return bValue - aValue;
+    });
+    
+    var totalValue = (gameState.totalPoolTon * TON_TO_STARS_RATE) + gameState.totalPoolStars;
+    
+    list.innerHTML = activePlayers.map(function(player) {
+        var isWinner = gameState.winner && gameState.winner.userId === player.userId;
+        var betText = formatPlayerBets(player);
+        var playerValue = calculatePlayerTotalValue(player);
+        var share = totalValue > 0 && playerValue > 0 ? ((playerValue / totalValue) * 100).toFixed(1) + '%' : '0%';
+        
+        return '<div class="player-row ' + (isWinner ? 'winner-row' : '') + '">' +
+            '<div class="player-row-color" style="background-color: ' + player.color + '"></div>' +
+            '<img src="' + getAvatarUrl(player) + '" alt="' + player.firstName + '" class="player-row-avatar" onerror="this.src=\'assets/avatar.png\'">' +
+            '<span class="player-row-name">' + player.firstName + (isWinner ? ' 👑' : '') + '</span>' +
+            '<span class="player-row-bet">' + betText + '</span>' +
+            '<span class="player-row-share">' + share + '</span>' +
+            '</div>';
+    }).join('');
 }
 
 function updateBetUI() {
@@ -1658,7 +1622,8 @@ function updateHub(type, data) {
         if (statusEl) statusEl.textContent = data;
     } else if (type === 'avatar') {
         if (hubContent) {
-            hubContent.innerHTML = '<img src="' + getAvatarUrl(data) + '" alt="' + data.firstName + '" class="hub-avatar">' +
+            var avatarUrl = getAvatarUrl(data);
+            hubContent.innerHTML = '<img src="' + avatarUrl + '" alt="' + data.firstName + '" class="hub-avatar" onerror="this.src=\'assets/avatar.png\'">' +
                 '<div class="hub-player-name">' + data.firstName + '</div>';
         }
     }
@@ -1707,6 +1672,116 @@ function updateTopGameDisplay() {
         topGameEl.textContent = '—';
         topGameEl.className = 'info-value';
     }
+}
+
+// ============================================================
+// ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
+// ============================================================
+
+function getActivePlayers() {
+    return gameState.players.filter(function(p) { return p.bets && p.bets.length > 0; });
+}
+
+function getAvatarUrl(player) {
+    if (!player) return 'assets/avatar.png';
+    
+    if (player.avatar && player.avatar !== '') return player.avatar;
+    if (player.photo_url && player.photo_url !== '') return player.photo_url;
+    if (player.userId) {
+        return 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + player.userId;
+    }
+    return 'assets/avatar.png';
+}
+
+function formatPlayerBets(player) {
+    if (!player || !player.bets || player.bets.length === 0) return '0';
+    
+    var tonTotal = 0;
+    var starsTotal = 0;
+    
+    player.bets.forEach(function(bet) {
+        if (bet.currency === 'ton') {
+            tonTotal += bet.amount;
+        } else {
+            starsTotal += bet.amount;
+        }
+    });
+    
+    var parts = [];
+    if (tonTotal > 0) parts.push(tonTotal.toFixed(1) + ' TON');
+    if (starsTotal > 0) parts.push(Math.floor(starsTotal) + ' Stars');
+    
+    return parts.join(' + ') || '0';
+}
+
+function calculateWinChance(player) {
+    if (!player || !player.bets || player.bets.length === 0) return '0%';
+    
+    var playerValue = calculatePlayerTotalValue(player);
+    var totalValue = (gameState.totalPoolTon * TON_TO_STARS_RATE) + gameState.totalPoolStars;
+    
+    if (totalValue === 0 || playerValue === 0) return '0%';
+    
+    var chance = (playerValue / totalValue) * 100;
+    return chance.toFixed(1) + '%';
+}
+
+function calculatePlayerTotalValue(player) {
+    if (!player || !player.bets) return 0;
+    var value = 0;
+    player.bets.forEach(function(bet) {
+        if (bet.currency === 'ton') {
+            value += bet.amount * TON_TO_STARS_RATE;
+        } else {
+            value += bet.amount;
+        }
+    });
+    return value;
+}
+
+function updateWheelImmediately() {
+    createWheelSegments();
+    updatePlayersList();
+    updateUI();
+    updateRoomStatus();
+    updateHubCurrentPlayer();
+    console.log('🔄 Wheel updated immediately');
+}
+
+function addDemoPlayers() {
+    var user = tg.initDataUnsafe?.user;
+    var demoPlayers = [
+        {
+            userId: user?.id || 1,
+            firstName: user?.first_name || 'Вы',
+            username: user?.username || 'you',
+            avatar: user?.photo_url || '',
+            color: '#0ceb0f',
+            bets: []
+        },
+        {
+            userId: 2,
+            firstName: 'Алексей',
+            username: 'alex_win',
+            avatar: '',
+            color: '#ff6b6b',
+            bets: []
+        },
+        {
+            userId: 3,
+            firstName: 'Мария',
+            username: 'maria_luck',
+            avatar: '',
+            color: '#4ecdc4',
+            bets: []
+        }
+    ];
+    gameState.players = demoPlayers;
+}
+
+function getRandomColor() {
+    var colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#a29bfe', '#fd79a8', '#fdcb6e', '#e17055', '#00cec9'];
+    return colors[Math.floor(Math.random() * colors.length)];
 }
 
 // ============================================================
@@ -1870,7 +1945,6 @@ async function showWinner(winner) {
         playerDetails
     );
     
-    // savedRound может быть null, поэтому обрабатываем это
     if (savedRound) {
         gameState.history.unshift({
             roundId: gameState.roundId,
@@ -1923,7 +1997,6 @@ async function showWinner(winner) {
         updateTopGameDisplay();
         updateHeaderInfo();
     } else {
-        // Если не удалось сохранить в БД, всё равно добавляем в локальную историю
         gameState.history.unshift({
             roundId: gameState.roundId,
             winner: winner.firstName,
@@ -1941,7 +2014,6 @@ async function showWinner(winner) {
         modal.classList.remove('show');
     }, 3000);
 }
-
 
 // ============================================================
 // СТАТИСТИКА ИГРОКОВ
@@ -2368,7 +2440,6 @@ async function syncRoomData() {
         return;
     }
     
-    // Не синхронизируем чаще чем раз в 500ms
     var now = Date.now();
     if (now - gameState._lastSync < 500) {
         return;
@@ -2406,69 +2477,6 @@ async function syncRoomData() {
     } finally {
         isSyncing = false;
     }
-}
-
-// ============================================================
-// ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
-// ============================================================
-
-function getActivePlayers() {
-    return gameState.players.filter(function(p) { return p.bets && p.bets.length > 0; });
-}
-
-function addDemoPlayers() {
-    var user = tg.initDataUnsafe?.user;
-    var demoPlayers = [
-        {
-            userId: user?.id || 1,
-            firstName: user?.first_name || 'Вы',
-            username: user?.username || 'you',
-            avatar: user?.photo_url || '',
-            color: '#0ceb0f',
-            bets: []
-        },
-        {
-            userId: 2,
-            firstName: 'Алексей',
-            username: 'alex_win',
-            avatar: '',
-            color: '#ff6b6b',
-            bets: []
-        },
-        {
-            userId: 3,
-            firstName: 'Мария',
-            username: 'maria_luck',
-            avatar: '',
-            color: '#4ecdc4',
-            bets: []
-        }
-    ];
-    gameState.players = demoPlayers;
-}
-
-function formatPlayerBets(player) {
-    if (!player || !player.bets) return '0';
-    var tonTotal = player.bets.filter(function(b) { return b.currency === 'ton'; }).reduce(function(s, b) { return s + b.amount; }, 0);
-    var starsTotal = player.bets.filter(function(b) { return b.currency === 'stars'; }).reduce(function(s, b) { return s + b.amount; }, 0);
-    var parts = [];
-    if (tonTotal > 0) parts.push(tonTotal.toFixed(1) + ' TON');
-    if (starsTotal > 0) parts.push(Math.floor(starsTotal) + ' Stars');
-    return parts.join(' + ') || '0';
-}
-
-function calculateWinChance(player) {
-    if (!player || !player.bets) return '0%';
-    var playerValue = calculatePlayerTotalValue(player);
-    var totalValue = (gameState.totalPoolTon * TON_TO_STARS_RATE) + gameState.totalPoolStars;
-    if (totalValue === 0) return '0%';
-    return ((playerValue / totalValue) * 100).toFixed(1) + '%';
-}
-
-function getAvatarUrl(player) {
-    if (!player) return '';
-    if (player.avatar) return player.avatar;
-    return 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + player.userId;
 }
 
 // ============================================================
