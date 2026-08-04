@@ -10,63 +10,43 @@ const tg = window.Telegram.WebApp;
 
 const MANIFEST_URL = 'https://bets-telegram-mini-app.vercel.app/tonconnect-manifest.json';
 
-// Глобальная переменная для TonConnectUI
 let tonConnectUI = null;
 let isWalletConnected = false;
 let walletAddress = null;
-let tonConnectReady = false;
 
-// Ждем загрузку TonConnect
-function waitForTonConnect() {
-    return new Promise((resolve) => {
+// Инициализация TonConnect
+function initTonConnect() {
+    try {
         // Проверяем, загружен ли TonConnectUI
-        if (typeof window.TonConnectUI !== 'undefined') {
-            tonConnectReady = true;
-            resolve();
+        if (typeof window.TON_CONNECT_UI === 'undefined') {
+            console.warn('⚠️ TonConnectUI not loaded, waiting...');
+            // Пробуем загрузить через CDN
+            const script = document.createElement('script');
+            script.src = 'https://unpkg.com/@tonconnect/ui@2.0.0/dist/tonconnect-ui.min.js';
+            script.onload = function() {
+                console.log('✅ TonConnectUI loaded from CDN');
+                createTonConnectInstance();
+            };
+            script.onerror = function() {
+                console.error('❌ Failed to load TonConnectUI');
+                showTonConnectError();
+            };
+            document.head.appendChild(script);
             return;
         }
         
-        // Слушаем событие загрузки
-        const checkInterval = setInterval(() => {
-            if (typeof window.TonConnectUI !== 'undefined') {
-                clearInterval(checkInterval);
-                tonConnectReady = true;
-                resolve();
-            }
-        }, 100);
-        
-        // Таймаут на всякий случай
-        setTimeout(() => {
-            clearInterval(checkInterval);
-            if (!tonConnectReady) {
-                console.warn('⚠️ TonConnect not loaded after timeout, retrying...');
-                // Пробуем загрузить вручную через динамический импорт
-                import('https://unpkg.com/@tonconnect/ui@2.0.0/dist/tonconnect-ui.esm.js')
-                    .then(module => {
-                        window.TonConnectUI = module.TonConnectUI;
-                        tonConnectReady = true;
-                        resolve();
-                    })
-                    .catch(err => {
-                        console.error('❌ Failed to load TonConnect:', err);
-                        resolve(); // Разрешаем даже при ошибке, чтобы приложение работало
-                    });
-            }
-        }, 5000);
-    });
+        createTonConnectInstance();
+    } catch (error) {
+        console.error('❌ initTonConnect error:', error);
+        showTonConnectError();
+    }
 }
 
-// Инициализация TonConnect
-async function initTonConnect() {
-    await waitForTonConnect();
-    
-    if (typeof window.TonConnectUI === 'undefined') {
-        console.error('❌ TonConnectUI not available');
-        return;
-    }
-    
+function createTonConnectInstance() {
     try {
-        tonConnectUI = new window.TonConnectUI({
+        const TonConnectUI = window.TON_CONNECT_UI.TonConnectUI;
+        
+        tonConnectUI = new TonConnectUI({
             manifestUrl: MANIFEST_URL,
             actionsConfiguration: {
                 twaReturnUrl: 'https://t.me/bets_mini_app_bot/app'
@@ -83,7 +63,6 @@ async function initTonConnect() {
                 walletAddress = wallet.account.address;
                 console.log('💰 Wallet connected:', walletAddress);
                 updateWalletUI(true, walletAddress);
-                // Обновляем модалку депозита если открыта
                 if (document.getElementById('depositModal').classList.contains('show')) {
                     updateDepositModalUI();
                 }
@@ -99,8 +78,31 @@ async function initTonConnect() {
         });
         
         console.log('✅ TonConnect initialized successfully');
+        
     } catch (error) {
-        console.error('❌ initTonConnect error:', error);
+        console.error('❌ createTonConnectInstance error:', error);
+        showTonConnectError();
+    }
+}
+
+function showTonConnectError() {
+    const container = document.getElementById('ton-connect-container');
+    if (container) {
+        container.innerHTML = `
+            <div style="color: #ff6b6b; padding: 12px; border: 1px solid rgba(255,107,107,0.2); border-radius: 8px; text-align: center;">
+                ⚠️ Не удалось загрузить TON кошелек<br>
+                <button onclick="location.reload()" style="
+                    margin-top: 8px;
+                    padding: 6px 16px;
+                    background: #0ceb0f;
+                    color: #000;
+                    border: none;
+                    border-radius: 6px;
+                    cursor: pointer;
+                ">Обновить</button>
+            </div>
+        `;
+        container.style.display = 'block';
     }
 }
 
@@ -111,14 +113,13 @@ function updateWalletUI(connected, address = '') {
     if (connected && address) {
         const shortAddr = address.slice(0, 4) + '...' + address.slice(-4);
         container.innerHTML = `
-            <div style="color: #0ceb0f; padding: 10px; border: 1px solid rgba(12,235,15,0.2); border-radius: 8px; background: rgba(12,235,15,0.05);">
+            <div style="color: #0ceb0f; padding: 10px; border: 1px solid rgba(12,235,15,0.2); border-radius: 8px; background: rgba(12,235,15,0.05); text-align: center;">
                 ✅ Кошелек подключен<br>
                 <span style="font-size: 13px; opacity: 0.7;">${shortAddr}</span>
             </div>
         `;
         container.style.display = 'block';
     } else {
-        // Показываем кнопку подключения
         container.innerHTML = `
             <button class="ton-connect-btn" id="tonConnectBtn" style="
                 width: 100%;
@@ -134,22 +135,21 @@ function updateWalletUI(connected, address = '') {
             ">
                 🔗 Подключить TON кошелек
             </button>
-            <p style="font-size: 12px; color: rgba(255,255,255,0.35); margin-top: 8px;">
+            <p style="font-size: 12px; color: rgba(255,255,255,0.35); margin-top: 8px; text-align: center;">
                 Подключите кошелек для пополнения в TON
             </p>
         `;
         container.style.display = 'block';
         
-        // Обработчик клика
         const btn = document.getElementById('tonConnectBtn');
         if (btn) {
-            btn.onclick = async () => {
+            btn.onclick = async function() {
                 try {
-                    if (tonConnectUI) {
-                        await tonConnectUI.openModal();
-                    } else {
-                        tg.showAlert('❌ TON кошелек не загружен. Попробуйте обновить страницу.');
+                    if (!tonConnectUI) {
+                        tg.showAlert('❌ TON кошелек не загружен. Обновите страницу.');
+                        return;
                     }
+                    await tonConnectUI.openModal();
                 } catch (error) {
                     console.error('Connection error:', error);
                     tg.showAlert('❌ Ошибка подключения кошелька');
@@ -165,7 +165,6 @@ function updateWalletUI(connected, address = '') {
 const SUPABASE_URL = 'https://siibxynvgrrsktyihuby.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNpaWJ4eW52Z3Jyc2t0eWlodWJ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU3MDE0MzUsImV4cCI6MjEwMTI3NzQzNX0.k8bdNQPeB8lDkw_1XKVtFB-u3NjyHmyr2L7zE4mhN6I';
 
-// Инициализация Supabase клиента
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ============================================================
@@ -199,26 +198,25 @@ const MIN_BET_STARS = 10;
 const ROUND_DURATION = 20;
 const SPIN_DURATION = 5000;
 
-// Владелец кошелька для TON депозитов
-const OWNER_WALLET = 'UQA3WtWc48aXCd_coowsdnhZclJu2zZlo2llq7qsK9uM58SX';
+const OWNER_WALLET = 'UQC5ZUl4Qobq69CgLi7tg-8y6aOwVilc5b82jJFZShtnetrw';
 
 // ============================================================
 // ИНИЦИАЛИЗАЦИЯ
 // ============================================================
 
-document.addEventListener('DOMContentLoaded', async () => {
+document.addEventListener('DOMContentLoaded', function() {
     tg.expand();
     tg.ready();
     tg.setBackgroundColor('#121216');
     tg.setHeaderColor('#121216');
     
     tg.BackButton.show();
-    tg.BackButton.onClick(() => {
+    tg.BackButton.onClick(function() {
         window.location.href = 'index.html';
     });
     
     // Инициализируем TonConnect
-    await initTonConnect();
+    initTonConnect();
     
     loadBalance();
     loadHistoryFromDB();
@@ -228,7 +226,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     startWaitingPhase();
     updateUI();
     
-    // Скрытие клавиатуры при клике вне поля ввода
     document.addEventListener('click', function(e) {
         const input = document.getElementById('betInput');
         if (input && e.target !== input) {
@@ -271,14 +268,16 @@ async function loadHistoryFromDB() {
         }
         
         if (historyData) {
-            gameState.history = historyData.map(round => ({
-                roundId: round.round_number,
-                winner: round.winner_name,
-                prize: round.prize,
-                multiplier: round.multiplier,
-                players: round.players_count,
-                timestamp: new Date(round.created_at).getTime()
-            }));
+            gameState.history = historyData.map(function(round) {
+                return {
+                    roundId: round.round_number,
+                    winner: round.winner_name,
+                    prize: round.prize,
+                    multiplier: round.multiplier,
+                    players: round.players_count,
+                    timestamp: new Date(round.created_at).getTime()
+                };
+            });
         }
         
         const { data: topData, error: topError } = await supabaseClient
@@ -416,16 +415,16 @@ async function loadPlayerStats(userId) {
 // ============================================================
 
 function initializePvPUser() {
-    const user = tg.initDataUnsafe?.user;
+    var user = tg.initDataUnsafe?.user;
     
-    const userNameDisplay = document.getElementById('pvpUserNameDisplay');
-    const userAvatar = document.getElementById('pvpUserAvatar');
+    var userNameDisplay = document.getElementById('pvpUserNameDisplay');
+    var userAvatar = document.getElementById('pvpUserAvatar');
     
     if (user) {
         if (userNameDisplay) {
-            const firstName = user.first_name || '';
-            const lastName = user.last_name || '';
-            const username = user.username || '';
+            var firstName = user.first_name || '';
+            var lastName = user.last_name || '';
+            var username = user.username || '';
             
             if (firstName) {
                 userNameDisplay.textContent = firstName + (lastName ? ' ' + lastName : '');
@@ -440,13 +439,13 @@ function initializePvPUser() {
             if (user.photo_url) {
                 userAvatar.src = user.photo_url;
             } else {
-                const avatarUrl = `https://t.me/i/userpic/320/${user.id}.jpg`;
+                var avatarUrl = 'https://t.me/i/userpic/320/' + user.id + '.jpg';
                 userAvatar.src = avatarUrl;
                 userAvatar.onerror = function() {
                     this.style.display = 'none';
-                    const fallbackText = document.createElement('span');
+                    var fallbackText = document.createElement('span');
                     fallbackText.className = 'user-avatar-fallback';
-                    const firstLetter = (user.first_name || user.username || 'U')[0].toUpperCase();
+                    var firstLetter = (user.first_name || user.username || 'U')[0].toUpperCase();
                     fallbackText.textContent = firstLetter;
                     this.parentNode.insertBefore(fallbackText, this);
                     this.style.display = 'none';
@@ -467,9 +466,9 @@ function initializePvPUser() {
 // ============================================================
 
 function loadBalance() {
-    const saved = localStorage.getItem('bets_data');
+    var saved = localStorage.getItem('bets_data');
     if (saved) {
-        const data = JSON.parse(saved);
+        var data = JSON.parse(saved);
         gameState.balance.ton = data.balance || 0;
         gameState.balance.stars = data.inventory || 0;
     }
@@ -486,15 +485,15 @@ function saveBalance() {
 }
 
 function updateBalanceUI() {
-    const tonEl = document.getElementById('tonBalanceSmall');
-    const starsEl = document.getElementById('starsBalanceSmall');
+    var tonEl = document.getElementById('tonBalanceSmall');
+    var starsEl = document.getElementById('starsBalanceSmall');
     if (tonEl) tonEl.textContent = gameState.balance.ton.toFixed(2);
     if (starsEl) starsEl.textContent = Math.floor(gameState.balance.stars);
 }
 
 function updatePvPBalanceUI() {
-    const tonEl = document.getElementById('pvpTonBalance');
-    const starsEl = document.getElementById('pvpStarsBalance');
+    var tonEl = document.getElementById('pvpTonBalance');
+    var starsEl = document.getElementById('pvpStarsBalance');
     if (tonEl) tonEl.textContent = gameState.balance.ton.toFixed(2);
     if (starsEl) starsEl.textContent = Math.floor(gameState.balance.stars);
 }
@@ -504,22 +503,22 @@ function updatePvPBalanceUI() {
 // ============================================================
 
 function setupUI() {
-    document.getElementById('historyBtn').addEventListener('click', () => {
+    document.getElementById('historyBtn').addEventListener('click', function() {
         showHistoryModal();
     });
     
-    document.getElementById('chatBtn').addEventListener('click', () => {
+    document.getElementById('chatBtn').addEventListener('click', function() {
         tg.showAlert('💬 Чат пока не доступен');
     });
     
-    document.getElementById('pvpDepositBtn').addEventListener('click', () => {
+    document.getElementById('pvpDepositBtn').addEventListener('click', function() {
         openDepositModal();
     });
     
-    document.getElementById('betDec').addEventListener('click', () => {
-        const step = gameState.selectedCurrency === 'ton' ? 0.1 : 25;
-        const min = gameState.selectedCurrency === 'ton' ? MIN_BET_TON : MIN_BET_STARS;
-        let newAmount = gameState.betAmount - step;
+    document.getElementById('betDec').addEventListener('click', function() {
+        var step = gameState.selectedCurrency === 'ton' ? 0.1 : 25;
+        var min = gameState.selectedCurrency === 'ton' ? MIN_BET_TON : MIN_BET_STARS;
+        var newAmount = gameState.betAmount - step;
         if (newAmount < min) newAmount = min;
         gameState.betAmount = parseFloat(newAmount.toFixed(2));
         updateBetUI();
@@ -527,10 +526,10 @@ function setupUI() {
         updateQuickBetButtons();
     });
     
-    document.getElementById('betInc').addEventListener('click', () => {
-        const step = gameState.selectedCurrency === 'ton' ? 0.1 : 25;
-        const max = gameState.selectedCurrency === 'ton' ? gameState.balance.ton : gameState.balance.stars;
-        let newAmount = gameState.betAmount + step;
+    document.getElementById('betInc').addEventListener('click', function() {
+        var step = gameState.selectedCurrency === 'ton' ? 0.1 : 25;
+        var max = gameState.selectedCurrency === 'ton' ? gameState.balance.ton : gameState.balance.stars;
+        var newAmount = gameState.betAmount + step;
         if (newAmount > max) newAmount = max;
         gameState.betAmount = parseFloat(newAmount.toFixed(2));
         updateBetUI();
@@ -538,36 +537,30 @@ function setupUI() {
         updateQuickBetButtons();
     });
     
-    // Обработка ввода суммы с точкой как разделителем
-    const betInput = document.getElementById('betInput');
+    var betInput = document.getElementById('betInput');
     betInput.addEventListener('input', function(e) {
-        // Удаляем все символы кроме цифр и точки
-        let value = this.value.replace(/[^0-9.]/g, '');
+        var value = this.value.replace(/[^0-9.]/g, '');
         
-        // Проверяем, что только одна точка
-        const parts = value.split('.');
+        var parts = value.split('.');
         if (parts.length > 2) {
             value = parts[0] + '.' + parts.slice(1).join('');
         }
         
-        // Если значение не пустое, обновляем
         if (value !== '' && value !== '.') {
             this.value = value;
-            let val = parseFloat(value);
+            var val = parseFloat(value);
             if (!isNaN(val) && val >= 0) {
-                const max = gameState.selectedCurrency === 'ton' ? gameState.balance.ton : gameState.balance.stars;
-                const min = gameState.selectedCurrency === 'ton' ? MIN_BET_TON : MIN_BET_STARS;
+                var max = gameState.selectedCurrency === 'ton' ? gameState.balance.ton : gameState.balance.stars;
+                var min = gameState.selectedCurrency === 'ton' ? MIN_BET_TON : MIN_BET_STARS;
                 gameState.betAmount = Math.min(max, Math.max(min, val));
                 updatePlaceBetButton();
                 updateQuickBetButtons();
             }
         } else if (value === '.') {
-            // Если пользователь ввел только точку, показываем "0."
             this.value = '0.';
             gameState.betAmount = 0;
         } else {
-            // Если поле пустое, устанавливаем минимальное значение
-            const min = gameState.selectedCurrency === 'ton' ? MIN_BET_TON : MIN_BET_STARS;
+            var min = gameState.selectedCurrency === 'ton' ? MIN_BET_TON : MIN_BET_STARS;
             gameState.betAmount = min;
             this.value = min;
             updatePlaceBetButton();
@@ -576,7 +569,7 @@ function setupUI() {
     });
     
     betInput.addEventListener('blur', function() {
-        const min = gameState.selectedCurrency === 'ton' ? MIN_BET_TON : MIN_BET_STARS;
+        var min = gameState.selectedCurrency === 'ton' ? MIN_BET_TON : MIN_BET_STARS;
         if (this.value === '' || this.value === '.' || parseFloat(this.value) < min) {
             this.value = min;
             gameState.betAmount = min;
@@ -594,22 +587,22 @@ function setupUI() {
     
     document.getElementById('placeBetBtn').addEventListener('click', placeBet);
     
-    document.getElementById('winnerModalBtn').addEventListener('click', () => {
+    document.getElementById('winnerModalBtn').addEventListener('click', function() {
         document.getElementById('winnerModal').classList.remove('show');
         startNewRound();
     });
     
-    const newRoundBtn = document.getElementById('newRoundBtn');
+    var newRoundBtn = document.getElementById('newRoundBtn');
     if (newRoundBtn) {
-        newRoundBtn.addEventListener('click', () => {
+        newRoundBtn.addEventListener('click', function() {
             document.getElementById('winnerSection').style.display = 'none';
             startNewRound();
         });
     }
     
-    document.querySelectorAll('.currency-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            document.querySelectorAll('.currency-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.currency-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.currency-btn').forEach(function(b) { b.classList.remove('active'); });
             btn.classList.add('active');
             gameState.selectedCurrency = btn.dataset.currency;
             updateBetUI();
@@ -618,17 +611,14 @@ function setupUI() {
         });
     });
     
-    // Настройка быстрых ставок
     setupQuickBets();
     
-    // Закрытие модалки депозита по клику на крестик
-    const depositModalClose = document.getElementById('depositModalClose');
+    var depositModalClose = document.getElementById('depositModalClose');
     if (depositModalClose) {
         depositModalClose.addEventListener('click', closeDepositModal);
     }
     
-    // Закрытие модалки по клику на оверлей
-    const depositModal = document.getElementById('depositModal');
+    var depositModal = document.getElementById('depositModal');
     if (depositModal) {
         depositModal.addEventListener('click', function(e) {
             if (e.target === this) {
@@ -648,17 +638,17 @@ function showHistoryModal() {
         return;
     }
     
-    const recentGames = gameState.history.slice(0, 10);
-    let message = '📊 ПОСЛЕДНИЕ ИГРЫ\n\n';
+    var recentGames = gameState.history.slice(0, 10);
+    var message = '📊 ПОСЛЕДНИЕ ИГРЫ\n\n';
     
-    recentGames.forEach(game => {
-        const date = new Date(game.timestamp);
-        const timeStr = date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
-        message += `#${game.roundId} | ${game.winner} +${game.prize.toFixed(2)} TON | ×${game.multiplier.toFixed(1)} | ${timeStr}\n`;
+    recentGames.forEach(function(game) {
+        var date = new Date(game.timestamp);
+        var timeStr = date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+        message += '#' + game.roundId + ' | ' + game.winner + ' +' + game.prize.toFixed(2) + ' TON | ×' + game.multiplier.toFixed(1) + ' | ' + timeStr + '\n';
     });
     
     if (gameState.topGame) {
-        message += `\n🏆 ТОП ИГРА: #${gameState.topGame.roundId} | ${gameState.topGame.winner} +${gameState.topGame.prize.toFixed(2)} TON`;
+        message += '\n🏆 ТОП ИГРА: #' + gameState.topGame.roundId + ' | ' + gameState.topGame.winner + ' +' + gameState.topGame.prize.toFixed(2) + ' TON';
     }
     
     tg.showAlert(message);
@@ -669,10 +659,10 @@ function showHistoryModal() {
 // ============================================================
 
 function updateBetUI() {
-    const input = document.getElementById('betInput');
+    var input = document.getElementById('betInput');
     if (!input) return;
     
-    let display;
+    var display;
     if (gameState.selectedCurrency === 'ton') {
         display = Math.round(gameState.betAmount * 10) / 10;
         display = display.toFixed(1);
@@ -681,27 +671,26 @@ function updateBetUI() {
     }
     input.value = display;
     
-    // Обновляем иконки быстрых ставок при смене валюты
     updateQuickBetIcons();
     updateQuickBetButtons();
 }
 
 function updatePlaceBetButton() {
-    const btn = document.getElementById('placeBetBtn');
+    var btn = document.getElementById('placeBetBtn');
     if (!btn) return;
-    const max = gameState.selectedCurrency === 'ton' ? gameState.balance.ton : gameState.balance.stars;
-    const min = gameState.selectedCurrency === 'ton' ? MIN_BET_TON : MIN_BET_STARS;
+    var max = gameState.selectedCurrency === 'ton' ? gameState.balance.ton : gameState.balance.stars;
+    var min = gameState.selectedCurrency === 'ton' ? MIN_BET_TON : MIN_BET_STARS;
     btn.disabled = gameState.betAmount > max || gameState.betAmount < min || gameState.isSpinning || gameState.roundPhase === 'finished';
 }
 
 function updateHub(type, data) {
-    const hubContent = document.getElementById('hubContent');
-    const timerEl = document.querySelector('.hub-timer');
-    const statusEl = document.querySelector('.hub-status');
+    var hubContent = document.getElementById('hubContent');
+    var timerEl = document.querySelector('.hub-timer');
+    var statusEl = document.querySelector('.hub-status');
     
     if (type === 'timer') {
         if (timerEl) {
-            const activePlayers = getActivePlayers().length;
+            var activePlayers = getActivePlayers().length;
             if (activePlayers > 1 && gameState.roundPhase !== 'waiting') {
                 timerEl.textContent = data;
                 timerEl.classList.remove('hidden');
@@ -718,46 +707,41 @@ function updateHub(type, data) {
         if (statusEl) statusEl.textContent = data;
     } else if (type === 'avatar') {
         if (hubContent) {
-            hubContent.innerHTML = `
-                <img src="${getAvatarUrl(data)}" alt="${data.firstName}" class="hub-avatar">
-                <div class="hub-player-name">${data.firstName}</div>
-            `;
+            hubContent.innerHTML = '<img src="' + getAvatarUrl(data) + '" alt="' + data.firstName + '" class="hub-avatar"><div class="hub-player-name">' + data.firstName + '</div>';
         }
     }
 }
 
 function updateUI() {
-    const totalInTon = gameState.totalPoolTon + (gameState.totalPoolStars / TON_TO_STARS_RATE);
-    const poolEl = document.getElementById('poolTotal');
+    var totalInTon = gameState.totalPoolTon + (gameState.totalPoolStars / TON_TO_STARS_RATE);
+    var poolEl = document.getElementById('poolTotal');
     if (poolEl) {
-        poolEl.innerHTML = `${totalInTon.toFixed(2)} <img src="assets/ton.png" alt="TON" class="pool-icon">`;
+        poolEl.innerHTML = totalInTon.toFixed(2) + ' <img src="assets/ton.png" alt="TON" class="pool-icon">';
     }
     
-    const activePlayers = getActivePlayers();
-    const playersCountEl = document.getElementById('playersCount');
+    var activePlayers = getActivePlayers();
+    var playersCountEl = document.getElementById('playersCount');
     if (playersCountEl) playersCountEl.textContent = activePlayers.length;
     
     updateRoundDisplay();
     
-    const list = document.getElementById('playersListCompact');
+    var list = document.getElementById('playersListCompact');
     if (list) {
         if (activePlayers.length === 0) {
             list.innerHTML = '<div class="no-players-compact">Нет игроков</div>';
         } else {
-            list.innerHTML = activePlayers.map(player => {
-                const isWinner = gameState.winner && gameState.winner.userId === player.userId;
-                const betText = formatPlayerBets(player);
-                const share = calculateWinChance(player);
+            list.innerHTML = activePlayers.map(function(player) {
+                var isWinner = gameState.winner && gameState.winner.userId === player.userId;
+                var betText = formatPlayerBets(player);
+                var share = calculateWinChance(player);
                 
-                return `
-                    <div class="player-row ${isWinner ? 'winner-row' : ''}">
-                        <div class="player-row-color" style="background-color: ${player.color}"></div>
-                        <img src="${getAvatarUrl(player)}" alt="${player.firstName}" class="player-row-avatar">
-                        <span class="player-row-name">${player.firstName}${isWinner ? ' 👑' : ''}</span>
-                        <span class="player-row-bet">${betText}</span>
-                        <span class="player-row-share">${share}</span>
-                    </div>
-                `;
+                return '<div class="player-row ' + (isWinner ? 'winner-row' : '') + '">' +
+                    '<div class="player-row-color" style="background-color: ' + player.color + '"></div>' +
+                    '<img src="' + getAvatarUrl(player) + '" alt="' + player.firstName + '" class="player-row-avatar">' +
+                    '<span class="player-row-name">' + player.firstName + (isWinner ? ' 👑' : '') + '</span>' +
+                    '<span class="player-row-bet">' + betText + '</span>' +
+                    '<span class="player-row-share">' + share + '</span>' +
+                    '</div>';
             }).join('');
         }
     }
@@ -767,11 +751,11 @@ function updateUI() {
 }
 
 function updateHeaderInfo() {
-    const prevGameText = document.getElementById('prevGameText');
+    var prevGameText = document.getElementById('prevGameText');
     if (prevGameText) {
         if (gameState.history.length > 0) {
-            const last = gameState.history[0];
-            prevGameText.textContent = `${last.winner} +${last.prize.toFixed(2)}`;
+            var last = gameState.history[0];
+            prevGameText.textContent = last.winner + ' +' + last.prize.toFixed(2);
             prevGameText.className = 'info-value win';
         } else {
             prevGameText.textContent = '—';
@@ -781,7 +765,7 @@ function updateHeaderInfo() {
 }
 
 function updateTimerUI() {
-    const timerText = document.getElementById('hubTimer');
+    var timerText = document.getElementById('hubTimer');
     if (timerText) {
         timerText.textContent = gameState.timeLeft;
         if (gameState.timeLeft <= 5) {
@@ -793,16 +777,16 @@ function updateTimerUI() {
 }
 
 function updateRoundDisplay() {
-    const roundEl = document.getElementById('roundNumber');
+    var roundEl = document.getElementById('roundNumber');
     if (roundEl) {
-        roundEl.textContent = `#${gameState.roundId}`;
+        roundEl.textContent = '#' + gameState.roundId;
     }
 }
 
 function updateTopGameDisplay() {
-    const topGameEl = document.getElementById('topGameText');
+    var topGameEl = document.getElementById('topGameText');
     if (topGameEl && gameState.topGame) {
-        topGameEl.textContent = `${gameState.topGame.winner} +${gameState.topGame.prize.toFixed(2)}`;
+        topGameEl.textContent = gameState.topGame.winner + ' +' + gameState.topGame.prize.toFixed(2);
         topGameEl.className = 'info-value win';
     } else if (topGameEl) {
         topGameEl.textContent = '—';
@@ -815,28 +799,20 @@ function updateTopGameDisplay() {
 // ============================================================
 
 function startWaitingSpin() {
-    const wheel = document.getElementById('wheel');
+    var wheel = document.getElementById('wheel');
     if (!wheel) return;
     
-    // Добавляем класс для полосатого узора
     wheel.classList.add('waiting-pattern');
-    
-    // Добавляем класс для вращения
     wheel.classList.add('waiting-spin');
-    
-    // Убираем стандартный transition для плавного вращения
     wheel.style.transition = 'none';
 }
 
 function stopWaitingSpin() {
-    const wheel = document.getElementById('wheel');
+    var wheel = document.getElementById('wheel');
     if (!wheel) return;
     
-    // Убираем классы
     wheel.classList.remove('waiting-pattern');
     wheel.classList.remove('waiting-spin');
-    
-    // Возвращаем transition
     wheel.style.transition = 'transform 5s cubic-bezier(0.17, 0.67, 0.12, 0.99)';
 }
 
@@ -845,17 +821,16 @@ function stopWaitingSpin() {
 // ============================================================
 
 function setupQuickBets() {
-    const quickBtns = document.querySelectorAll('.quick-bet-btn');
-    quickBtns.forEach(btn => {
+    var quickBtns = document.querySelectorAll('.quick-bet-btn');
+    quickBtns.forEach(function(btn) {
         btn.addEventListener('click', function() {
-            const amount = parseFloat(this.dataset.amount);
+            var amount = parseFloat(this.dataset.amount);
             if (isNaN(amount) || amount <= 0) return;
             
-            // Проверяем, не превышает ли баланс
-            const max = gameState.selectedCurrency === 'ton' ? gameState.balance.ton : gameState.balance.stars;
-            const min = gameState.selectedCurrency === 'ton' ? MIN_BET_TON : MIN_BET_STARS;
+            var max = gameState.selectedCurrency === 'ton' ? gameState.balance.ton : gameState.balance.stars;
+            var min = gameState.selectedCurrency === 'ton' ? MIN_BET_TON : MIN_BET_STARS;
             
-            let finalAmount = amount;
+            var finalAmount = amount;
             if (finalAmount > max) finalAmount = max;
             if (finalAmount < min) finalAmount = min;
             
@@ -866,36 +841,30 @@ function setupQuickBets() {
         });
     });
     
-    // Обновляем иконки в кнопках быстрых ставок
     updateQuickBetIcons();
 }
 
 function updateQuickBetIcons() {
-    const quickBtns = document.querySelectorAll('.quick-bet-btn');
-    const isTon = gameState.selectedCurrency === 'ton';
-    const iconSrc = isTon ? 'assets/ton.png' : 'assets/stars.png';
-    const iconAlt = isTon ? 'TON' : 'Stars';
+    var quickBtns = document.querySelectorAll('.quick-bet-btn');
+    var isTon = gameState.selectedCurrency === 'ton';
+    var iconSrc = isTon ? 'assets/ton.png' : 'assets/stars.png';
+    var iconAlt = isTon ? 'TON' : 'Stars';
     
-    quickBtns.forEach((btn, index) => {
-        // Удаляем старую иконку
-        const oldIcon = btn.querySelector('.quick-bet-icon');
+    quickBtns.forEach(function(btn, index) {
+        var oldIcon = btn.querySelector('.quick-bet-icon');
         if (oldIcon) oldIcon.remove();
         
-        // Создаем новую иконку
-        const icon = document.createElement('img');
+        var icon = document.createElement('img');
         icon.className = 'quick-bet-icon';
         icon.src = iconSrc;
         icon.alt = iconAlt;
         
-        // Вставляем иконку перед текстом
         btn.prepend(icon);
         
-        // Обновляем значения кнопок в зависимости от валюты
-        const values = isTon ? [0.1, 0.5, 1.0] : [25, 50, 100];
+        var values = isTon ? [0.1, 0.5, 1.0] : [25, 50, 100];
         btn.dataset.amount = values[index] || values[0];
         
-        // Обновляем отображаемый текст
-        btn.childNodes.forEach(node => {
+        btn.childNodes.forEach(function(node) {
             if (node.nodeType === Node.TEXT_NODE) {
                 node.textContent = values[index] || values[0];
             }
@@ -904,12 +873,12 @@ function updateQuickBetIcons() {
 }
 
 function updateQuickBetButtons() {
-    const quickBtns = document.querySelectorAll('.quick-bet-btn');
-    const tolerance = gameState.selectedCurrency === 'ton' ? 0.01 : 0.5;
+    var quickBtns = document.querySelectorAll('.quick-bet-btn');
+    var tolerance = gameState.selectedCurrency === 'ton' ? 0.01 : 0.5;
     
-    quickBtns.forEach(btn => {
-        const amount = parseFloat(btn.dataset.amount);
-        const isActive = Math.abs(gameState.betAmount - amount) < tolerance;
+    quickBtns.forEach(function(btn) {
+        var amount = parseFloat(btn.dataset.amount);
+        var isActive = Math.abs(gameState.betAmount - amount) < tolerance;
         btn.classList.toggle('active', isActive);
     });
 }
@@ -919,19 +888,18 @@ function updateQuickBetButtons() {
 // ============================================================
 
 function toNano(amount) {
-    return Math.floor(amount * 1_000_000_000).toString();
+    return Math.floor(amount * 1000000000).toString();
 }
 
 function fromNano(nano) {
-    return Number(nano) / 1_000_000_000;
+    return Number(nano) / 1000000000;
 }
 
 // ============================================================
 // ДЕПОЗИТЫ
 // ============================================================
 
-// Состояние депозита
-const depositState = {
+var depositState = {
     amount: 0,
     currency: 'ton',
     step: 'input',
@@ -946,17 +914,16 @@ const depositState = {
 // ============================================================
 
 function updateDepositModalUI() {
-    const modal = document.getElementById('depositModal');
+    var modal = document.getElementById('depositModal');
     if (!modal) return;
     
-    const titleEl = document.getElementById('depositModalTitle');
-    const bodyEl = document.getElementById('depositModalBody');
-    const footerEl = document.getElementById('depositModalFooter');
-    const tonContainer = document.getElementById('ton-connect-container');
+    var titleEl = document.getElementById('depositModalTitle');
+    var bodyEl = document.getElementById('depositModalBody');
+    var footerEl = document.getElementById('depositModalFooter');
+    var tonContainer = document.getElementById('ton-connect-container');
     
     if (!titleEl || !bodyEl || !footerEl) return;
     
-    // Проверяем подключение
     if (tonConnectUI) {
         isWalletConnected = !!tonConnectUI.wallet;
         depositState.isWalletConnected = isWalletConnected;
@@ -968,7 +935,6 @@ function updateDepositModalUI() {
     if (depositState.step === 'input') {
         titleEl.textContent = 'Пополнение баланса';
         
-        // Обновляем контейнер TON Connect
         if (tonContainer) {
             if (depositState.currency === 'ton') {
                 if (!isWalletConnected) {
@@ -981,34 +947,25 @@ function updateDepositModalUI() {
             }
         }
         
-        bodyEl.innerHTML = `
-            <div class="deposit-currency-toggle">
-                <button class="deposit-currency-btn ${depositState.currency === 'ton' ? 'active' : ''}" data-currency="ton">
-                    <img src="assets/ton.png" alt="TON" class="deposit-currency-icon"> TON
-                </button>
-                <button class="deposit-currency-btn ${depositState.currency === 'stars' ? 'active' : ''}" data-currency="stars">
-                    <img src="assets/stars.png" alt="Stars" class="deposit-currency-icon"> Stars
-                </button>
-            </div>
-            <div class="deposit-balance-info">
-                Ваш баланс: ${depositState.currency === 'ton' ? 
-                    `${gameState.balance.ton.toFixed(1)} TON` : 
-                    `${gameState.balance.stars.toFixed(0)} Stars`}
-            </div>
-            <input type="number" class="deposit-input" id="depositAmountInput" 
-                   placeholder="Введите сумму в ${depositState.currency === 'ton' ? 'TON' : 'Stars'}" min="0">
-            ${depositState.error ? `<div class="deposit-error">${depositState.error}</div>` : ''}
-        `;
+        bodyEl.innerHTML = '<div class="deposit-currency-toggle">' +
+            '<button class="deposit-currency-btn ' + (depositState.currency === 'ton' ? 'active' : '') + '" data-currency="ton">' +
+            '<img src="assets/ton.png" alt="TON" class="deposit-currency-icon"> TON</button>' +
+            '<button class="deposit-currency-btn ' + (depositState.currency === 'stars' ? 'active' : '') + '" data-currency="stars">' +
+            '<img src="assets/stars.png" alt="Stars" class="deposit-currency-icon"> Stars</button>' +
+            '</div>' +
+            '<div class="deposit-balance-info">Ваш баланс: ' + (depositState.currency === 'ton' ? 
+                gameState.balance.ton.toFixed(1) + ' TON' : 
+                gameState.balance.stars.toFixed(0) + ' Stars') + '</div>' +
+            '<input type="number" class="deposit-input" id="depositAmountInput" placeholder="Введите сумму в ' + (depositState.currency === 'ton' ? 'TON' : 'Stars') + '" min="0">' +
+            (depositState.error ? '<div class="deposit-error">' + depositState.error + '</div>' : '');
         
-        footerEl.innerHTML = `
-            <button class="deposit-button" id="depositConfirmBtn">
-                ${depositState.currency === 'ton' ? '💰 Пополнить TON' : '⭐ Оплатить Stars'}
-            </button>
-            <button class="deposit-cancel-btn" id="depositCancelBtn">Отмена</button>
-        `;
+        footerEl.innerHTML = '<button class="deposit-button" id="depositConfirmBtn">' +
+            (depositState.currency === 'ton' ? '💰 Пополнить TON' : '⭐ Оплатить Stars') +
+            '</button>' +
+            '<button class="deposit-cancel-btn" id="depositCancelBtn">Отмена</button>';
         
-        setTimeout(() => {
-            document.querySelectorAll('.deposit-currency-btn').forEach(btn => {
+        setTimeout(function() {
+            document.querySelectorAll('.deposit-currency-btn').forEach(function(btn) {
                 btn.addEventListener('click', function() {
                     depositState.currency = this.dataset.currency;
                     depositState.error = null;
@@ -1016,17 +973,17 @@ function updateDepositModalUI() {
                 });
             });
             
-            const confirmBtn = document.getElementById('depositConfirmBtn');
+            var confirmBtn = document.getElementById('depositConfirmBtn');
             if (confirmBtn) {
                 confirmBtn.addEventListener('click', handleDepositConfirm);
             }
             
-            const cancelBtn = document.getElementById('depositCancelBtn');
+            var cancelBtn = document.getElementById('depositCancelBtn');
             if (cancelBtn) {
                 cancelBtn.addEventListener('click', closeDepositModal);
             }
             
-            const amountInput = document.getElementById('depositAmountInput');
+            var amountInput = document.getElementById('depositAmountInput');
             if (amountInput) {
                 amountInput.addEventListener('input', function() {
                     depositState.amount = parseFloat(this.value) || 0;
@@ -1037,31 +994,20 @@ function updateDepositModalUI() {
     } else if (depositState.step === 'sending') {
         if (tonContainer) tonContainer.style.display = 'none';
         titleEl.textContent = depositState.currency === 'ton' ? 'Подтверждение в кошельке' : 'Оплата Stars...';
-        bodyEl.innerHTML = `
-            <div class="deposit-sending">
-                <div class="deposit-spinner"></div>
-                <p>${depositState.currency === 'ton' 
-                    ? 'Пожалуйста, подтвердите транзакцию в вашем TON кошельке...' 
-                    : 'Открытие счета для оплаты Stars...'}</p>
-            </div>
-        `;
+        bodyEl.innerHTML = '<div class="deposit-sending"><div class="deposit-spinner"></div><p>' + 
+            (depositState.currency === 'ton' 
+                ? 'Пожалуйста, подтвердите транзакцию в вашем TON кошельке...' 
+                : 'Открытие счета для оплаты Stars...') + '</p></div>';
         footerEl.innerHTML = '';
         
     } else if (depositState.step === 'success') {
         if (tonContainer) tonContainer.style.display = 'none';
         titleEl.textContent = 'Успешно!';
-        bodyEl.innerHTML = `
-            <div class="deposit-success">
-                <p>✅ Пополнено ${depositState.amount} ${depositState.currency === 'ton' ? 'TON' : 'Stars'}</p>
-                <p>Ваш баланс обновлен</p>
-            </div>
-        `;
-        footerEl.innerHTML = `
-            <button class="deposit-close-btn" id="depositCloseBtn">Закрыть</button>
-        `;
+        bodyEl.innerHTML = '<div class="deposit-success"><p>✅ Пополнено ' + depositState.amount + ' ' + (depositState.currency === 'ton' ? 'TON' : 'Stars') + '</p><p>Ваш баланс обновлен</p></div>';
+        footerEl.innerHTML = '<button class="deposit-close-btn" id="depositCloseBtn">Закрыть</button>';
         
-        setTimeout(() => {
-            const closeBtn = document.getElementById('depositCloseBtn');
+        setTimeout(function() {
+            var closeBtn = document.getElementById('depositCloseBtn');
             if (closeBtn) {
                 closeBtn.addEventListener('click', closeDepositModal);
             }
@@ -1076,8 +1022,8 @@ function updateDepositModalUI() {
 async function handleDepositConfirm() {
     if (depositState.isProcessing) return;
     
-    const amount = depositState.amount;
-    const currency = depositState.currency;
+    var amount = depositState.amount;
+    var currency = depositState.currency;
     
     if (!amount || amount <= 0) {
         depositState.error = 'Пожалуйста, введите корректную сумму';
@@ -1092,7 +1038,6 @@ async function handleDepositConfirm() {
     
     try {
         if (currency === 'ton') {
-            // Проверяем подключение TON кошелька
             if (!tonConnectUI || !tonConnectUI.wallet) {
                 depositState.error = 'Пожалуйста, подключите TON кошелек';
                 depositState.step = 'input';
@@ -1102,8 +1047,7 @@ async function handleDepositConfirm() {
             }
             
             try {
-                // Отправляем транзакцию
-                const transaction = {
+                var transaction = {
                     validUntil: Math.floor(Date.now() / 1000) + 300,
                     messages: [
                         {
@@ -1115,7 +1059,6 @@ async function handleDepositConfirm() {
                 
                 await tonConnectUI.sendTransaction(transaction);
                 
-                // Успех
                 depositState.step = 'success';
                 depositState.isProcessing = false;
                 updateDepositModalUI();
@@ -1137,23 +1080,22 @@ async function handleDepositConfirm() {
             }
             
         } else if (currency === 'stars') {
-            // Stars через Telegram Stars
-            const starsAmount = Math.floor(amount);
+            var starsAmount = Math.floor(amount);
             
             try {
-                const response = await fetch('/api/create-invoice', {
+                var response = await fetch('/api/create-invoice', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ amount: starsAmount })
                 });
                 
-                const data = await response.json();
+                var data = await response.json();
                 
                 if (!data.success || !data.invoiceLink) {
                     throw new Error(data.error || 'Не удалось создать счет');
                 }
                 
-                tg.openInvoice(data.invoiceLink, (status) => {
+                tg.openInvoice(data.invoiceLink, function(status) {
                     depositState.isProcessing = false;
                     
                     if (status === 'paid') {
@@ -1205,12 +1147,12 @@ function depositToBalance(amount, currency) {
     saveBalance();
     updatePvPBalanceUI();
     
-    const tonEl = document.getElementById('pvpTonBalance');
-    const starsEl = document.getElementById('pvpStarsBalance');
+    var tonEl = document.getElementById('pvpTonBalance');
+    var starsEl = document.getElementById('pvpStarsBalance');
     if (tonEl) tonEl.textContent = gameState.balance.ton.toFixed(2);
     if (starsEl) starsEl.textContent = Math.floor(gameState.balance.stars);
     
-    tg.showAlert(`✅ ${amount} ${currency === 'ton' ? 'TON' : 'Stars'} успешно пополнены!`);
+    tg.showAlert('✅ ' + amount + ' ' + (currency === 'ton' ? 'TON' : 'Stars') + ' успешно пополнены!');
 }
 
 // ============================================================
@@ -1224,7 +1166,7 @@ function openDepositModal() {
     depositState.currency = gameState.selectedCurrency || 'ton';
     depositState.isProcessing = false;
     
-    const modal = document.getElementById('depositModal');
+    var modal = document.getElementById('depositModal');
     if (modal) {
         modal.classList.add('show');
         updateDepositModalUI();
@@ -1232,7 +1174,7 @@ function openDepositModal() {
 }
 
 function closeDepositModal() {
-    const modal = document.getElementById('depositModal');
+    var modal = document.getElementById('depositModal');
     if (modal) {
         modal.classList.remove('show');
     }
@@ -1246,13 +1188,13 @@ function closeDepositModal() {
 // ============================================================
 
 function getActivePlayers() {
-    return gameState.players.filter(p => p.bets && p.bets.length > 0);
+    return gameState.players.filter(function(p) { return p.bets && p.bets.length > 0; });
 }
 
 function addDemoPlayers() {
-    const user = tg.initDataUnsafe?.user;
+    var user = tg.initDataUnsafe?.user;
     
-    const demoPlayers = [
+    var demoPlayers = [
         {
             userId: user?.id || 1,
             firstName: user?.first_name || 'Вы',
@@ -1293,25 +1235,24 @@ function startWaitingPhase() {
     
     if (gameState.timer) clearInterval(gameState.timer);
     
-    // Запускаем вращение колеса в режиме ожидания
     startWaitingSpin();
     
     updateHub('timer', ROUND_DURATION);
     updateHub('status', 'Ожидание');
     
-    const placeBtn = document.getElementById('placeBetBtn');
+    var placeBtn = document.getElementById('placeBetBtn');
     if (placeBtn) placeBtn.disabled = false;
     
-    const winnerModal = document.getElementById('winnerModal');
+    var winnerModal = document.getElementById('winnerModal');
     if (winnerModal) winnerModal.classList.remove('show');
     
-    const winnerSection = document.getElementById('winnerSection');
+    var winnerSection = document.getElementById('winnerSection');
     if (winnerSection) winnerSection.style.display = 'none';
     
-    const spinningStatus = document.getElementById('spinningStatus');
+    var spinningStatus = document.getElementById('spinningStatus');
     if (spinningStatus) spinningStatus.style.display = 'none';
     
-    const betSection = document.getElementById('betSection');
+    var betSection = document.getElementById('betSection');
     if (betSection) betSection.style.display = 'block';
     
     updateUI();
@@ -1321,13 +1262,12 @@ function startWaitingPhase() {
 }
 
 function startCountdown() {
-    const activePlayers = getActivePlayers();
+    var activePlayers = getActivePlayers();
     if (activePlayers.length < MIN_PLAYERS) {
         startWaitingPhase();
         return;
     }
     
-    // Останавливаем вращение в режиме ожидания
     stopWaitingSpin();
     
     gameState.roundPhase = 'countdown';
@@ -1338,10 +1278,10 @@ function startCountdown() {
     updateHub('timer', ROUND_DURATION);
     updateHub('status', 'До вращения');
     
-    const placeBtn = document.getElementById('placeBetBtn');
+    var placeBtn = document.getElementById('placeBetBtn');
     if (placeBtn) placeBtn.disabled = false;
     
-    gameState.timer = setInterval(() => {
+    gameState.timer = setInterval(function() {
         gameState.timeLeft--;
         updateTimerUI();
         updateHub('timer', gameState.timeLeft);
@@ -1360,7 +1300,7 @@ function startCountdown() {
 // ============================================================
 
 function placeBet() {
-    const user = tg.initDataUnsafe?.user;
+    var user = tg.initDataUnsafe?.user;
     if (!user) {
         tg.showAlert('❌ Откройте приложение через Telegram');
         return;
@@ -1376,10 +1316,10 @@ function placeBet() {
         return;
     }
     
-    const currency = gameState.selectedCurrency;
-    const amount = gameState.betAmount;
-    const max = currency === 'ton' ? gameState.balance.ton : gameState.balance.stars;
-    const min = currency === 'ton' ? MIN_BET_TON : MIN_BET_STARS;
+    var currency = gameState.selectedCurrency;
+    var amount = gameState.betAmount;
+    var max = currency === 'ton' ? gameState.balance.ton : gameState.balance.stars;
+    var min = currency === 'ton' ? MIN_BET_TON : MIN_BET_STARS;
     
     if (amount > max) {
         tg.showAlert('❌ Недостаточно средств!');
@@ -1387,11 +1327,11 @@ function placeBet() {
     }
     
     if (amount < min) {
-        tg.showAlert(`❌ Минимальная ставка: ${min} ${currency === 'ton' ? 'TON' : 'Stars'}`);
+        tg.showAlert('❌ Минимальная ставка: ' + min + ' ' + (currency === 'ton' ? 'TON' : 'Stars'));
         return;
     }
     
-    let player = gameState.players.find(p => p.userId === user.id);
+    var player = gameState.players.find(function(p) { return p.userId === user.id; });
     if (!player) {
         player = {
             userId: user.id,
@@ -1404,8 +1344,8 @@ function placeBet() {
         gameState.players.push(player);
     }
     
-    player.bets.push({ amount, currency });
-    gameState.playerBets.push({ amount, currency });
+    player.bets.push({ amount: amount, currency: currency });
+    gameState.playerBets.push({ amount: amount, currency: currency });
     
     if (currency === 'ton') {
         gameState.totalPoolTon += amount;
@@ -1418,7 +1358,7 @@ function placeBet() {
     saveBalance();
     updateBalanceUI();
     
-    const activePlayers = getActivePlayers();
+    var activePlayers = getActivePlayers();
     if (activePlayers.length >= MIN_PLAYERS && (gameState.roundPhase === 'waiting' || gameState.roundPhase === 'countdown')) {
         startCountdown();
     }
@@ -1428,7 +1368,7 @@ function placeBet() {
     updateTimerUI();
     updatePlaceBetButton();
     
-    tg.showAlert(`✅ Ставка ${amount} ${currency === 'ton' ? 'TON' : 'Stars'} принята!`);
+    tg.showAlert('✅ Ставка ' + amount + ' ' + (currency === 'ton' ? 'TON' : 'Stars') + ' принята!');
 }
 
 // ============================================================
@@ -1436,9 +1376,9 @@ function placeBet() {
 // ============================================================
 
 function startSpin() {
-    const activePlayers = getActivePlayers();
+    var activePlayers = getActivePlayers();
     if (activePlayers.length < MIN_PLAYERS) {
-        tg.showAlert(`❌ Недостаточно игроков! Нужно минимум ${MIN_PLAYERS}.`);
+        tg.showAlert('❌ Недостаточно игроков! Нужно минимум ' + MIN_PLAYERS + '.');
         startWaitingPhase();
         return;
     }
@@ -1448,35 +1388,35 @@ function startSpin() {
     gameState.roundId++;
     updateRoundDisplay();
     
-    const placeBtn = document.getElementById('placeBetBtn');
+    var placeBtn = document.getElementById('placeBetBtn');
     if (placeBtn) placeBtn.disabled = true;
     
-    const betSection = document.getElementById('betSection');
+    var betSection = document.getElementById('betSection');
     if (betSection) betSection.style.display = 'none';
     
-    const spinningStatus = document.getElementById('spinningStatus');
+    var spinningStatus = document.getElementById('spinningStatus');
     if (spinningStatus) spinningStatus.style.display = 'block';
     
     updateHub('status', 'ИГРА');
     
     createWheelSegments();
     
-    const winner = selectWinner();
+    var winner = selectWinner();
     gameState.winner = winner;
     
-    const spins = 5 + Math.random() * 5;
-    const targetAngle = 360 * spins + (Math.random() * 360);
+    var spins = 5 + Math.random() * 5;
+    var targetAngle = 360 * spins + (Math.random() * 360);
     gameState.rotationAngle += targetAngle;
     
-    const wheel = document.getElementById('wheel');
+    var wheel = document.getElementById('wheel');
     if (wheel) {
-        wheel.style.transform = `rotate(${gameState.rotationAngle}deg)`;
+        wheel.style.transform = 'rotate(' + gameState.rotationAngle + 'deg)';
         wheel.classList.add('spinning');
     }
     
     updateHub('avatar', winner);
     
-    gameState.spinTimer = setTimeout(() => {
+    gameState.spinTimer = setTimeout(function() {
         if (wheel) wheel.classList.remove('spinning');
         gameState.isSpinning = false;
         gameState.roundPhase = 'finished';
@@ -1494,8 +1434,8 @@ function startSpin() {
 // ============================================================
 
 function createWheelSegments() {
-    const wheel = document.getElementById('wheel');
-    const activePlayers = getActivePlayers();
+    var wheel = document.getElementById('wheel');
+    var activePlayers = getActivePlayers();
     
     if (!wheel) return;
     
@@ -1504,43 +1444,38 @@ function createWheelSegments() {
         return;
     }
     
-    const totalValue = (gameState.totalPoolTon * TON_TO_STARS_RATE) + gameState.totalPoolStars;
-    let startAngle = 0;
-    let segmentsHTML = '';
+    var totalValue = (gameState.totalPoolTon * TON_TO_STARS_RATE) + gameState.totalPoolStars;
+    var startAngle = 0;
+    var segmentsHTML = '';
     
-    activePlayers.forEach((player) => {
-        const playerValue = (player.bets.filter(b => b.currency === 'ton').reduce((s, b) => s + b.amount, 0) * TON_TO_STARS_RATE) +
-                          player.bets.filter(b => b.currency === 'stars').reduce((s, b) => s + b.amount, 0);
-        const angle = totalValue > 0 ? (playerValue / totalValue) * 360 : 360 / activePlayers.length;
-        const midAngle = startAngle + angle / 2;
+    activePlayers.forEach(function(player) {
+        var playerValue = (player.bets.filter(function(b) { return b.currency === 'ton'; }).reduce(function(s, b) { return s + b.amount; }, 0) * TON_TO_STARS_RATE) +
+                          player.bets.filter(function(b) { return b.currency === 'stars'; }).reduce(function(s, b) { return s + b.amount; }, 0);
+        var angle = totalValue > 0 ? (playerValue / totalValue) * 360 : 360 / activePlayers.length;
+        var midAngle = startAngle + angle / 2;
         
-        segmentsHTML += `
-            <div class="wheel-avatar-container" style="transform: rotate(${midAngle}deg);">
-                <div class="avatar-position">
-                    <img src="${getAvatarUrl(player)}" alt="${player.firstName}" class="wheel-player-avatar">
-                </div>
-            </div>
-        `;
+        segmentsHTML += '<div class="wheel-avatar-container" style="transform: rotate(' + midAngle + 'deg);">' +
+            '<div class="avatar-position">' +
+            '<img src="' + getAvatarUrl(player) + '" alt="' + player.firstName + '" class="wheel-player-avatar">' +
+            '</div></div>';
         
         startAngle += angle;
     });
     
-    const gradientColors = activePlayers.map((player, index) => {
-        const playerValue = (player.bets.filter(b => b.currency === 'ton').reduce((s, b) => s + b.amount, 0) * TON_TO_STARS_RATE) +
-                          player.bets.filter(b => b.currency === 'stars').reduce((s, b) => s + b.amount, 0);
-        const angle = totalValue > 0 ? (playerValue / totalValue) * 360 : 360 / activePlayers.length;
-        const startPercent = (index / activePlayers.length) * 100;
-        const endPercent = ((index + 1) / activePlayers.length) * 100;
-        return `${player.color} ${startPercent}% ${endPercent}%`;
+    var gradientColors = activePlayers.map(function(player, index) {
+        var playerValue = (player.bets.filter(function(b) { return b.currency === 'ton'; }).reduce(function(s, b) { return s + b.amount; }, 0) * TON_TO_STARS_RATE) +
+                          player.bets.filter(function(b) { return b.currency === 'stars'; }).reduce(function(s, b) { return s + b.amount; }, 0);
+        var angle = totalValue > 0 ? (playerValue / totalValue) * 360 : 360 / activePlayers.length;
+        var startPercent = (index / activePlayers.length) * 100;
+        var endPercent = ((index + 1) / activePlayers.length) * 100;
+        return player.color + ' ' + startPercent + '% ' + endPercent + '%';
     });
     
-    const gradient = `conic-gradient(from 0deg, ${gradientColors.join(', ')})`;
+    var gradient = 'conic-gradient(from 0deg, ' + gradientColors.join(', ') + ')';
     
-    wheel.innerHTML = `
-        <div style="width:100%;height:100%;border-radius:50%;background:${gradient};position:relative;">
-            ${segmentsHTML}
-        </div>
-    `;
+    wheel.innerHTML = '<div style="width:100%;height:100%;border-radius:50%;background:' + gradient + ';position:relative;">' +
+        segmentsHTML +
+        '</div>';
 }
 
 // ============================================================
@@ -1548,19 +1483,20 @@ function createWheelSegments() {
 // ============================================================
 
 function selectWinner() {
-    const activePlayers = getActivePlayers();
-    const totalValue = (gameState.totalPoolTon * TON_TO_STARS_RATE) + gameState.totalPoolStars;
+    var activePlayers = getActivePlayers();
+    var totalValue = (gameState.totalPoolTon * TON_TO_STARS_RATE) + gameState.totalPoolStars;
     
     if (totalValue === 0) {
         return activePlayers[Math.floor(Math.random() * activePlayers.length)];
     }
     
-    let random = Math.random() * totalValue;
-    let cumulative = 0;
+    var random = Math.random() * totalValue;
+    var cumulative = 0;
     
-    for (const player of activePlayers) {
-        const playerValue = (player.bets.filter(b => b.currency === 'ton').reduce((s, b) => s + b.amount, 0) * TON_TO_STARS_RATE) +
-                          player.bets.filter(b => b.currency === 'stars').reduce((s, b) => s + b.amount, 0);
+    for (var i = 0; i < activePlayers.length; i++) {
+        var player = activePlayers[i];
+        var playerValue = (player.bets.filter(function(b) { return b.currency === 'ton'; }).reduce(function(s, b) { return s + b.amount; }, 0) * TON_TO_STARS_RATE) +
+                          player.bets.filter(function(b) { return b.currency === 'stars'; }).reduce(function(s, b) { return s + b.amount; }, 0);
         cumulative += playerValue;
         if (random <= cumulative) {
             return player;
@@ -1571,32 +1507,34 @@ function selectWinner() {
 }
 
 async function showWinner(winner) {
-    const modal = document.getElementById('winnerModal');
+    var modal = document.getElementById('winnerModal');
     if (!modal) return;
     
-    const totalInTon = gameState.totalPoolTon + (gameState.totalPoolStars / TON_TO_STARS_RATE);
-    const playerValue = (winner.bets.filter(b => b.currency === 'ton').reduce((s, b) => s + b.amount, 0) * TON_TO_STARS_RATE) +
-                       winner.bets.filter(b => b.currency === 'stars').reduce((s, b) => s + b.amount, 0);
-    const totalValue = (gameState.totalPoolTon * TON_TO_STARS_RATE) + gameState.totalPoolStars;
-    const multiplier = totalValue > 0 && playerValue > 0 ? totalValue / playerValue : 0;
+    var totalInTon = gameState.totalPoolTon + (gameState.totalPoolStars / TON_TO_STARS_RATE);
+    var playerValue = (winner.bets.filter(function(b) { return b.currency === 'ton'; }).reduce(function(s, b) { return s + b.amount; }, 0) * TON_TO_STARS_RATE) +
+                       winner.bets.filter(function(b) { return b.currency === 'stars'; }).reduce(function(s, b) { return s + b.amount; }, 0);
+    var totalValue = (gameState.totalPoolTon * TON_TO_STARS_RATE) + gameState.totalPoolStars;
+    var multiplier = totalValue > 0 && playerValue > 0 ? totalValue / playerValue : 0;
     
-    const nameEl = document.getElementById('winnerModalName');
-    const roundEl = document.getElementById('winnerModalRound');
-    const prizeEl = document.getElementById('winnerModalPrize');
-    const multiEl = document.getElementById('winnerModalMultiplier');
+    var nameEl = document.getElementById('winnerModalName');
+    var roundEl = document.getElementById('winnerModalRound');
+    var prizeEl = document.getElementById('winnerModalPrize');
+    var multiEl = document.getElementById('winnerModalMultiplier');
     
     if (nameEl) nameEl.textContent = winner.firstName;
-    if (roundEl) roundEl.textContent = `#${String(gameState.roundId).padStart(4, '0')}`;
-    if (prizeEl) prizeEl.innerHTML = `${totalInTon.toFixed(2)} <img src="assets/ton.png" alt="TON" class="winner-modal-icon-small">`;
-    if (multiEl) multiEl.textContent = `×${multiplier.toFixed(1)}`;
+    if (roundEl) roundEl.textContent = '#' + String(gameState.roundId).padStart(4, '0');
+    if (prizeEl) prizeEl.innerHTML = totalInTon.toFixed(2) + ' <img src="assets/ton.png" alt="TON" class="winner-modal-icon-small">';
+    if (multiEl) multiEl.textContent = '×' + multiplier.toFixed(1);
     
-    const playerDetails = getActivePlayers().map(p => ({
-        name: p.firstName,
-        bets: p.bets,
-        share: calculateWinChance(p)
-    }));
+    var playerDetails = getActivePlayers().map(function(p) {
+        return {
+            name: p.firstName,
+            bets: p.bets,
+            share: calculateWinChance(p)
+        };
+    });
     
-    const savedRound = await saveRoundToDB(
+    var savedRound = await saveRoundToDB(
         gameState.roundId,
         winner.firstName,
         totalInTon,
@@ -1623,12 +1561,12 @@ async function showWinner(winner) {
             };
         }
         
-        const user = tg.initDataUnsafe?.user;
+        var user = tg.initDataUnsafe?.user;
         if (user) {
-            const stats = await loadPlayerStats(user.id);
-            const totalBets = (stats?.total_bets || 0) + gameState.playerBets.length;
-            const totalWins = (stats?.total_wins || 0) + (winner.userId === user.id ? 1 : 0);
-            const totalPrize = (stats?.total_prize || 0) + (winner.userId === user.id ? totalInTon : 0);
+            var stats = await loadPlayerStats(user.id);
+            var totalBets = (stats?.total_bets || 0) + gameState.playerBets.length;
+            var totalWins = (stats?.total_wins || 0) + (winner.userId === user.id ? 1 : 0);
+            var totalPrize = (stats?.total_prize || 0) + (winner.userId === user.id ? totalInTon : 0);
             
             await updatePlayerStats(
                 user.id,
@@ -1655,35 +1593,31 @@ function startNewRound() {
     if (gameState.timer) clearInterval(gameState.timer);
     if (gameState.spinTimer) clearTimeout(gameState.spinTimer);
     
-    gameState.players.forEach(p => p.bets = []);
+    gameState.players.forEach(function(p) { p.bets = []; });
     gameState.playerBets = [];
     gameState.totalPoolTon = 0;
     gameState.totalPoolStars = 0;
     gameState.winner = null;
     gameState.isSpinning = false;
     
-    // Восстанавливаем центр
-    const hubContent = document.getElementById('hubContent');
+    var hubContent = document.getElementById('hubContent');
     if (hubContent) {
-        hubContent.innerHTML = `
-            <div class="hub-timer" id="hubTimer">20</div>
-            <div class="hub-status" id="hubStatus">Ожидание</div>
-        `;
+        hubContent.innerHTML = '<div class="hub-timer" id="hubTimer">20</div><div class="hub-status" id="hubStatus">Ожидание</div>';
     }
     
-    const winnerModal = document.getElementById('winnerModal');
+    var winnerModal = document.getElementById('winnerModal');
     if (winnerModal) winnerModal.classList.remove('show');
     
-    const winnerSection = document.getElementById('winnerSection');
+    var winnerSection = document.getElementById('winnerSection');
     if (winnerSection) winnerSection.style.display = 'none';
     
-    const spinningStatus = document.getElementById('spinningStatus');
+    var spinningStatus = document.getElementById('spinningStatus');
     if (spinningStatus) spinningStatus.style.display = 'none';
     
-    const betSection = document.getElementById('betSection');
+    var betSection = document.getElementById('betSection');
     if (betSection) betSection.style.display = 'block';
     
-    const placeBtn = document.getElementById('placeBetBtn');
+    var placeBtn = document.getElementById('placeBetBtn');
     if (placeBtn) placeBtn.disabled = false;
     
     startWaitingPhase();
@@ -1701,32 +1635,32 @@ function startNewRound() {
 
 function formatPlayerBets(player) {
     if (!player || !player.bets) return '0';
-    const tonTotal = player.bets.filter(b => b.currency === 'ton').reduce((s, b) => s + b.amount, 0);
-    const starsTotal = player.bets.filter(b => b.currency === 'stars').reduce((s, b) => s + b.amount, 0);
-    const parts = [];
-    if (tonTotal > 0) parts.push(`${tonTotal.toFixed(1)} TON`);
-    if (starsTotal > 0) parts.push(`${Math.floor(starsTotal)} Stars`);
+    var tonTotal = player.bets.filter(function(b) { return b.currency === 'ton'; }).reduce(function(s, b) { return s + b.amount; }, 0);
+    var starsTotal = player.bets.filter(function(b) { return b.currency === 'stars'; }).reduce(function(s, b) { return s + b.amount; }, 0);
+    var parts = [];
+    if (tonTotal > 0) parts.push(tonTotal.toFixed(1) + ' TON');
+    if (starsTotal > 0) parts.push(Math.floor(starsTotal) + ' Stars');
     return parts.join(' + ') || '0';
 }
 
 function calculateWinChance(player) {
     if (!player || !player.bets) return '0%';
-    const tonBets = player.bets.filter(b => b.currency === 'ton').reduce((s, b) => s + b.amount, 0);
-    const starsBets = player.bets.filter(b => b.currency === 'stars').reduce((s, b) => s + b.amount, 0);
-    const playerValue = (tonBets * TON_TO_STARS_RATE) + starsBets;
-    const totalValue = (gameState.totalPoolTon * TON_TO_STARS_RATE) + gameState.totalPoolStars;
+    var tonBets = player.bets.filter(function(b) { return b.currency === 'ton'; }).reduce(function(s, b) { return s + b.amount; }, 0);
+    var starsBets = player.bets.filter(function(b) { return b.currency === 'stars'; }).reduce(function(s, b) { return s + b.amount; }, 0);
+    var playerValue = (tonBets * TON_TO_STARS_RATE) + starsBets;
+    var totalValue = (gameState.totalPoolTon * TON_TO_STARS_RATE) + gameState.totalPoolStars;
     if (totalValue === 0) return '0%';
-    return `${((playerValue / totalValue) * 100).toFixed(1)}%`;
+    return ((playerValue / totalValue) * 100).toFixed(1) + '%';
 }
 
 function getAvatarUrl(player) {
     if (!player) return '';
     if (player.avatar) return player.avatar;
-    return `https://api.dicebear.com/7.x/avataaars/svg?seed=${player.userId}`;
+    return 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + player.userId;
 }
 
 function getRandomColor() {
-    const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#a29bfe', '#fd79a8', '#fdcb6e', '#e17055', '#00cec9'];
+    var colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#a29bfe', '#fd79a8', '#fdcb6e', '#e17055', '#00cec9'];
     return colors[Math.floor(Math.random() * colors.length)];
 }
 
@@ -1736,8 +1670,8 @@ function getRandomColor() {
 
 window.pvpGame = {
     state: gameState,
-    placeBet,
-    startNewRound,
-    getActivePlayers,
-    updateUI
+    placeBet: placeBet,
+    startNewRound: startNewRound,
+    getActivePlayers: getActivePlayers,
+    updateUI: updateUI
 };
