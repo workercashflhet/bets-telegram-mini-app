@@ -329,6 +329,16 @@ document.addEventListener('DOMContentLoaded', function() {
             input.blur();
         }
     });
+
+    setTimeout(function() {
+        var user = getUserData();
+        if (user) {
+            gameState.balance.ton = user.ton_balance || 0;
+            gameState.balance.stars = user.stars_balance || 0;
+            updatePvPBalanceUI();
+            console.log('💰 PvP balance synced on load:', gameState.balance.ton, gameState.balance.stars);
+        }
+    }, 1000);
 });
 
 // ============================================================
