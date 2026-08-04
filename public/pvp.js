@@ -11,38 +11,21 @@ const tg = window.Telegram.WebApp;
 console.log('🔍 Checking TonConnect...');
 console.log('typeof TonConnectUI:', typeof TonConnectUI);
 
-// Если не загружен - пробуем альтернативный URL
 if (typeof TonConnectUI === 'undefined') {
-    console.warn('⚠️ TonConnect not loaded, trying alternative...');
-    
-    // Создаем скрипт с альтернативным источником
-    const script = document.createElement('script');
-    script.src = 'https://cdn.jsdelivr.net/npm/@tonconnect/ui@1.0.0/dist/tonconnect-ui.min.js';
-    script.onload = function() {
-        console.log('✅ TonConnect loaded from jsdelivr!');
-        console.log('typeof TonConnectUI:', typeof TonConnectUI);
-        // Обновляем UI если модалка открыта
-        if (document.getElementById('depositModal')?.classList?.contains('show')) {
-            updateDepositModalUI();
-        }
-    };
-    script.onerror = function() {
-        console.error('❌ Failed to load TonConnect');
-        // Создаем заглушку
-        window.TonConnectUI = function() {
-            console.warn('⚠️ TonConnect stub called');
-            return {
-                openModal: function() { 
-                    tg.showAlert('⚠️ TON кошелек временно недоступен. Попробуйте позже.');
-                },
-                onStatusChange: function() {},
-                sendTransaction: function() { 
-                    return Promise.reject('TonConnect not available');
-                }
-            };
+    console.warn('⚠️ TonConnect not loaded!');
+    // Создаем заглушку
+    window.TonConnectUI = function() {
+        console.warn('⚠️ TonConnect stub called');
+        return {
+            openModal: function() { 
+                tg.showAlert('⚠️ TON кошелек временно недоступен');
+            },
+            onStatusChange: function() {},
+            sendTransaction: function() { 
+                return Promise.reject('TonConnect not available');
+            }
         };
     };
-    document.head.appendChild(script);
 }
 
 // ============================================================

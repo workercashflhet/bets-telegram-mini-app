@@ -19,6 +19,7 @@
     "serve": "^14.2.0"
   },
   "dependencies": {
+    "@tonconnect/ui": "^2.0.0",
     "@tonconnect/ui-react": "^3.0.0"
   }
 }
