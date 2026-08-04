@@ -7,6 +7,7 @@
     <script src="https://telegram.org/js/telegram-web-app.js?56"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="user.js"></script>
+    <script src="pvp-realtime.js"></script>
     
     <!-- TON CONNECT - через CDN -->
     <script src="https://unpkg.com/@tonconnect/ui@2.0.0/dist/tonconnect-ui.min.js"></script>
@@ -16,14 +17,14 @@
 </head>
 <body class="fullscreen-mode">
     <div id="app">
-        <!-- ФИКСИРОВАННЫЙ КОНТЕЙНЕР ДЛЯ ОСТРОВКОВ (расположение как в PvP, стиль как в главном меню) -->
+        <!-- ФИКСИРОВАННЫЙ КОНТЕЙНЕР ДЛЯ ОСТРОВКОВ -->
         <div class="islands-container">
             <!-- Левый островок с профилем -->
             <div class="user-island">
                 <img src="assets/avatar.png" alt="Avatar" class="user-avatar" id="pvpUserAvatar">
                 <span class="user-name" id="pvpUserNameDisplay">User</span>
             </div>
-            <!-- Правый островок с балансом (ТОТ ЖЕ СТИЛЬ, ЧТО В ГЛАВНОМ МЕНЮ) -->
+            <!-- Правый островок с балансом -->
             <div class="balance-wrapper">
                 <div class="balance-island">
                     <div class="balance-item">
@@ -66,6 +67,12 @@
                     </button>
                 </div>
             </div>
+        </div>
+
+        <!-- Статус комнаты -->
+        <div class="room-status" id="roomStatus">
+            <span>Комната: <span class="room-id" id="roomId">—</span></span>
+            <span> | Игроков: <span class="players-count" id="roomPlayersCount">0</span></span>
         </div>
 
         <!-- Мои ставки -->
@@ -152,13 +159,13 @@
             <button class="place-bet-button" id="placeBetBtn">Сделать ставку</button>
         </div>
 
-        <!-- Список игроков -->
+        <!-- Список игроков (реальное время) -->
         <div class="players-compact">
             <div class="players-header">
-                <span>Игроки</span>
+                <span>Игроки в комнате</span>
             </div>
             <div class="players-list-compact" id="playersListCompact">
-                <div class="no-players-compact">Нет игроков</div>
+                <div class="no-players-compact">Нет игроков в комнате</div>
             </div>
         </div>
     </div>
@@ -197,7 +204,6 @@
             <div class="deposit-modal-body" id="depositModalBody">
                 <!-- Содержимое генерируется динамически -->
             </div>
-            <!-- КОНТЕЙНЕР ДЛЯ КНОПКИ TON CONNECT -->
             <div id="ton-connect-container" style="display: none; margin: 12px 0; text-align: center;"></div>
             <div class="deposit-modal-footer" id="depositModalFooter">
                 <!-- Кнопки генерируются динамически -->

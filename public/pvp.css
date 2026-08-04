@@ -2073,3 +2073,125 @@ body {
         transform: scale(1);
     }
 }
+
+/* ============================================================
+   СТАТУС КОМНАТЫ
+   ============================================================ */
+
+.room-status {
+    text-align: center;
+    padding: 8px 12px;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.5);
+    margin-top: 2px;
+    margin-bottom: 4px;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.room-status .room-id {
+    color: #0ceb0f;
+    font-weight: 600;
+}
+
+.room-status .players-count {
+    color: #ffffff;
+    font-weight: 600;
+}
+
+/* Список игроков в реальном времени */
+.players-compact {
+    margin-top: 16px;
+}
+
+.players-list-compact {
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.players-list-compact::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
+}
+
+.players-list-compact {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.player-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
+    animation: playerFadeIn 0.3s ease;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.player-row:last-child {
+    border-bottom: none;
+}
+
+@keyframes playerFadeIn {
+    from {
+        opacity: 0;
+        transform: translateX(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.player-row.winner-row {
+    background: rgba(255, 215, 0, 0.08);
+    border-radius: 6px;
+    padding: 6px 8px;
+}
+
+.player-row .player-row-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+    background: #2c2c2e;
+}
+
+.player-row .player-row-color {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.player-row .player-row-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: #ffffff;
+    flex: 1;
+}
+
+.player-row .player-row-bet {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.4);
+    flex-shrink: 0;
+}
+
+.player-row .player-row-share {
+    font-size: 12px;
+    font-weight: 600;
+    color: #0ceb0f;
+    min-width: 44px;
+    text-align: right;
+    flex-shrink: 0;
+}
+
+.no-players-compact {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.25);
+    text-align: center;
+    padding: 16px 0;
+}

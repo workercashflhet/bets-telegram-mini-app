@@ -23,11 +23,11 @@ var supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
 });
 
 // ============================================================
-// PVP ROOM MANAGER
+// PVP ROOM MANAGER - ЕДИНАЯ КОМНАТА ДЛЯ ВСЕХ
 // ============================================================
 
 var PvPRoomManager = {
-    _roomId: null,
+    _roomId: 'pvp_main_room',
     _channel: null,
     _subscriptions: [],
     _players: [],
@@ -39,11 +39,10 @@ var PvPRoomManager = {
     // Инициализация комнаты
     initRoom: async function() {
         try {
-            // Получаем или создаем комнату
-            var roomId = this._roomId || this.generateRoomId();
-            this._roomId = roomId;
+            var roomId = this._roomId;
             
-            // Проверяем существующую комнату
+            console.log('🔄 Initializing room:', roomId);
+            
             var { data: existingRoom, error: findError } = await supabaseClient
                 .from('pvp_rooms')
                 .select('*')
@@ -55,7 +54,6 @@ var PvPRoomManager = {
             }
             
             if (!existingRoom) {
-                // Создаем новую комнату
                 var { data: newRoom, error: createError } = await supabaseClient
                     .from('pvp_rooms')
                     .insert({
@@ -75,14 +73,10 @@ var PvPRoomManager = {
             } else {
                 console.log('✅ Room exists:', roomId, 'Status:', existingRoom.status);
                 this._roundId = existingRoom.round_number || 0;
-                this._totalPoolTon = 0;
-                this._totalPoolStars = 0;
             }
             
-            // Подписываемся на изменения
             this.subscribeToRoom();
             
-            // Загружаем игроков
             await this.loadPlayers();
             
             return true;
@@ -93,22 +87,14 @@ var PvPRoomManager = {
         }
     },
 
-    generateRoomId: function() {
-        // Генерируем ID комнаты на основе текущего времени и случайного числа
-        var timestamp = Date.now().toString(36);
-        var random = Math.random().toString(36).substring(2, 6);
-        var roomId = 'room_' + timestamp + '_' + random;
-        this._roomId = roomId;
-        return roomId;
-    },
-
-    // Подписка на реальные обновления
     subscribeToRoom: function() {
         if (this._channel) {
             this._channel.unsubscribe();
         }
         
         var roomId = this._roomId;
+        
+        console.log('📡 Subscribing to room:', roomId);
         
         this._channel = supabaseClient
             .channel('pvp_room_' + roomId)
@@ -144,15 +130,15 @@ var PvPRoomManager = {
             });
     },
 
-    // Обработка изменений игроков
     handlePlayerChange: function(payload) {
         var eventType = payload.eventType;
         var newData = payload.new;
         var oldData = payload.old;
         
+        console.log('📡 Player event:', eventType, newData || oldData);
+        
         switch(eventType) {
             case 'INSERT':
-                // Новый игрок в комнате
                 if (!this._players.find(p => p.user_id === newData.user_id)) {
                     this._players.push(newData);
                     this.updateTotalPool();
@@ -161,7 +147,6 @@ var PvPRoomManager = {
                 break;
                 
             case 'UPDATE':
-                // Обновление игрока (ставка)
                 var index = this._players.findIndex(p => p.user_id === newData.user_id);
                 if (index !== -1) {
                     this._players[index] = newData;
@@ -173,20 +158,19 @@ var PvPRoomManager = {
                 break;
                 
             case 'DELETE':
-                // Игрок вышел
                 this._players = this._players.filter(p => p.user_id !== oldData.user_id);
                 this.updateTotalPool();
                 this.notifyListeners('player_removed', oldData);
                 break;
         }
         
-        // Обновляем UI
         this.notifyListeners('players_updated', this._players);
     },
 
-    // Обработка изменений комнаты
     handleRoomChange: function(payload) {
         var newData = payload.new;
+        console.log('📡 Room status:', newData.status);
+        
         if (newData.status === 'spinning') {
             this.notifyListeners('room_spinning', newData);
         } else if (newData.status === 'finished') {
@@ -198,9 +182,10 @@ var PvPRoomManager = {
         this._roundId = newData.round_number || 0;
     },
 
-    // Загрузка игроков из БД
     loadPlayers: async function() {
         try {
+            console.log('📥 Loading players for room:', this._roomId);
+            
             var { data, error } = await supabaseClient
                 .from('pvp_room_players')
                 .select('*')
@@ -222,16 +207,15 @@ var PvPRoomManager = {
         }
     },
 
-    // Добавление ставки
     addBet: async function(userId, username, firstName, photoUrl, amount, currency) {
         try {
-            // Проверяем, есть ли уже игрок
+            console.log('💰 Adding bet:', userId, amount, currency);
+            
             var existingPlayer = this._players.find(p => p.user_id === userId);
             
             var newBet = { amount: amount, currency: currency };
             
             if (existingPlayer) {
-                // Обновляем существующего игрока
                 var bets = existingPlayer.bets || [];
                 bets.push(newBet);
                 
@@ -251,8 +235,9 @@ var PvPRoomManager = {
                     return false;
                 }
                 
+                console.log('✅ Player updated:', userId);
+                
             } else {
-                // Создаем нового игрока
                 var color = this.getRandomColor();
                 var bets = [newBet];
                 var totalValue = this.calculatePlayerValue(bets);
@@ -274,12 +259,16 @@ var PvPRoomManager = {
                     console.error('Insert player error:', insertError);
                     return false;
                 }
+                
+                console.log('✅ New player added:', userId);
             }
             
-            // Обновляем общий пул
             this.updateTotalPool();
             
-            console.log('✅ Bet added for user:', userId);
+            setTimeout(function() {
+                PvPRoomManager.loadPlayers();
+            }, 500);
+            
             return true;
             
         } catch (error) {
@@ -288,7 +277,6 @@ var PvPRoomManager = {
         }
     },
 
-    // Обновление общего пула
     updateTotalPool: function() {
         this._totalPoolTon = 0;
         this._totalPoolStars = 0;
@@ -310,7 +298,6 @@ var PvPRoomManager = {
         });
     },
 
-    // Расчет общей стоимости ставок игрока
     calculatePlayerValue: function(bets) {
         var value = 0;
         var TON_TO_STARS_RATE = 76;
@@ -326,12 +313,10 @@ var PvPRoomManager = {
         return value;
     },
 
-    // Получение игроков
     getPlayers: function() {
         return this._players;
     },
 
-    // Получение пула
     getPool: function() {
         return {
             ton: this._totalPoolTon,
@@ -339,136 +324,10 @@ var PvPRoomManager = {
         };
     },
 
-    // Получение ID комнаты
     getRoomId: function() {
         return this._roomId;
     },
 
-    // Статус комнаты
-    getRoomStatus: function() {
-        // Проверяем через Supabase
-        return supabaseClient
-            .from('pvp_rooms')
-            .select('status')
-            .eq('room_id', this._roomId)
-            .single()
-            .then(function(result) {
-                return result.data ? result.data.status : 'waiting';
-            });
-    },
-
-    // Начать вращение
-    startSpin: async function() {
-        try {
-            var { error } = await supabaseClient
-                .from('pvp_rooms')
-                .update({
-                    status: 'spinning',
-                    updated_at: new Date().toISOString()
-                })
-                .eq('room_id', this._roomId);
-            
-            if (error) {
-                console.error('Start spin error:', error);
-                return false;
-            }
-            
-            // Увеличиваем номер раунда
-            this._roundId++;
-            
-            return true;
-            
-        } catch (error) {
-            console.error('Start spin error:', error);
-            return false;
-        }
-    },
-
-    // Завершить раунд
-    finishRound: async function(winner) {
-        try {
-            // Сохраняем историю
-            var { error: historyError } = await supabaseClient
-                .from('pvp_round_history')
-                .insert({
-                    room_id: this._roomId,
-                    round_number: this._roundId,
-                    winner_user_id: winner ? winner.user_id : null,
-                    winner_name: winner ? winner.first_name : null,
-                    total_pool_ton: this._totalPoolTon,
-                    total_pool_stars: this._totalPoolStars,
-                    players_data: this._players
-                });
-            
-            if (historyError) {
-                console.error('Save history error:', historyError);
-            }
-            
-            // Обновляем статус комнаты
-            var { error } = await supabaseClient
-                .from('pvp_rooms')
-                .update({
-                    status: 'finished',
-                    round_number: this._roundId,
-                    updated_at: new Date().toISOString()
-                })
-                .eq('room_id', this._roomId);
-            
-            if (error) {
-                console.error('Finish round error:', error);
-                return false;
-            }
-            
-            return true;
-            
-        } catch (error) {
-            console.error('Finish round error:', error);
-            return false;
-        }
-    },
-
-    // Начать новый раунд
-    startNewRound: async function() {
-        try {
-            // Очищаем игроков
-            var { error: deleteError } = await supabaseClient
-                .from('pvp_room_players')
-                .delete()
-                .eq('room_id', this._roomId);
-            
-            if (deleteError) {
-                console.error('Clear players error:', deleteError);
-            }
-            
-            // Обновляем комнату
-            var { error } = await supabaseClient
-                .from('pvp_rooms')
-                .update({
-                    status: 'waiting',
-                    updated_at: new Date().toISOString()
-                })
-                .eq('room_id', this._roomId);
-            
-            if (error) {
-                console.error('Start new round error:', error);
-                return false;
-            }
-            
-            this._players = [];
-            this._totalPoolTon = 0;
-            this._totalPoolStars = 0;
-            this.notifyListeners('players_updated', []);
-            this.notifyListeners('pool_updated', { ton: 0, stars: 0 });
-            
-            return true;
-            
-        } catch (error) {
-            console.error('Start new round error:', error);
-            return false;
-        }
-    },
-
-    // Подписка на события
     subscribe: function(callback) {
         this._subscriptions.push(callback);
         return function() {
@@ -479,7 +338,6 @@ var PvPRoomManager = {
         }.bind(this);
     },
 
-    // Уведомление слушателей
     notifyListeners: function(event, data) {
         this._subscriptions.forEach(function(callback) {
             try {
@@ -490,13 +348,11 @@ var PvPRoomManager = {
         });
     },
 
-    // Случайный цвет
     getRandomColor: function() {
         var colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#a29bfe', '#fd79a8', '#fdcb6e', '#e17055', '#00cec9'];
         return colors[Math.floor(Math.random() * colors.length)];
     },
 
-    // Отключение
     disconnect: function() {
         if (this._channel) {
             this._channel.unsubscribe();
@@ -507,6 +363,5 @@ var PvPRoomManager = {
     }
 };
 
-// Экспорт
 window.PvPRoomManager = PvPRoomManager;
 console.log('✅ PvPRoomManager loaded');
