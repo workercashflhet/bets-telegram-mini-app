@@ -13,19 +13,21 @@ var UserManager = window.UserManager;
 // ФУНКЦИЯ ЗАГРУЗКИ ПОЛЬЗОВАТЕЛЯ - ТОЧНО ТАК ЖЕ КАК В APP.JS
 async function initializeUserInPvP() {
     try {
+        console.log('🔄 PvP: Loading user from UserManager...');
         var user = await UserManager.loadUser();
         if (user) {
             console.log('✅ User loaded in PvP:', user);
-            // Обновляем баланс
+            // Обновляем баланс из загруженного пользователя
             gameState.balance.ton = user.ton_balance || 0;
             gameState.balance.stars = user.stars_balance || 0;
             updatePvPBalanceUI();
             console.log('💰 PvP balance updated:', gameState.balance.ton, gameState.balance.stars);
             return user;
         }
+        console.warn('⚠️ No user loaded in PvP');
         return null;
     } catch (error) {
-        console.error('Error loading user in PvP:', error);
+        console.error('❌ Error loading user in PvP:', error);
         return null;
     }
 }
@@ -322,17 +324,16 @@ document.addEventListener('DOMContentLoaded', function() {
     initTonConnect();
     
     // ============================================================
-    // ЗАГРУЗКА БАЛАНСА - ЗАГРУЖАЕМ ПОЛЬЗОВАТЕЛЯ КАК В APP.JS
+    // ЗАГРУЗКА ПОЛЬЗОВАТЕЛЯ - ТОЧНО ТАК ЖЕ КАК В ГЛАВНОМ МЕНЮ
     // ============================================================
     
-    // Сначала загружаем пользователя из БД (как в app.js)
+    // Загружаем пользователя из БД (как в app.js)
     initializeUserInPvP().then(function(user) {
         if (user) {
-            // Пользователь загружен, баланс уже обновлен в функции
-            console.log('✅ PvP balance loaded successfully');
+            console.log('✅ PvP user loaded successfully');
         } else {
-            // Если не загрузился - пробуем localStorage
-            console.warn('⚠️ User not loaded, trying localStorage');
+            // Если пользователь не загрузился - пробуем localStorage
+            console.warn('⚠️ User not loaded, trying localStorage...');
             var saved = localStorage.getItem('bets_data');
             if (saved) {
                 var data = JSON.parse(saved);
@@ -360,10 +361,17 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ============================================================
-// БАЛАНС - ОБНОВЛЕНИЕ UI
+// БАЛАНС - ОБНОВЛЕНИЕ UI (БЕРЕТ ДАННЫЕ ИЗ USERMANAGER)
 // ============================================================
 
 function updatePvPBalanceUI() {
+    // Получаем актуальные данные из UserManager
+    var user = getUserData();
+    if (user) {
+        gameState.balance.ton = user.ton_balance || 0;
+        gameState.balance.stars = user.stars_balance || 0;
+    }
+    
     var tonEl = document.getElementById('pvpTonBalance');
     var starsEl = document.getElementById('pvpStarsBalance');
     if (tonEl) tonEl.textContent = gameState.balance.ton.toFixed(2);
