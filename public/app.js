@@ -64,7 +64,6 @@ function initializeApp() {
 
 async function initializeUser() {
     try {
-        // Загружаем пользователя из БД
         var user = await UserManager.loadUser();
         
         if (user) {
@@ -72,12 +71,10 @@ async function initializeUser() {
             state.user = user;
             state.userId = user.user_id;
             
-            // Обновляем UI
             updateUserUI(user);
             updateBalanceUI(user);
         } else {
             console.warn('⚠️ No user loaded, using fallback');
-            // Fallback для демо
             var demoUser = {
                 user_id: 'demo_' + Date.now(),
                 username: 'demo_user',
@@ -116,7 +113,6 @@ function updateUserUI(user) {
     var userNameElement = document.getElementById('userName');
     var userIdElement = document.getElementById('userId');
     
-    // Имя
     if (userNameDisplay) {
         var firstName = user.first_name || '';
         var lastName = user.last_name || '';
@@ -131,12 +127,10 @@ function updateUserUI(user) {
         }
     }
     
-    // Аватар
     if (userAvatar) {
         if (user.photo_url) {
             userAvatar.src = user.photo_url;
         } else {
-            // Пробуем загрузить через Telegram
             var tgUser = UserManager.getTelegramUser();
             if (tgUser && tgUser.id) {
                 var avatarUrl = 'https://t.me/i/userpic/320/' + tgUser.id + '.jpg';
@@ -153,12 +147,10 @@ function updateUserUI(user) {
         }
     }
     
-    // Username
     if (userNameElement) {
         userNameElement.textContent = '@' + (user.username || 'user');
     }
     
-    // ID
     if (userIdElement) {
         userIdElement.textContent = 'id: ' + (user.user_id || '');
     }
@@ -175,6 +167,34 @@ function updateBalanceUI(user) {
     }
     if (starsBalanceEl) {
         starsBalanceEl.textContent = Math.floor(user.stars_balance || 0);
+    }
+}
+
+// ============================================================
+// ОТКРЫТИЕ МОДАЛКИ ДЕПОЗИТА ИЗ ГЛАВНОГО МЕНЮ
+// ============================================================
+
+function openDepositModal() {
+    // Проверяем, загружен ли pvpGame
+    if (window.pvpGame && window.pvpGame.openDepositModal) {
+        window.pvpGame.openDepositModal();
+    } else {
+        // Если pvp не загружен - загружаем модалку через iframe или показываем попап
+        tg.showPopup({
+            title: '💰 Пополнение баланса',
+            message: 'Выберите способ пополнения',
+            buttons: [
+                { id: 'ton', text: '💰 TON' },
+                { id: 'stars', text: '⭐ Stars' },
+                { id: 'cancel', text: 'Отмена', type: 'cancel' }
+            ]
+        }, function(buttonId) {
+            if (buttonId === 'ton') {
+                tg.showAlert('💰 Пополнение TON\n\nПерейдите в раздел PvP для пополнения через кошелек');
+            } else if (buttonId === 'stars') {
+                tg.showAlert('⭐ Пополнение Stars\n\nПерейдите в раздел PvP для пополнения через Stars');
+            }
+        });
     }
 }
 
@@ -392,29 +412,11 @@ function setupEventListeners() {
         });
     }
 
-    // Депозит
+    // Депозит - теперь открывает модалку как в PvP
     var depositBtn = document.getElementById('depositBtn');
     if (depositBtn) {
         depositBtn.addEventListener('click', function() {
-            if (window.pvpGame && window.pvpGame.openDepositModal) {
-                window.pvpGame.openDepositModal();
-            } else {
-                tg.showPopup({
-                    title: '💰 Deposit',
-                    message: 'Выберите способ пополнения',
-                    buttons: [
-                        { id: 'ton', text: 'TON' },
-                        { id: 'stars', text: 'Stars' },
-                        { id: 'cancel', text: 'Отмена', type: 'cancel' }
-                    ]
-                }, function(buttonId) {
-                    if (buttonId === 'ton') {
-                        tg.showAlert('💰 Пополнение TON');
-                    } else if (buttonId === 'stars') {
-                        tg.showAlert('⭐ Пополнение Stars');
-                    }
-                });
-            }
+            openDepositModal();
         });
     }
 
@@ -431,7 +433,8 @@ window.betsApp = {
     goToSlide: goToSlide,
     nextSlide: nextSlide,
     initializeUser: initializeUser,
-    UserManager: UserManager
+    UserManager: UserManager,
+    openDepositModal: openDepositModal
 };
 
 console.log('✅ App initialized');
