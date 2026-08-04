@@ -25,6 +25,7 @@ if (UserManager) {
         gameState.balance.ton = user.ton_balance || 0;
         gameState.balance.stars = user.stars_balance || 0;
         updatePvPBalanceUI();
+        updatePvPUserUI();
     });
 }
 
@@ -438,6 +439,7 @@ async function forceResetRound() {
     gameState.winner = null;
     gameState.timeLeft = ROUND_DURATION;
     gameState.rotationAngle = 0;
+    gameState.isResultLoaded = false;
     
     var spinningStatus = document.getElementById('spinningStatus');
     if (spinningStatus) spinningStatus.style.display = 'none';
@@ -643,7 +645,7 @@ async function initializeUserInPvP() {
             gameState.balance.ton = user.ton_balance || 0;
             gameState.balance.stars = user.stars_balance || 0;
             updatePvPBalanceUI();
-            updatePvPUserUI(); // <-- ДОБАВЛЕНО
+            updatePvPUserUI();
             
             await initPvPRoom();
             
@@ -660,7 +662,6 @@ async function initializeUserInPvP() {
     }
 }
 
-// ДОБАВЬТЕ ЭТУ ФУНКЦИЮ
 function updatePvPUserUI() {
     var user = getUserData();
     if (!user) return;
@@ -693,7 +694,6 @@ function updatePvPUserUI() {
             };
             avatar.style.display = 'block';
             
-            // Скрываем fallback если есть
             var fallback = document.querySelector('.user-avatar-fallback');
             if (fallback) {
                 fallback.style.display = 'none';
@@ -726,18 +726,6 @@ function updatePvPUserUI() {
             }
         }
     }
-}
-
-// В начале файла, после подписки на баланс, добавьте:
-
-if (UserManager) {
-    UserManager.subscribe(function(user) {
-        console.log('🔄 PvP: Balance updated from UserManager');
-        gameState.balance.ton = user.ton_balance || 0;
-        gameState.balance.stars = user.stars_balance || 0;
-        updatePvPBalanceUI();
-        updatePvPUserUI(); // <-- ДОБАВЛЕНО
-    });
 }
 
 // ============================================================
@@ -932,6 +920,7 @@ function handleRoomSpin() {
 async function handleRoomFinishedFromServer(data) {
     console.log('🏁 Room finished from server:', data);
     
+    // Если уже показываем победителя - пропускаем
     if (gameState.roundPhase === 'finished' && gameState.winner) {
         return;
     }
@@ -949,6 +938,14 @@ async function handleRoomFinishedFromServer(data) {
         gameState.roundPhase = 'finished';
         gameState.isResultLoaded = true;
         
+        // Останавливаем колесо
+        var wheel = document.getElementById('wheel');
+        if (wheel) {
+            wheel.classList.remove('spinning');
+            wheel.style.transition = 'none';
+        }
+        
+        // Скрываем индикаторы
         var spinningStatus = document.getElementById('spinningStatus');
         if (spinningStatus) spinningStatus.style.display = 'none';
         
@@ -958,12 +955,7 @@ async function handleRoomFinishedFromServer(data) {
         var placeBtn = document.getElementById('placeBetBtn');
         if (placeBtn) placeBtn.disabled = true;
         
-        var wheel = document.getElementById('wheel');
-        if (wheel) {
-            wheel.classList.remove('spinning');
-            wheel.style.transition = 'none';
-        }
-        
+        // Показываем победителя
         var winnerSection = document.getElementById('winnerSection');
         if (winnerSection) {
             winnerSection.style.display = 'block';
@@ -978,11 +970,7 @@ async function handleRoomFinishedFromServer(data) {
             modal.classList.add('show');
         }
         
-        updateUI();
-        updatePlayersList();
-        updateHubCurrentPlayer();
-        
-        // Добавляем выигрыш победителю
+        // Добавляем выигрыш победителю (только для победителя)
         var user = tg.initDataUnsafe?.user;
         if (user && winner.userId === String(user.id) && totalInTon > 0) {
             if (UserManager) {
@@ -998,6 +986,11 @@ async function handleRoomFinishedFromServer(data) {
             }
         }
         
+        updateUI();
+        updatePlayersList();
+        updateHubCurrentPlayer();
+        
+        // Запускаем новый раунд через задержку
         if (gameState.newRoundTimer) {
             clearTimeout(gameState.newRoundTimer);
         }
@@ -1021,6 +1014,14 @@ async function handleRoomFinishedFromServer(data) {
         gameState.roundPhase = 'finished';
         gameState.isResultLoaded = true;
         
+        // Останавливаем колесо
+        var wheel = document.getElementById('wheel');
+        if (wheel) {
+            wheel.classList.remove('spinning');
+            wheel.style.transition = 'none';
+        }
+        
+        // Скрываем индикаторы
         var spinningStatus = document.getElementById('spinningStatus');
         if (spinningStatus) spinningStatus.style.display = 'none';
         
@@ -1030,12 +1031,7 @@ async function handleRoomFinishedFromServer(data) {
         var placeBtn = document.getElementById('placeBetBtn');
         if (placeBtn) placeBtn.disabled = true;
         
-        var wheel = document.getElementById('wheel');
-        if (wheel) {
-            wheel.classList.remove('spinning');
-            wheel.style.transition = 'none';
-        }
-        
+        // Показываем победителя
         var winnerSection = document.getElementById('winnerSection');
         if (winnerSection) {
             winnerSection.style.display = 'block';
@@ -1265,7 +1261,7 @@ async function startSpin() {
     gameState.roundId++;
     updateRoundDisplay();
     
-    // Выбираем победителя на сервере
+    // 1. ВЫБИРАЕМ ПОБЕДИТЕЛЯ НА СЕРВЕРЕ
     var winner = await selectWinnerOnServer();
     if (!winner) {
         tg.showAlert('❌ Ошибка выбора победителя');
@@ -1277,9 +1273,17 @@ async function startSpin() {
     
     var totalInTon = gameState.totalPoolTon + (gameState.totalPoolStars / TON_TO_STARS_RATE);
     
-    // Сохраняем результат в БД
+    // 2. СОХРАНЯЕМ РЕЗУЛЬТАТ В БД
     await saveSpinResultToDB(winner, totalInTon, gameState.roundId, activePlayers);
     await syncRoomStateToDB();
+    
+    // 3. УВЕДОМЛЯЕМ ВСЕХ ЧЕРЕЗ REALTIME
+    PvPRoomManager.notifyListeners('room_finished', {
+        winner_id: winner.userId,
+        winner_name: winner.firstName,
+        prize: totalInTon,
+        roundId: gameState.roundId
+    });
     
     var placeBtn = document.getElementById('placeBetBtn');
     if (placeBtn) placeBtn.disabled = true;
@@ -1291,6 +1295,7 @@ async function startSpin() {
     updateHub('status', 'ИГРА');
     createWheelSegments();
     
+    // 4. РАССЧИТЫВАЕМ УГОЛ ДЛЯ ОСТАНОВКИ НА ПОБЕДИТЕЛЕ
     var targetAngle = calculateTargetAngleForWinner(winner);
     var spins = 5 + Math.random() * 5;
     var finalAngle = 360 * spins + targetAngle;
@@ -1310,6 +1315,7 @@ async function startSpin() {
     
     startForceResetTimer();
     
+    // 5. ЗАВЕРШАЕМ ВРАЩЕНИЕ
     gameState.spinTimer = setTimeout(async function() {
         clearForceResetTimer();
         if (wheel) {
@@ -1322,17 +1328,10 @@ async function startSpin() {
         
         if (spinningStatus) spinningStatus.style.display = 'none';
         
+        // 6. ПОКАЗЫВАЕМ ПОБЕДИТЕЛЯ
         await showWinner(winner);
         updateUI();
         updatePlaceBetButton();
-        
-        // Уведомляем всех через Realtime
-        PvPRoomManager.notifyListeners('room_finished', {
-            winner_id: winner.userId,
-            winner_name: winner.firstName,
-            prize: totalInTon,
-            roundId: gameState.roundId
-        });
         
     }, SPIN_DURATION);
 }
@@ -1458,72 +1457,6 @@ function updatePvPBalanceUI() {
     if (tonEl) tonEl.textContent = gameState.balance.ton.toFixed(2);
     if (starsEl) starsEl.textContent = Math.floor(gameState.balance.stars);
 }
-
-// Добавьте в pvp.js после updatePvPBalanceUI()
-
-function updatePvPUserUI() {
-    var user = getUserData();
-    if (!user) return;
-    
-    // Обновляем имя
-    var nameDisplay = document.getElementById('pvpUserNameDisplay');
-    if (nameDisplay) {
-        var firstName = user.first_name || '';
-        var lastName = user.last_name || '';
-        var username = user.username || '';
-        
-        if (firstName) {
-            nameDisplay.textContent = firstName + (lastName ? ' ' + lastName : '');
-        } else if (username) {
-            nameDisplay.textContent = '@' + username;
-        } else {
-            nameDisplay.textContent = 'User';
-        }
-    }
-    
-    // Обновляем аватарку
-    var avatar = document.getElementById('pvpUserAvatar');
-    if (avatar) {
-        // Получаем Telegram пользователя
-        var tgUser = UserManager.getTelegramUser();
-        
-        if (tgUser && tgUser.id) {
-            // Используем фото из Telegram
-            var avatarUrl = 'https://t.me/i/userpic/320/' + tgUser.id + '.jpg';
-            avatar.src = avatarUrl;
-            avatar.onerror = function() {
-                // Если фото не загрузилось - показываем заглушку
-                this.src = 'assets/avatar.png';
-                this.onerror = null;
-            };
-            avatar.style.display = 'block';
-        } else if (user.photo_url) {
-            avatar.src = user.photo_url;
-            avatar.onerror = function() {
-                this.src = 'assets/avatar.png';
-                this.onerror = null;
-            };
-            avatar.style.display = 'block';
-        } else {
-            // Если нет фото - показываем букву
-            avatar.style.display = 'none';
-            var fallback = document.querySelector('.user-avatar-fallback');
-            if (!fallback) {
-                fallback = document.createElement('span');
-                fallback.className = 'user-avatar-fallback';
-                var letter = (user.first_name || user.username || 'U')[0].toUpperCase();
-                fallback.textContent = letter;
-                avatar.parentNode.insertBefore(fallback, avatar);
-            } else {
-                fallback.style.display = 'flex';
-                var letter = (user.first_name || user.username || 'U')[0].toUpperCase();
-                fallback.textContent = letter;
-            }
-        }
-    }
-}
-
-
 
 function updateBalanceFromDB(user) {
     if (!user) {
@@ -1916,6 +1849,7 @@ async function showWinner(winner) {
     if (prizeEl) prizeEl.innerHTML = totalInTon.toFixed(2) + ' <img src="assets/ton.png" alt="TON" class="winner-modal-icon-small">';
     if (multiEl) multiEl.textContent = '×' + multiplier.toFixed(1);
     
+    // Показываем секцию победителя
     var winnerSection = document.getElementById('winnerSection');
     if (winnerSection) {
         winnerSection.style.display = 'block';
@@ -1923,6 +1857,7 @@ async function showWinner(winner) {
         document.getElementById('winnerPrize').innerHTML = totalInTon.toFixed(2) + ' <img src="assets/ton.png" alt="TON" class="winner-prize-icon">';
     }
     
+    // Сохраняем в историю
     var playerDetails = getActivePlayers().map(function(p) {
         return {
             name: p.firstName,
@@ -1931,7 +1866,7 @@ async function showWinner(winner) {
         };
     });
     
-    var savedRound = await saveRoundToDB(
+    await saveRoundToDB(
         gameState.roundId,
         winner.firstName,
         totalInTon,
@@ -1940,59 +1875,61 @@ async function showWinner(winner) {
         playerDetails
     );
     
-    if (savedRound) {
-        gameState.history.unshift({
-            roundId: gameState.roundId,
+    // Обновляем историю
+    gameState.history.unshift({
+        roundId: gameState.roundId,
+        winner: winner.firstName,
+        prize: totalInTon,
+        multiplier: multiplier,
+        players: getActivePlayers().length,
+        timestamp: Date.now()
+    });
+    
+    if (!gameState.topGame || totalInTon > gameState.topGame.prize) {
+        gameState.topGame = {
             winner: winner.firstName,
             prize: totalInTon,
-            multiplier: multiplier,
-            players: getActivePlayers().length,
-            timestamp: Date.now()
-        });
-        
-        if (!gameState.topGame || totalInTon > gameState.topGame.prize) {
-            gameState.topGame = {
-                winner: winner.firstName,
-                prize: totalInTon,
-                roundId: gameState.roundId
-            };
-        }
-        
-        var user = tg.initDataUnsafe?.user;
-        if (user && winner.userId === String(user.id) && totalInTon > 0) {
-            if (UserManager) {
-                var added = await UserManager.addWin(totalInTon, 'ton', 'Win in PvP Round #' + gameState.roundId);
-                if (added) {
-                    var updatedUser = UserManager.getUser();
-                    gameState.balance.ton = updatedUser.ton_balance;
-                    updatePvPBalanceUI();
-                    if (window.betsApp && window.betsApp.refreshBalance) {
-                        window.betsApp.refreshBalance();
-                    }
+            roundId: gameState.roundId
+        };
+    }
+    
+    updateTopGameDisplay();
+    updateHeaderInfo();
+    
+    // Добавляем выигрыш победителю (только если это текущий пользователь)
+    var user = tg.initDataUnsafe?.user;
+    if (user && winner.userId === String(user.id) && totalInTon > 0) {
+        if (UserManager) {
+            var added = await UserManager.addWin(totalInTon, 'ton', 'Win in PvP Round #' + gameState.roundId);
+            if (added) {
+                var updatedUser = UserManager.getUser();
+                gameState.balance.ton = updatedUser.ton_balance;
+                updatePvPBalanceUI();
+                if (window.betsApp && window.betsApp.refreshBalance) {
+                    window.betsApp.refreshBalance();
                 }
             }
         }
-        
-        if (user) {
-            var stats = await loadPlayerStats(user.id);
-            var totalBets = (stats?.total_bets || 0) + gameState.playerBets.length;
-            var totalWins = (stats?.total_wins || 0) + (winner.userId === String(user.id) ? 1 : 0);
-            var totalPrize = (stats?.total_prize || 0) + (winner.userId === String(user.id) ? totalInTon : 0);
-            
-            await updatePlayerStats(
-                String(user.id),
-                user.username || '',
-                user.first_name || '',
-                totalBets,
-                totalWins,
-                totalPrize
-            );
-        }
-        
-        updateTopGameDisplay();
-        updateHeaderInfo();
     }
     
+    // Обновляем статистику игрока
+    if (user) {
+        var stats = await loadPlayerStats(user.id);
+        var totalBets = (stats?.total_bets || 0) + gameState.playerBets.length;
+        var totalWins = (stats?.total_wins || 0) + (winner.userId === String(user.id) ? 1 : 0);
+        var totalPrize = (stats?.total_prize || 0) + (winner.userId === String(user.id) ? totalInTon : 0);
+        
+        await updatePlayerStats(
+            String(user.id),
+            user.username || '',
+            user.first_name || '',
+            totalBets,
+            totalWins,
+            totalPrize
+        );
+    }
+    
+    // Показываем модалку
     modal.classList.add('show');
     await syncRoomStateToDB();
     
@@ -2479,6 +2416,11 @@ function getAvatarUrl(player) {
     if (!player) return '';
     if (player.avatar) return player.avatar;
     return 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + player.userId;
+}
+
+function getRandomColor() {
+    var colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#a29bfe', '#fd79a8', '#fdcb6e', '#e17055', '#00cec9'];
+    return colors[Math.floor(Math.random() * colors.length)];
 }
 
 // ============================================================

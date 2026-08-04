@@ -283,7 +283,7 @@ var PvPRoomManager = {
             clearInterval(this._syncInterval);
         }
         
-        // Синхронизация каждую секунду (было 3 секунды)
+        // Синхронизация каждую секунду
         this._syncInterval = setInterval(function() {
             if (PvPRoomManager._isConnected) {
                 PvPRoomManager.loadPlayers();
@@ -497,8 +497,6 @@ var PvPRoomManager = {
         console.log('🔌 Disconnected');
     }
 };
-
-
 
 window.PvPRoomManager = PvPRoomManager;
 console.log('✅ PvPRoomManager loaded (optimized)');
