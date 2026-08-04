@@ -5,15 +5,27 @@
 var tg = window.Telegram.WebApp;
 
 // ============================================================
-// ПОДКЛЮЧЕНИЕ USERMANAGER - ТАК ЖЕ КАК В ГЛАВНОМ МЕНЮ
+// ПОДКЛЮЧЕНИЕ USERMANAGER - ИСПОЛЬЗУЕМ ГЛОБАЛЬНЫЙ
 // ============================================================
 
+// UserManager уже загружен из user.js через <script src="user.js">
 var UserManager = window.UserManager;
+
+// Проверяем, что UserManager загружен
+if (!UserManager) {
+    console.error('❌ UserManager not loaded! Please check that user.js is included.');
+}
 
 // ФУНКЦИЯ ЗАГРУЗКИ ПОЛЬЗОВАТЕЛЯ - ТОЧНО ТАК ЖЕ КАК В APP.JS
 async function initializeUserInPvP() {
     try {
         console.log('🔄 PvP: Loading user from UserManager...');
+        
+        if (!UserManager) {
+            console.error('❌ UserManager is undefined');
+            return null;
+        }
+        
         var user = await UserManager.loadUser();
         if (user) {
             console.log('✅ User loaded in PvP:', user);
@@ -47,6 +59,8 @@ if (UserManager) {
         gameState.balance.stars = user.stars_balance || 0;
         updatePvPBalanceUI();
     });
+} else {
+    console.warn('⚠️ UserManager not available for subscription');
 }
 
 // ============================================================
