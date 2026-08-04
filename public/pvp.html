@@ -5,18 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>PvP Колесо</title>
     <script src="https://telegram.org/js/telegram-web-app.js?56"></script>
-    <!-- В самом верху pvp.html, после скрипта Telegram -->
-    <script type="module">
-    import { TonConnectUIProvider } from '@tonconnect/ui-react';
-    
-    // Создаем провайдер
-    const manifestUrl = 'https://bets-telegram-mini-app.vercel.app/tonconnect-manifest.json';
-    
-    // Сохраняем в window для использования в React
-    window.__TON_CONNECT_MANIFEST__ = manifestUrl;
-    </script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tonconnect/ui@2.4.4/dist/tonconnect-ui.min.js"></script>
+    <!-- Используем ESM версию -->
+    <script type="importmap">
+        {
+            "imports": {
+                "@tonconnect/ui": "https://cdn.jsdelivr.net/npm/@tonconnect/ui@2.4.4/dist/tonconnect-ui.esm.js"
+            }
+        }
+    </script>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="pvp.css">
 </head>
