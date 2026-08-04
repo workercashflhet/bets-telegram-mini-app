@@ -1,8 +1,8 @@
 // Telegram Web App initialization
-const tg = window.Telegram.WebApp;
+var tg = window.Telegram.WebApp;
 
 // App state
-const state = {
+var state = {
     user: null,
     userId: null,
     balance: 0.00,
@@ -14,10 +14,10 @@ const state = {
 };
 
 // Initialize app
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', function() {
     // Показываем прелоадер минимум 3 секунды
-    const preloader = document.getElementById('preloader');
-    const app = document.getElementById('app');
+    var preloader = document.getElementById('preloader');
+    var app = document.getElementById('app');
     
     // Расширяем приложение на весь экран
     tg.expand();
@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
     tg.setHeaderColor('#000000');
     
     // Показываем прелоадер минимум 3 секунды
-    setTimeout(() => {
+    setTimeout(function() {
         // Скрываем прелоадер
         preloader.classList.add('hidden');
         
@@ -50,8 +50,8 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function initializeApp() {
-    // Initialize user first
-    initializeUser();
+    // Initialize user from DB first
+    initializeUserFromDB();
     
     // Setup event listeners
     setupEventListeners();
@@ -60,122 +60,168 @@ function initializeApp() {
     initializeCarousel();
     
     // Обработчик изменения размера
-    window.addEventListener('resize', () => {
+    window.addEventListener('resize', function() {
         if (tg.isExpanded) {
             tg.expand();
         }
     });
     
     // Обработчик события изменения вьюпорта
-    tg.onEvent('viewportChanged', () => {
+    tg.onEvent('viewportChanged', function() {
         if (!tg.isExpanded) {
             tg.expand();
         }
     });
 }
 
-// Initialize user from Telegram
-function initializeUser() {
+// Initialize user from Telegram and Supabase
+async function initializeUserFromDB() {
     try {
-        // Получаем данные пользователя из Telegram
-        const user = tg.initDataUnsafe?.user;
+        // Загружаем пользователя из БД
+        var userData = await UserManager.getOrCreateUser();
         
-        console.log('Telegram user data:', user);
-        
-        if (user) {
-            state.user = user;
-            state.userId = user.id || Math.floor(Math.random() * 10000);
+        if (userData) {
+            console.log('✅ User loaded from DB:', userData);
             
-            // Обновляем имя пользователя в левом островке
-            const userNameDisplay = document.getElementById('userNameDisplay');
-            if (userNameDisplay) {
-                const firstName = user.first_name || '';
-                const lastName = user.last_name || '';
-                const username = user.username || '';
-                
-                if (firstName) {
-                    userNameDisplay.textContent = firstName + (lastName ? ' ' + lastName : '');
-                } else if (username) {
-                    userNameDisplay.textContent = '@' + username;
-                } else {
-                    userNameDisplay.textContent = 'User';
-                }
-            }
+            // Обновляем состояние
+            state.user = userData;
+            state.userId = userData.user_id;
+            state.balance = userData.ton_balance;
+            state.inventory = userData.stars_balance;
             
-            // Обновляем аватарку пользователя
-            const userAvatar = document.getElementById('userAvatar');
-            if (userAvatar) {
-                if (user.photo_url) {
-                    userAvatar.src = user.photo_url;
-                } else {
-                    const avatarUrl = `https://t.me/i/userpic/320/${user.id}.jpg`;
-                    userAvatar.src = avatarUrl;
-                    userAvatar.onerror = function() {
-                        this.style.display = 'none';
-                        const fallbackText = document.createElement('span');
-                        fallbackText.className = 'user-avatar-fallback';
-                        const firstLetter = (user.first_name || user.username || 'U')[0].toUpperCase();
-                        fallbackText.textContent = firstLetter;
-                        this.parentNode.insertBefore(fallbackText, this);
-                        this.style.display = 'none';
-                    };
-                }
-            }
+            // Синхронизируем с localStorage
+            UserManager.syncFromLocalStorage();
             
-            // Обновляем данные в шапке
-            const userNameElement = document.getElementById('userName');
-            if (userNameElement) {
-                userNameElement.textContent = `@${user.username || 'user'}`;
-            }
-            const userIdElement = document.getElementById('userId');
-            if (userIdElement) {
-                userIdElement.textContent = `id: ${state.userId}`;
-            }
-            
-            // Сохраняем в localStorage
-            localStorage.setItem('bets_user', JSON.stringify({
-                username: user.username || 'user',
-                userId: state.userId,
-                firstName: user.first_name || '',
-                lastName: user.last_name || '',
-                photoUrl: user.photo_url || ''
-            }));
+            // Обновляем UI
+            updateUserUI(userData);
+            updateBalanceUI();
         } else {
-            console.warn('No Telegram user data available, using fallback');
-            const savedUser = localStorage.getItem('bets_user');
+            // Fallback на localStorage
+            console.warn('⚠️ Using localStorage fallback');
+            var savedUser = localStorage.getItem('bets_user');
             if (savedUser) {
-                const userData = JSON.parse(savedUser);
-                const userNameDisplay = document.getElementById('userNameDisplay');
+                var userData = JSON.parse(savedUser);
+                state.userId = userData.userId;
+                var userNameDisplay = document.getElementById('userNameDisplay');
                 if (userNameDisplay) {
                     userNameDisplay.textContent = userData.firstName || userData.username || 'User';
                 }
-                state.userId = userData.userId;
             } else {
-                const userNameDisplay = document.getElementById('userNameDisplay');
+                var userNameDisplay = document.getElementById('userNameDisplay');
                 if (userNameDisplay) {
                     userNameDisplay.textContent = 'Demo User';
                 }
                 state.userId = Math.floor(Math.random() * 10000);
             }
+            
+            // Загружаем баланс из localStorage
+            var saved = localStorage.getItem('bets_data');
+            if (saved) {
+                var data = JSON.parse(saved);
+                state.balance = data.balance || 0;
+                state.inventory = data.inventory || 0;
+                updateBalanceUI();
+            }
+        }
+        
+    } catch (error) {
+        console.error('Error initializing user from DB:', error);
+    }
+}
+
+// Update user UI
+function updateUserUI(userData) {
+    var userNameDisplay = document.getElementById('userNameDisplay');
+    var userAvatar = document.getElementById('userAvatar');
+    var userNameElement = document.getElementById('userName');
+    var userIdElement = document.getElementById('userId');
+    
+    if (userNameDisplay) {
+        var firstName = userData.first_name || '';
+        var lastName = userData.last_name || '';
+        var username = userData.username || '';
+        
+        if (firstName) {
+            userNameDisplay.textContent = firstName + (lastName ? ' ' + lastName : '');
+        } else if (username) {
+            userNameDisplay.textContent = '@' + username;
+        } else {
+            userNameDisplay.textContent = 'User';
+        }
+    }
+    
+    if (userAvatar) {
+        if (userData.photo_url) {
+            userAvatar.src = userData.photo_url;
+        } else {
+            userAvatar.onerror = function() {
+                this.style.display = 'none';
+                var fallbackText = document.createElement('span');
+                fallbackText.className = 'user-avatar-fallback';
+                var firstLetter = (userData.first_name || userData.username || 'U')[0].toUpperCase();
+                fallbackText.textContent = firstLetter;
+                this.parentNode.insertBefore(fallbackText, this);
+                this.style.display = 'none';
+            };
+        }
+    }
+    
+    if (userNameElement) {
+        userNameElement.textContent = '@' + (userData.username || 'user');
+    }
+    
+    if (userIdElement) {
+        userIdElement.textContent = 'id: ' + userData.user_id;
+    }
+}
+
+// Update balance UI
+function updateBalanceUI() {
+    var tonBalanceEl = document.getElementById('tonBalance');
+    var starsBalanceEl = document.getElementById('starsBalance');
+    
+    if (tonBalanceEl) {
+        tonBalanceEl.textContent = state.balance.toFixed(2);
+    }
+    if (starsBalanceEl) {
+        starsBalanceEl.textContent = Math.floor(state.inventory);
+    }
+    
+    // Сохраняем в localStorage для обратной совместимости
+    localStorage.setItem('bets_data', JSON.stringify({
+        balance: state.balance,
+        inventory: state.inventory
+    }));
+}
+
+// Update balance from DB
+async function refreshBalance() {
+    try {
+        var userData = await UserManager.getOrCreateUser();
+        if (userData) {
+            state.balance = userData.ton_balance;
+            state.inventory = userData.stars_balance;
+            updateBalanceUI();
+            console.log('✅ Balance refreshed:', state.balance, state.inventory);
         }
     } catch (error) {
-        console.error('Error initializing user:', error);
+        console.error('Error refreshing balance:', error);
     }
 }
 
 // Carousel state
-let currentSlide = 0;
-let totalSlides = 0;
-let autoPlayInterval = null;
-let isTransitioning = false;
-let startX = 0;
-let currentX = 0;
-let isDragging = false;
+var currentSlide = 0;
+var totalSlides = 0;
+var autoPlayInterval = null;
+var isTransitioning = false;
+var startX = 0;
+var currentX = 0;
+var isDragging = false;
 
 // Initialize carousel
 function initializeCarousel() {
-    const track = document.getElementById('carouselTrack');
-    const dots = document.querySelectorAll('.dot');
+    var track = document.getElementById('carouselTrack');
+    var dots = document.querySelectorAll('.dot');
     
     if (!track) return;
     
@@ -188,8 +234,8 @@ function initializeCarousel() {
     startAutoPlay();
     
     // Add touch/click events for dots
-    dots.forEach((dot, index) => {
-        dot.addEventListener('click', () => {
+    dots.forEach(function(dot, index) {
+        dot.addEventListener('click', function() {
             goToSlide(index);
         });
     });
@@ -208,17 +254,17 @@ function initializeCarousel() {
 
 // Update carousel position
 function updateCarousel(index) {
-    const track = document.getElementById('carouselTrack');
-    const dots = document.querySelectorAll('.dot');
+    var track = document.getElementById('carouselTrack');
+    var dots = document.querySelectorAll('.dot');
     
     if (!track) return;
     
     currentSlide = index;
-    const offset = -index * 100;
-    track.style.transform = `translateX(${offset}%)`;
+    var offset = -index * 100;
+    track.style.transform = 'translateX(' + offset + '%)';
     
     // Update dots
-    dots.forEach((dot, i) => {
+    dots.forEach(function(dot, i) {
         dot.classList.toggle('active', i === index);
     });
 }
@@ -231,7 +277,7 @@ function goToSlide(index) {
     
     isTransitioning = true;
     updateCarousel(index);
-    setTimeout(() => {
+    setTimeout(function() {
         isTransitioning = false;
     }, 500);
     
@@ -278,8 +324,8 @@ function handleTouchEnd(e) {
     if (!isDragging) return;
     isDragging = false;
     
-    const diff = startX - currentX;
-    const threshold = 50;
+    var diff = startX - currentX;
+    var threshold = 50;
     
     if (Math.abs(diff) > threshold) {
         if (diff > 0) {
@@ -311,8 +357,8 @@ function handleMouseUp(e) {
     if (!isDragging) return;
     isDragging = false;
     
-    const diff = startX - currentX;
-    const threshold = 50;
+    var diff = startX - currentX;
+    var threshold = 50;
     
     if (Math.abs(diff) > threshold) {
         if (diff > 0) {
@@ -340,12 +386,12 @@ function handleMouseLeave() {
 // Show tab content
 function showTab(page) {
     // Скрываем все табы
-    document.querySelectorAll('.tab-content').forEach(tab => {
+    document.querySelectorAll('.tab-content').forEach(function(tab) {
         tab.classList.remove('active');
     });
     
     // Показываем выбранный таб
-    const targetTab = document.getElementById(`tab-${page}`);
+    var targetTab = document.getElementById('tab-' + page);
     if (targetTab) {
         targetTab.classList.add('active');
     }
@@ -361,20 +407,20 @@ function showTab(page) {
 // Setup event listeners
 function setupEventListeners() {
     // Bottom navigation
-    document.querySelectorAll('.nav-item').forEach(item => {
-        item.addEventListener('click', (e) => {
-            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(function(item) {
+        item.addEventListener('click', function(e) {
+            document.querySelectorAll('.nav-item').forEach(function(i) { i.classList.remove('active'); });
             item.classList.add('active');
             
-            const page = item.dataset.page;
+            var page = item.dataset.page;
             showTab(page);
         });
     });
 
     // Free spin button
-    const freeSpinBtn = document.getElementById('freeSpinBtn');
+    var freeSpinBtn = document.getElementById('freeSpinBtn');
     if (freeSpinBtn) {
-        freeSpinBtn.addEventListener('click', () => {
+        freeSpinBtn.addEventListener('click', function() {
             tg.showPopup({
                 title: '🎰 Бесплатный спин',
                 message: 'Вы получили бесплатный спин! Крутите колесо удачи!',
@@ -382,7 +428,7 @@ function setupEventListeners() {
                     { id: 'spin', text: '🎰 Крутить!' },
                     { id: 'cancel', text: 'Отмена', type: 'cancel' }
                 ]
-            }, (buttonId) => {
+            }, function(buttonId) {
                 if (buttonId === 'spin') {
                     tg.showAlert('🎉 Поздравляем! Вы выиграли 100 ₽!');
                 }
@@ -391,38 +437,53 @@ function setupEventListeners() {
     }
 
     // Deposit button in balance island
-    const depositBtn = document.getElementById('depositBtn');
+    var depositBtn = document.getElementById('depositBtn');
     if (depositBtn) {
-        depositBtn.addEventListener('click', () => {
-            tg.showPopup({
-                title: '💰 Deposit',
-                message: 'Select deposit method',
-                buttons: [
-                    { id: 'crypto', text: 'Crypto' },
-                    { id: 'card', text: 'Card' },
-                    { id: 'cancel', text: 'Cancel', type: 'cancel' }
-                ]
-            }, (buttonId) => {
-                if (buttonId === 'crypto') {
-                    tg.showAlert('Crypto deposit selected');
-                } else if (buttonId === 'card') {
-                    tg.showAlert('Card deposit selected');
-                }
-            });
+        depositBtn.addEventListener('click', function() {
+            // Открываем модалку депозита из pvp.js
+            if (window.pvpGame && window.pvpGame.openDepositModal) {
+                window.pvpGame.openDepositModal();
+            } else {
+                // Fallback: показываем попап
+                tg.showPopup({
+                    title: '💰 Deposit',
+                    message: 'Выберите способ пополнения',
+                    buttons: [
+                        { id: 'ton', text: 'TON' },
+                        { id: 'stars', text: 'Stars' },
+                        { id: 'cancel', text: 'Отмена', type: 'cancel' }
+                    ]
+                }, function(buttonId) {
+                    if (buttonId === 'ton') {
+                        tg.showAlert('💰 Пополнение TON');
+                    } else if (buttonId === 'stars') {
+                        tg.showAlert('⭐ Пополнение Stars');
+                    }
+                });
+            }
         });
     }
 
     // Close app on back button
-    tg.onEvent('backButtonClicked', () => {
+    tg.onEvent('backButtonClicked', function() {
         tg.close();
     });
 }
 
+// Refresh balance periodically
+setInterval(function() {
+    refreshBalance();
+}, 30000); // Каждые 30 секунд
+
 // Export functions for debugging
 window.betsApp = {
-    state,
-    showTab,
-    goToSlide,
-    nextSlide,
-    initializeUser
+    state: state,
+    showTab: showTab,
+    goToSlide: goToSlide,
+    nextSlide: nextSlide,
+    initializeUserFromDB: initializeUserFromDB,
+    refreshBalance: refreshBalance,
+    UserManager: UserManager
 };
+
+console.log('✅ App initialized');
