@@ -286,7 +286,7 @@ var PvPRoomManager = {
             var success = false;
             
             if (existingPlayer) {
-                // Обновляем существующего игрока
+                // Обновляем существующего игрока - БЕЗ updated_at
                 var bets = existingPlayer.bets || [];
                 bets.push(newBet);
                 var totalValue = this.calculatePlayerValue(bets);
@@ -295,8 +295,8 @@ var PvPRoomManager = {
                     .from('pvp_room_players')
                     .update({
                         bets: bets,
-                        total_value: totalValue,
-                        updated_at: new Date().toISOString()
+                        total_value: totalValue
+                        // updated_at УДАЛЕН!
                     })
                     .eq('room_id', this._roomId)
                     .eq('user_id', userId);
