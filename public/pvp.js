@@ -89,6 +89,7 @@ var gameState = {
 
 var forceResetTimer = null;
 var isBetting = false;
+var isSyncing = false;
 
 // ============================================================
 // TON CONNECT - ИНИЦИАЛИЗАЦИЯ (ОПТИМИЗИРОВАННАЯ)
