@@ -404,6 +404,8 @@ async function initPvPRoom() {
     }
 }
 
+// В функции setupRealtimeHandlers добавьте более надежную обработку
+
 function setupRealtimeHandlers() {
     if (!PvPRoomManager) return;
     
@@ -412,25 +414,34 @@ function setupRealtimeHandlers() {
     }
     
     window._pvpUnsubscribe = PvPRoomManager.subscribe(function(event, data) {
-        console.log('📡 Room event:', event, data);
+        console.log('📡 Room event received:', event, data ? (data.length || '') : '');
         
         switch(event) {
             case 'players_loaded':
             case 'players_updated':
-                updatePlayersFromRoom(data);
+                // Обновляем игроков
+                if (data && data.length !== undefined) {
+                    updatePlayersFromRoom(data);
+                } else {
+                    // Если данных нет - загружаем принудительно
+                    syncRoomData();
+                }
                 updateWheelImmediately();
                 break;
                 
             case 'pool_updated':
-                gameState.totalPoolTon = data.ton;
-                gameState.totalPoolStars = data.stars;
+                if (data) {
+                    gameState.totalPoolTon = data.ton || 0;
+                    gameState.totalPoolStars = data.stars || 0;
+                }
                 updateUI();
                 updateWheelImmediately();
                 break;
                 
             case 'player_added':
             case 'player_updated':
-                updateUI();
+                // При добавлении или обновлении игрока - принудительная синхронизация
+                syncRoomData();
                 updateWheelImmediately();
                 break;
                 
@@ -1336,6 +1347,19 @@ function startCountdown() {
     updateHubCurrentPlayer();
 }
 
+// Периодическая синхронизация с комнатой (каждые 3 секунды)
+setInterval(function() {
+    if (PvPRoomManager && PvPRoomManager._isConnected && !gameState.isSpinning) {
+        // Проверяем, изменился ли пул
+        var currentPool = PvPRoomManager.getPool();
+        if (currentPool.ton !== gameState.totalPoolTon || 
+            currentPool.stars !== gameState.totalPoolStars) {
+            console.log('🔄 Periodic sync: pool changed, updating...');
+            syncRoomData();
+        }
+    }
+}, 3000);
+
 // ============================================================
 // РЕЖИМ ОЖИДАНИЯ - ВРАЩЕНИЕ КОЛЕСА (ЧЕРНО-ЗЕЛЕНОЕ)
 // ============================================================
@@ -1774,7 +1798,7 @@ function fromNano(nano) {
 }
 
 // ============================================================
-// СТАВКА - С ИНТЕГРАЦИЕЙ ROOM MANAGER (БЕЗ АЛЕРТА)
+// СТАВКА - С ИНТЕГРАЦИЕЙ ROOM MANAGER И ПРИНУДИТЕЛЬНОЙ СИНХРОНИЗАЦИЕЙ
 // ============================================================
 
 async function placeBet() {
@@ -1830,6 +1854,7 @@ async function placeBet() {
         updatePvPBalanceUI();
     }
     
+    // Отправляем ставку в комнату
     var roomSuccess = await PvPRoomManager.addBet(
         String(user.id),
         user.username || '',
@@ -1844,6 +1869,10 @@ async function placeBet() {
         return;
     }
     
+    // ПРИНУДИТЕЛЬНО ОБНОВЛЯЕМ ДАННЫЕ
+    await syncRoomData();
+    
+    // Обновляем локальное состояние
     var player = gameState.players.find(function(p) { return p.userId === String(user.id); });
     if (!player) {
         player = {
@@ -1860,6 +1889,7 @@ async function placeBet() {
     player.bets.push({ amount: amount, currency: currency });
     gameState.playerBets.push({ amount: amount, currency: currency });
     
+    // Обновляем UI
     updateUI();
     updateBetUI();
     updateTimerUI();
@@ -1867,11 +1897,52 @@ async function placeBet() {
     updatePlayersList();
     updateWheelImmediately();
     
-    // АЛЕРТ УДАЛЕН
-    
     var activePlayers = getActivePlayers();
     if (activePlayers.length >= MIN_PLAYERS && gameState.roundPhase === 'waiting') {
         startCountdown();
+    }
+}
+
+// ============================================================
+// ПРИНУДИТЕЛЬНАЯ СИНХРОНИЗАЦИЯ ДАННЫХ
+// ============================================================
+
+async function syncRoomData() {
+    try {
+        console.log('🔄 Forcing room data sync...');
+        
+        // Загружаем свежие данные из БД
+        await PvPRoomManager.loadPlayers();
+        
+        var players = PvPRoomManager.getPlayers();
+        var pool = PvPRoomManager.getPool();
+        
+        // Обновляем локальное состояние
+        gameState.players = players.map(function(p) {
+            return {
+                userId: p.user_id,
+                firstName: p.first_name,
+                username: p.username,
+                avatar: p.photo_url,
+                color: p.color,
+                bets: p.bets || []
+            };
+        });
+        
+        gameState.totalPoolTon = pool.ton;
+        gameState.totalPoolStars = pool.stars;
+        
+        // Обновляем UI
+        updateUI();
+        updatePlayersList();
+        updateWheelImmediately();
+        
+        console.log('✅ Room data synced:', gameState.players.length, 'players');
+        return true;
+        
+    } catch (error) {
+        console.error('Sync error:', error);
+        return false;
     }
 }
 

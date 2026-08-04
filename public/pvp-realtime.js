@@ -1,4 +1,4 @@
-// pvp-realtime.js - Реальный мультиплеер через Supabase Realtime
+// pvp-realtime.js - Реальный мультиплеер через Supabase Realtime (ИСПРАВЛЕННЫЙ)
 
 // ============================================================
 // SUPABASE КОНФИГУРАЦИЯ
@@ -17,7 +17,7 @@ var supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
     },
     realtime: {
         params: {
-            eventsPerSecond: 10
+            eventsPerSecond: 20
         }
     }
 });
@@ -36,6 +36,7 @@ var PvPRoomManager = {
     _totalPoolTon: 0,
     _totalPoolStars: 0,
     _lastUpdate: 0,
+    _isLoading: false,
 
     initRoom: async function() {
         try {
@@ -75,9 +76,14 @@ var PvPRoomManager = {
                 this._roundId = existingRoom.round_number || 0;
             }
             
+            // Подписываемся на изменения
             this.subscribeToRoom();
             
+            // Загружаем игроков
             await this.loadPlayers();
+            
+            // Запускаем периодическую синхронизацию
+            this.startPeriodicSync();
             
             return true;
             
@@ -90,6 +96,7 @@ var PvPRoomManager = {
     subscribeToRoom: function() {
         if (this._channel) {
             this._channel.unsubscribe();
+            this._channel = null;
         }
         
         var roomId = this._roomId;
@@ -127,6 +134,10 @@ var PvPRoomManager = {
             .subscribe(function(status) {
                 console.log('📡 Subscription status:', status);
                 PvPRoomManager._isConnected = status === 'SUBSCRIBED';
+                if (PvPRoomManager._isConnected) {
+                    // При подключении загружаем данные
+                    PvPRoomManager.loadPlayers();
+                }
             });
     },
 
@@ -135,6 +146,7 @@ var PvPRoomManager = {
         var newData = payload.new;
         var oldData = payload.old;
         
+        // Обновляем локальный кэш
         switch(eventType) {
             case 'INSERT':
                 if (!this._players.find(p => p.user_id === newData.user_id)) {
@@ -185,58 +197,106 @@ var PvPRoomManager = {
 
     forceUpdate: function() {
         var now = Date.now();
-        if (now - this._lastUpdate > 100) {
+        if (now - this._lastUpdate > 200) {
             this._lastUpdate = now;
-            this.loadPlayers().then(function() {
-                console.log('🔄 Force update complete');
-            });
+            this.loadPlayers();
         }
     },
 
     loadPlayers: async function() {
+        if (this._isLoading) return;
+        this._isLoading = true;
+        
         try {
             console.log('📥 Loading players for room:', this._roomId);
             
             var { data, error } = await supabaseClient
                 .from('pvp_room_players')
                 .select('*')
-                .eq('room_id', this._roomId);
+                .eq('room_id', this._roomId)
+                .order('total_value', { ascending: false });
             
             if (error) {
                 console.error('Load players error:', error);
+                this._isLoading = false;
                 return;
             }
             
-            this._players = data || [];
-            this.updateTotalPool();
-            this.notifyListeners('players_loaded', this._players);
+            var newPlayers = data || [];
+            var changed = false;
             
-            console.log('👥 Players loaded:', this._players.length);
+            // Проверяем, изменился ли список
+            if (newPlayers.length !== this._players.length) {
+                changed = true;
+            } else {
+                for (var i = 0; i < newPlayers.length; i++) {
+                    if (newPlayers[i].user_id !== this._players[i]?.user_id ||
+                        JSON.stringify(newPlayers[i].bets) !== JSON.stringify(this._players[i]?.bets)) {
+                        changed = true;
+                        break;
+                    }
+                }
+            }
+            
+            if (changed) {
+                this._players = newPlayers;
+                this.updateTotalPool();
+                this.notifyListeners('players_loaded', this._players);
+                console.log('👥 Players loaded:', this._players.length);
+            }
             
         } catch (error) {
             console.error('Load players error:', error);
         }
+        
+        this._isLoading = false;
+    },
+
+    // Периодическая синхронизация каждые 2 секунды
+    startPeriodicSync: function() {
+        if (this._syncInterval) {
+            clearInterval(this._syncInterval);
+        }
+        
+        this._syncInterval = setInterval(function() {
+            if (PvPRoomManager._isConnected) {
+                PvPRoomManager.loadPlayers();
+            }
+        }, 2000);
     },
 
     addBet: async function(userId, username, firstName, photoUrl, amount, currency) {
         try {
             console.log('💰 Adding bet:', userId, amount, currency);
             
-            var existingPlayer = this._players.find(p => p.user_id === userId);
+            // Сначала проверяем, есть ли уже игрок
+            var { data: existingPlayers, error: fetchError } = await supabaseClient
+                .from('pvp_room_players')
+                .select('*')
+                .eq('room_id', this._roomId)
+                .eq('user_id', userId);
             
+            if (fetchError) {
+                console.error('Fetch player error:', fetchError);
+                return false;
+            }
+            
+            var existingPlayer = existingPlayers && existingPlayers.length > 0 ? existingPlayers[0] : null;
             var newBet = { amount: amount, currency: currency };
+            var success = false;
             
             if (existingPlayer) {
+                // Обновляем существующего игрока
                 var bets = existingPlayer.bets || [];
                 bets.push(newBet);
-                
                 var totalValue = this.calculatePlayerValue(bets);
                 
                 var { error: updateError } = await supabaseClient
                     .from('pvp_room_players')
                     .update({
                         bets: bets,
-                        total_value: totalValue
+                        total_value: totalValue,
+                        updated_at: new Date().toISOString()
                     })
                     .eq('room_id', this._roomId)
                     .eq('user_id', userId);
@@ -246,9 +306,11 @@ var PvPRoomManager = {
                     return false;
                 }
                 
+                success = true;
                 console.log('✅ Player updated:', userId);
                 
             } else {
+                // Создаем нового игрока
                 var color = this.getRandomColor();
                 var bets = [newBet];
                 var totalValue = this.calculatePlayerValue(bets);
@@ -271,14 +333,22 @@ var PvPRoomManager = {
                     return false;
                 }
                 
+                success = true;
                 console.log('✅ New player added:', userId);
             }
             
-            this.updateTotalPool();
+            if (success) {
+                // Обновляем пул
+                this.updateTotalPool();
+                
+                // Принудительно загружаем игроков
+                await this.loadPlayers();
+                
+                // Уведомляем всех
+                this.notifyListeners('players_updated', this._players);
+            }
             
-            await this.loadPlayers();
-            
-            return true;
+            return success;
             
         } catch (error) {
             console.error('Add bet error:', error);
@@ -394,6 +464,10 @@ var PvPRoomManager = {
     },
 
     disconnect: function() {
+        if (this._syncInterval) {
+            clearInterval(this._syncInterval);
+            this._syncInterval = null;
+        }
         if (this._channel) {
             this._channel.unsubscribe();
             this._channel = null;
