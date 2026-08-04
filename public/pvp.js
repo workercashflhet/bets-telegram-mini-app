@@ -163,14 +163,12 @@ function updateWalletUI(connected, address) {
     ensureTonConnectZIndex();
     
     if (connected && address) {
-        var shortAddr = address.slice(0, 4) + '...' + address.slice(-4);
-        container.innerHTML = 
-            '<div style="color: #0ceb0f; padding: 10px; border: 1px solid rgba(12,235,15,0.2); border-radius: 8px; background: rgba(12,235,15,0.05); text-align: center;">' +
-                '✅ Кошелек подключен<br>' +
-                '<span style="font-size: 13px; opacity: 0.7;">' + shortAddr + '</span>' +
-            '</div>';
-        container.style.display = 'block';
+        // СКРЫВАЕМ КОНТЕЙНЕР ПОСЛЕ ПОДКЛЮЧЕНИЯ
+        container.style.display = 'none';
+        container.innerHTML = '';
+        console.log('✅ Wallet connected, container hidden');
     } else {
+        // Показываем кнопку подключения
         container.innerHTML = 
             '<button class="ton-connect-btn" id="tonConnectBtn" style="' +
                 'width: 100%;' +
@@ -206,10 +204,8 @@ function updateWalletUI(connected, address) {
                     
                     console.log('🔗 Opening TonConnect modal...');
                     
-                    // Открываем TonConnect (будет поверх всех модалок)
                     tonConnectUI.openModal().catch(function(err) {
                         console.error('Open modal error:', err);
-                        // Альтернативный метод
                         if (tonConnectUI.open) {
                             tonConnectUI.open();
                         }
