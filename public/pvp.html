@@ -7,18 +7,8 @@
     <script src="https://telegram.org/js/telegram-web-app.js?56"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
-    <!-- ИСПОЛЬЗУЕМ @tonconnect/ui-react ЧЕРЕЗ CDN -->
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script type="importmap">
-        {
-            "imports": {
-                "react": "https://unpkg.com/react@18/umd/react.production.min.js",
-                "react-dom": "https://unpkg.com/react-dom@18/umd/react-dom.production.min.js",
-                "@tonconnect/ui-react": "https://unpkg.com/@tonconnect/ui-react@3.0.0/dist/index.js"
-            }
-        }
-    </script>
+    <!-- ПРОСТАЯ CDN ЗАГРУЗКА TON CONNECT -->
+    <script src="https://unpkg.com/@tonconnect/ui@1.0.0/dist/tonconnect-ui.min.js"></script>
     
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="pvp.css">
