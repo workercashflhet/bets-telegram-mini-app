@@ -481,14 +481,14 @@ async function searchUsers() {
 
         results.innerHTML = users.map(function(user) {
             var name = user.first_name || user.username || 'User';
-            var avatar = user.photo_url || 'assets/avatar.png';
+            var avatar = user.photo_url || '';
             var balance = user.ton_balance || 0;
             var stars = user.stars_balance || 0;
             var isCurrent = user.user_id === UserManager.getUser()?.user_id;
 
             return '<div class="admin-user-result" data-userid="' + user.user_id + '">' +
                 '<div class="admin-user-result-info">' +
-                    '<img src="' + avatar + '" alt="' + name + '" class="admin-result-avatar" onerror="this.src=\'assets/avatar.png\'">' +
+                    '<img src="' + avatar + '" alt="' + name + '" class="admin-result-avatar">' +
                     '<div>' +
                         '<div class="admin-result-name">' + name + (isCurrent ? ' (Вы)' : '') + '</div>' +
                         '<div class="admin-result-id">ID: ' + user.user_id + '</div>' +
@@ -535,7 +535,7 @@ function selectUser(user) {
     var id = document.getElementById('adminUserId');
     var balance = document.getElementById('adminUserBalance');
 
-    if (avatar) avatar.src = user.photo_url || 'assets/avatar.png';
+    if (avatar) avatar.src = user.photo_url || '';
     if (name) name.textContent = user.first_name || user.username || 'User';
     if (id) id.textContent = 'ID: ' + user.user_id;
     if (balance) {
@@ -566,7 +566,7 @@ function updateSearchResult(user) {
     if (!results) return;
 
     var name = user.first_name || user.username || 'User';
-    var avatar = user.photo_url || 'assets/avatar.png';
+    var avatar = user.photo_url || '';
     var ton = user.ton_balance || 0;
     var stars = user.stars_balance || 0;
     var isCurrent = user.user_id === UserManager.getUser()?.user_id;
@@ -574,7 +574,7 @@ function updateSearchResult(user) {
     results.innerHTML = 
         '<div class="admin-user-result" data-userid="' + user.user_id + '">' +
             '<div class="admin-user-result-info">' +
-                '<img src="' + avatar + '" alt="' + name + '" class="admin-result-avatar" onerror="this.src=\'assets/avatar.png\'">' +
+                '<img src="' + avatar + '" alt="' + name + '" class="admin-result-avatar">' +
                 '<div>' +
                     '<div class="admin-result-name">' + name + (isCurrent ? ' (Вы)' : '') + '</div>' +
                     '<div class="admin-result-id">ID: ' + user.user_id + '</div>' +
@@ -858,6 +858,9 @@ async function initializeUser() {
             if (window.pvpGame) {
                 window.pvpGame.updateBalanceFromDB(user);
             }
+            if (window.iceArenaGame) {
+                window.iceArenaGame.updateBalanceFromDB(user);
+            }
         });
         
     } catch (error) {
@@ -868,6 +871,15 @@ async function initializeUser() {
 // ============================================================
 // UI ОБНОВЛЕНИЯ
 // ============================================================
+
+function generateAvatarSVG(initial, color) {
+    return 'data:image/svg+xml,' + encodeURIComponent(
+        '<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">' +
+            '<rect width="100" height="100" rx="50" fill="' + color + '"/>' +
+            '<text x="50" y="65" font-size="40" text-anchor="middle" fill="#fff" font-weight="bold">' + initial + '</text>' +
+        '</svg>'
+    );
+}
 
 function updateUserUI(user) {
     var userNameDisplay = document.getElementById('userNameDisplay');
@@ -896,7 +908,6 @@ function updateUserUI(user) {
             var avatarUrl = 'https://t.me/i/userpic/320/' + tgUser.id + '.jpg';
             userAvatar.src = avatarUrl;
             userAvatar.onerror = function() {
-                // Генерируем SVG аватар
                 var initial = (user.first_name || 'U')[0].toUpperCase();
                 var colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#a29bfe', '#fd79a8', '#fdcb6e', '#e17055', '#00cec9'];
                 var color = colors[Math.floor(Math.random() * colors.length)];
@@ -929,17 +940,6 @@ function updateUserUI(user) {
         userIdElement.textContent = 'id: ' + (user.user_id || '');
     }
 }
-
-// Функция генерации SVG аватара
-function generateAvatarSVG(initial, color) {
-    return 'data:image/svg+xml,' + encodeURIComponent(
-        '<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">' +
-            '<rect width="100" height="100" rx="50" fill="' + color + '"/>' +
-            '<text x="50" y="65" font-size="40" text-anchor="middle" fill="#fff" font-weight="bold">' + initial + '</text>' +
-        '</svg>'
-    );
-}
-
 
 function updateBalanceUI(user) {
     if (!user) return;

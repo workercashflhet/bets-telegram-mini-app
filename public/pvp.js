@@ -587,6 +587,15 @@ function showWinnerUI(winner, prize) {
 // ПОЛЬЗОВАТЕЛЬ
 // ============================================================
 
+function generateAvatarSVG(initial, color) {
+    return 'data:image/svg+xml,' + encodeURIComponent(
+        '<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">' +
+            '<rect width="100" height="100" rx="50" fill="' + color + '"/>' +
+            '<text x="50" y="65" font-size="40" text-anchor="middle" fill="#fff" font-weight="bold">' + initial + '</text>' +
+        '</svg>'
+    );
+}
+
 async function initializeUserInPvP() {
     try {
         if (!UserManager) {
@@ -650,11 +659,6 @@ function updatePvPUserUI() {
                 this.onerror = null;
             };
             avatar.style.display = 'block';
-            
-            var fallback = document.querySelector('.user-avatar-fallback');
-            if (fallback) {
-                fallback.style.display = 'none';
-            }
         } else if (user.photo_url) {
             avatar.src = user.photo_url;
             avatar.onerror = function() {
@@ -665,22 +669,12 @@ function updatePvPUserUI() {
                 this.onerror = null;
             };
             avatar.style.display = 'block';
-            
-            var fallback = document.querySelector('.user-avatar-fallback');
-            if (fallback) {
-                fallback.style.display = 'none';
-            }
         } else {
             var initial = (user.first_name || 'U')[0].toUpperCase();
             var colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#a29bfe', '#fd79a8', '#fdcb6e', '#e17055', '#00cec9'];
             var color = colors[Math.floor(Math.random() * colors.length)];
             avatar.src = generateAvatarSVG(initial, color);
             avatar.style.display = 'block';
-            
-            var fallback = document.querySelector('.user-avatar-fallback');
-            if (fallback) {
-                fallback.style.display = 'none';
-            }
         }
     }
 }
@@ -1005,7 +999,7 @@ function getAvatarUrl(player) {
     if (player.avatar && player.avatar !== '' && player.avatar !== 'assets/avatar.png') return player.avatar;
     if (player.photo_url && player.photo_url !== '') return player.photo_url;
     if (player.userId) {
-        return 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + player.userId;
+        return 'https://t.me/i/userpic/320/' + player.userId + '.jpg';
     }
     
     var name = player.firstName || 'User';
@@ -1015,16 +1009,6 @@ function getAvatarUrl(player) {
     
     return generateAvatarSVG(initial, color);
 }
-
-function generateAvatarSVG(initial, color) {
-    return 'data:image/svg+xml,' + encodeURIComponent(
-        '<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">' +
-            '<rect width="100" height="100" rx="50" fill="' + color + '"/>' +
-            '<text x="50" y="65" font-size="40" text-anchor="middle" fill="#fff" font-weight="bold">' + initial + '</text>' +
-        '</svg>'
-    );
-}
-
 
 function createWheelSegments() {
     var wheel = document.getElementById('wheel');
