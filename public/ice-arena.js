@@ -2092,6 +2092,7 @@ async function placeBet() {
     }
     
     try {
+        // ШАГ 1: Атомарное списание баланса
         var balanceSuccess = false;
         if (UserManager) {
             if (currency === 'ton') {
@@ -2116,6 +2117,7 @@ async function placeBet() {
             updateBalanceUI();
         }
         
+        // ШАГ 2: Добавление ставки в комнату
         var roomSuccess = await IceArenaRoomManager.addBet(
             String(user.id),
             user.username || '',
@@ -2126,6 +2128,7 @@ async function placeBet() {
         );
         
         if (!roomSuccess) {
+            // Откат: возвращаем средства, если ставка не засчитана
             console.warn('⚠️ Room add failed, rolling back...');
             tg.showAlert('❌ Не удалось разместить ставку. Средства возвращены.');
             if (UserManager) {
@@ -2147,8 +2150,10 @@ async function placeBet() {
             return;
         }
         
+        // ШАГ 3: Обновляем локальное состояние
         await syncRoomData();
         
+        // Находим или создаем игрока в локальном состоянии
         var player = gameState.players.find(function(p) { return p.userId === String(user.id); });
         if (!player) {
             var color = getUniqueColor();
@@ -2163,8 +2168,15 @@ async function placeBet() {
             gameState.players.push(player);
         }
         
+        // Добавляем ставку в локальное состояние (только один раз!)
         player.bets.push({ amount: amount, currency: currency });
-        gameState.playerBets.push({ amount: amount, currency: currency });
+        
+        // Обновляем total pool
+        if (currency === 'ton') {
+            gameState.totalPoolTon += amount;
+        } else {
+            gameState.totalPoolStars += amount;
+        }
         
         await syncRoomStateToDB();
         
