@@ -59,22 +59,13 @@ var MIN_BET_STARS = 10;
 var OWNER_WALLET = 'UQC5ZUl4Qobq69CgLi7tg-8y6aOwVilc5b82jJFZShtnetrw';
 
 // ============================================================
-// ЦВЕТА ЗОН (из палитры #05ff26)
+// ЦВЕТА ЗОН (яркие, различимые цвета)
 // ============================================================
 var ZONE_COLORS = [
-    '#05ff26',  // Яркий зеленый
-    '#1aff3a',  // Светло-зеленый
-    '#33ff4d',  // Зеленый
-    '#4cff60',  // Светло-зеленый
-    '#66ff73',  // Очень светлый зеленый
-    '#80ff86',  // Светлый зеленый
-    '#99ff99',  // Бледно-зеленый
-    '#b2ffab',  // Очень бледный зеленый
-    '#00e620',  // Темно-зеленый
-    '#00cc1a',  // Темно-зеленый
-    '#00b314',  // Темно-зеленый
-    '#00990e',  // Очень темный зеленый
-    '#008008'   // Почти черный зеленый
+    '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA94D', '#A29BFE',
+    '#FD79A8', '#FDCB6E', '#00B894', '#E17055', '#74B9FF',
+    '#55EFC4', '#FAB1A0', '#81ECEC', '#DDA0DD', '#FFD93D',
+    '#6C5CE7', '#00CEC9', '#FDA7DF', '#A3CB38', '#ED4C67'
 ];
 
 // ============================================================
@@ -108,7 +99,8 @@ var gameState = {
     _lastSync: 0,
     _isPlacingBet: false,
     _lastPlayersHash: null,
-    _puckAnimationId: null
+    _puckAnimationId: null,
+    _usedColors: []
 };
 
 var forceResetTimer = null;
@@ -412,6 +404,7 @@ async function forceResetRound() {
     gameState.isResultLoaded = false;
     gameState._isPlacingBet = false;
     gameState.puckMoving = false;
+    gameState._usedColors = [];
     
     var gameStatus = document.getElementById('gameStatus');
     if (gameStatus) gameStatus.style.display = 'none';
@@ -441,18 +434,26 @@ async function forceResetRound() {
         zone.classList.remove('highlight');
     });
     
+    // Показываем центр
     var center = document.getElementById('arenaCenter');
     if (center) {
         center.style.display = 'flex';
     }
     
+    // Обновляем статус
+    var statusEl = document.getElementById('arenaStatus');
+    if (statusEl) {
+        statusEl.textContent = 'Ожидание';
+        statusEl.className = 'arena-status waiting';
+    }
+    
+    // Обновляем таймер
     var timerEl = document.getElementById('arenaTimer');
     if (timerEl) {
         timerEl.textContent = ROUND_DURATION;
         timerEl.classList.remove('warning');
+        timerEl.classList.remove('finished');
     }
-    var statusEl = document.getElementById('arenaStatus');
-    if (statusEl) statusEl.textContent = 'Ожидание';
     
     await IceArenaRoomManager.clearAllPlayers();
     await syncRoomStateToDB();
@@ -926,6 +927,7 @@ async function clearRoomPlayers() {
             gameState.winner = null;
             gameState.winnerZone = null;
             gameState._isPlacingBet = false;
+            gameState._usedColors = [];
             updateUI();
             updatePlayersList();
             updateFieldZones();
@@ -967,6 +969,7 @@ async function startNewRound() {
     gameState._isPlacingBet = false;
     gameState.puckMoving = false;
     gameState._lastPlayersHash = null;
+    gameState._usedColors = [];
     
     await clearRoomPlayers();
     await syncRoomStateToDB();
@@ -985,18 +988,26 @@ async function startNewRound() {
         zone.classList.remove('highlight');
     });
     
+    // Показываем центр
     var center = document.getElementById('arenaCenter');
     if (center) {
         center.style.display = 'flex';
     }
     
+    // Обновляем статус
+    var statusEl = document.getElementById('arenaStatus');
+    if (statusEl) {
+        statusEl.textContent = 'Ожидание';
+        statusEl.className = 'arena-status waiting';
+    }
+    
+    // Обновляем таймер
     var timerEl = document.getElementById('arenaTimer');
     if (timerEl) {
         timerEl.textContent = ROUND_DURATION;
         timerEl.classList.remove('warning');
+        timerEl.classList.remove('finished');
     }
-    var statusEl = document.getElementById('arenaStatus');
-    if (statusEl) statusEl.textContent = 'Ожидание';
     
     var winnerModal = document.getElementById('winnerModal');
     if (winnerModal) winnerModal.classList.remove('show');
@@ -1027,6 +1038,24 @@ async function startNewRound() {
 // ПОЛЕ И ЗОНЫ
 // ============================================================
 
+function getUniqueColor() {
+    var available = ZONE_COLORS.filter(function(c) { 
+        return gameState._usedColors.indexOf(c) === -1; 
+    });
+    
+    if (available.length === 0) {
+        // Если все цвета использованы, генерируем случайный яркий
+        var hue = Math.floor(Math.random() * 360);
+        var sat = 70 + Math.floor(Math.random() * 30);
+        var lig = 50 + Math.floor(Math.random() * 30);
+        return 'hsl(' + hue + ', ' + sat + '%, ' + lig + '%)';
+    }
+    
+    var color = available[0];
+    gameState._usedColors.push(color);
+    return color;
+}
+
 function updateFieldZones() {
     var zonesContainer = document.getElementById('arenaZones');
     if (!zonesContainer) return;
@@ -1034,12 +1063,24 @@ function updateFieldZones() {
     var activePlayers = getActivePlayers();
     
     if (activePlayers.length === 0) {
-        zonesContainer.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;color:rgba(255,255,255,0.1);font-size:14px;">Нет игроков</div>';
+        zonesContainer.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;color:rgba(255,255,255,0.08);font-size:14px;font-weight:500;">Ожидание игроков</div>';
         return;
     }
     
-    // Определяем количество зон (максимум 12)
-    var numZones = Math.min(activePlayers.length, 12);
+    // Вычисляем общую ценность ставок
+    var totalValue = 0;
+    var playerValues = activePlayers.map(function(player) {
+        var value = calculatePlayerTotalValue(player);
+        totalValue += value;
+        return { player: player, value: value };
+    });
+    
+    var useEqualSplit = totalValue === 0;
+    
+    // Сортируем по убыванию ценности
+    playerValues.sort(function(a, b) { return b.value - a.value; });
+    
+    var numZones = activePlayers.length;
     var cols = Math.ceil(Math.sqrt(numZones));
     var rows = Math.ceil(numZones / cols);
     
@@ -1047,14 +1088,73 @@ function updateFieldZones() {
     zonesContainer.style.gridTemplateRows = 'repeat(' + rows + ', 1fr)';
     
     var html = '';
+    
     for (var i = 0; i < numZones; i++) {
-        var player = activePlayers[i] || { firstName: '—', color: '#333' };
-        var color = player.color || ZONE_COLORS[i % ZONE_COLORS.length];
+        var data = playerValues[i] || { player: { firstName: '—' }, value: 0 };
+        var player = data.player;
+        var value = data.value;
         
-        html += '<div class="arena-zone" data-zone="' + i + '" style="background: rgba(0,0,0,0.8); border-color: ' + color + '; box-shadow: inset 0 0 40px rgba(0,0,0,0.5), 0 0 20px ' + color + '33;">' +
-            '<div class="zone-label" style="color: ' + color + ';">' + player.firstName + '</div>' +
-            '<div class="zone-bet">' + formatPlayerBets(player) + '</div>' +
-            '</div>';
+        var percent = useEqualSplit ? (1 / numZones) : (value / totalValue);
+        var percentDisplay = (percent * 100).toFixed(1);
+        
+        var color = player.color || getUniqueColor();
+        
+        html += '<div class="arena-zone" data-zone="' + i + '" data-userid="' + player.userId + '" style="' +
+            'background: rgba(0,0,0,0.7); ' +
+            'border-color: ' + color + '; ' +
+            'box-shadow: inset 0 0 40px rgba(0,0,0,0.5), 0 0 30px ' + color + '33; ' +
+            'position: relative; ' +
+            'overflow: hidden; ' +
+            'display: flex; ' +
+            'flex-direction: column; ' +
+            'align-items: center; ' +
+            'justify-content: center; ' +
+            'cursor: default; ' +
+            'transition: all 0.3s ease; ' +
+        '">' +
+            '<div style="' +
+                'position: absolute; ' +
+                'bottom: 0; ' +
+                'left: 0; ' +
+                'right: 0; ' +
+                'height: ' + Math.max(percent * 100, 5) + '%; ' +
+                'background: ' + color + '; ' +
+                'opacity: 0.15; ' +
+                'transition: height 0.5s ease; ' +
+                'border-radius: 0; ' +
+            '"></div>' +
+            '<div class="zone-label" style="' +
+                'font-size: ' + (numZones > 6 ? '10px' : '14px') + '; ' +
+                'font-weight: 700; ' +
+                'color: #ffffff; ' +
+                'text-shadow: 0 0 20px rgba(0,0,0,0.9); ' +
+                'z-index: 2; ' +
+                'pointer-events: none; ' +
+                'text-align: center; ' +
+                'line-height: 1.2; ' +
+                'max-width: 90%; ' +
+                'word-break: break-word; ' +
+            '">' + player.firstName + '</div>' +
+            '<div class="zone-percent" style="' +
+                'font-size: ' + (numZones > 6 ? '9px' : '12px') + '; ' +
+                'font-weight: 600; ' +
+                'color: ' + color + '; ' +
+                'text-shadow: 0 0 10px rgba(0,0,0,0.8); ' +
+                'z-index: 2; ' +
+                'pointer-events: none; ' +
+                'margin-top: 2px; ' +
+            '">' + percentDisplay + '%</div>' +
+            '<div class="zone-bet" style="' +
+                'position: absolute; ' +
+                'bottom: 4px; ' +
+                'font-size: 8px; ' +
+                'color: rgba(255,255,255,0.25); ' +
+                'z-index: 2; ' +
+                'pointer-events: none; ' +
+                'text-align: center; ' +
+                'line-height: 1.2; ' +
+            '">' + formatPlayerBets(player) + '</div>' +
+        '</div>';
     }
     
     zonesContainer.innerHTML = html;
@@ -1072,26 +1172,26 @@ function spawnPuck(winnerZone) {
     if (!field) return;
     
     var rect = field.getBoundingClientRect();
-    var padding = 40;
-    var maxX = rect.width - padding * 2 - 30;
-    var maxY = rect.height - padding * 2 - 30;
+    var padding = 30;
+    var puckSize = 30;
+    var maxX = rect.width - padding * 2 - puckSize;
+    var maxY = rect.height - padding * 2 - puckSize;
     
-    // Позиция шайбы - случайная в поле
-    var x = padding + Math.random() * maxX;
-    var y = padding + Math.random() * maxY;
+    // Стартовая позиция - центр поля
+    var startX = rect.width / 2 - puckSize / 2;
+    var startY = rect.height / 2 - puckSize / 2;
     
-    gameState.puckPosition = { x: x, y: y };
+    gameState.puckPosition = { x: startX, y: startY };
     
-    puck.style.left = x + 'px';
-    puck.style.top = y + 'px';
+    puck.style.left = startX + 'px';
+    puck.style.top = startY + 'px';
     puck.style.display = 'block';
     puck.classList.add('spinning');
     
-    // Показываем стрелку
+    // Показываем стрелку со случайным направлением
     var arrow = document.getElementById('puckArrow');
     if (arrow) {
         arrow.classList.add('visible');
-        // Случайное направление
         var angle = Math.random() * 360;
         arrow.style.transform = 'translateX(-50%) rotate(' + angle + 'deg)';
         gameState.puckAngle = angle;
@@ -1103,14 +1203,24 @@ function spawnPuck(winnerZone) {
         center.style.display = 'none';
     }
     
-    // Через 1.5 секунды начинаем движение
+    // Статус игры
+    var gameStatus = document.getElementById('gameStatus');
+    if (gameStatus) {
+        gameStatus.style.display = 'block';
+        gameStatus.querySelector('.spinning-text').textContent = '🏒 Шайба в движении...';
+    }
+    
+    var betSection = document.getElementById('betSection');
+    if (betSection) betSection.style.display = 'none';
+    
+    // Через 1 секунду начинаем движение
     setTimeout(function() {
         if (puck) {
             puck.classList.remove('spinning');
             puck.classList.add('sliding');
             startPuckMovement(winnerZone);
         }
-    }, 1500);
+    }, 1000);
 }
 
 function startPuckMovement(winnerZone) {
@@ -1122,68 +1232,128 @@ function startPuckMovement(winnerZone) {
     
     var rect = field.getBoundingClientRect();
     var padding = 30;
-    var maxX = rect.width - padding * 2 - 30;
-    var maxY = rect.height - padding * 2 - 30;
+    var puckSize = 30;
+    var maxX = rect.width - padding * 2 - puckSize;
+    var maxY = rect.height - padding * 2 - puckSize;
     
-    // Определяем направление движения (рандомное)
+    // Начальная позиция - центр
+    var posX = rect.width / 2 - puckSize / 2;
+    var posY = rect.height / 2 - puckSize / 2;
+    gameState.puckPosition = { x: posX, y: posY };
+    
+    // Определяем направление движения
     var angle = gameState.puckAngle || (Math.random() * 360);
     var radians = angle * Math.PI / 180;
-    var speed = 2 + Math.random() * 3;
+    var speed = 3 + Math.random() * 3;
     
-    var posX = gameState.puckPosition.x;
-    var posY = gameState.puckPosition.y;
-    var targetX = padding + Math.random() * maxX;
-    var targetY = padding + Math.random() * maxY;
-    
-    // Движение к случайной точке с отскоками
-    var dx = targetX - posX;
-    var dy = targetY - posY;
-    var distance = Math.sqrt(dx * dx + dy * dy);
-    var steps = Math.floor(distance / 2);
-    var stepX = dx / steps;
-    var stepY = dy / steps;
-    var currentStep = 0;
+    var dx = Math.cos(radians) * speed;
+    var dy = Math.sin(radians) * speed;
     
     gameState.puckMoving = true;
+    var steps = 0;
+    var maxSteps = 200 + Math.floor(Math.random() * 150);
+    var lastBounceTime = 0;
     
     function animatePuck() {
         if (!gameState.puckMoving) {
             return;
         }
         
-        currentStep++;
-        if (currentStep >= steps) {
-            // Достигли цели
-            puck.classList.remove('sliding');
-            gameState.puckMoving = false;
-            
-            // Определяем зону победителя
-            determineWinnerZone(winnerZone);
-            return;
+        steps++;
+        
+        // Двигаем шайбу
+        posX += dx;
+        posY += dy;
+        
+        var bounced = false;
+        var now = Date.now();
+        
+        // Отскоки от границ с рикошетом
+        if (posX < padding) {
+            posX = padding;
+            dx = Math.abs(dx) * (0.85 + Math.random() * 0.15);
+            if (now - lastBounceTime > 200) {
+                var newAngle = (Math.random() - 0.5) * 80;
+                var rad = (gameState.puckAngle || 0 + newAngle) * Math.PI / 180;
+                dy = Math.sin(rad) * Math.abs(dx);
+                dx = Math.cos(rad) * Math.abs(dx);
+                lastBounceTime = now;
+                bounced = true;
+            }
         }
-        
-        posX += stepX;
-        posY += stepY;
-        
-        // Отскоки от границ
-        if (posX < padding) { posX = padding; stepX = -stepX; }
-        if (posX > maxX) { posX = maxX; stepX = -stepX; }
-        if (posY < padding) { posY = padding; stepY = -stepY; }
-        if (posY > maxY) { posY = maxY; stepY = -stepY; }
+        if (posX > maxX) {
+            posX = maxX;
+            dx = -Math.abs(dx) * (0.85 + Math.random() * 0.15);
+            if (now - lastBounceTime > 200) {
+                var newAngle = (Math.random() - 0.5) * 80;
+                var rad = (gameState.puckAngle || 0 + newAngle) * Math.PI / 180;
+                dy = Math.sin(rad) * Math.abs(dx);
+                dx = -Math.cos(rad) * Math.abs(dx);
+                lastBounceTime = now;
+                bounced = true;
+            }
+        }
+        if (posY < padding) {
+            posY = padding;
+            dy = Math.abs(dy) * (0.85 + Math.random() * 0.15);
+            if (now - lastBounceTime > 200) {
+                var newAngle = (Math.random() - 0.5) * 80;
+                var rad = (gameState.puckAngle || 0 + newAngle) * Math.PI / 180;
+                dx = Math.cos(rad) * Math.abs(dy);
+                dy = Math.sin(rad) * Math.abs(dy);
+                lastBounceTime = now;
+                bounced = true;
+            }
+        }
+        if (posY > maxY) {
+            posY = maxY;
+            dy = -Math.abs(dy) * (0.85 + Math.random() * 0.15);
+            if (now - lastBounceTime > 200) {
+                var newAngle = (Math.random() - 0.5) * 80;
+                var rad = (gameState.puckAngle || 0 + newAngle) * Math.PI / 180;
+                dx = Math.cos(rad) * Math.abs(dy);
+                dy = -Math.sin(rad) * Math.abs(dy);
+                lastBounceTime = now;
+                bounced = true;
+            }
+        }
         
         gameState.puckPosition = { x: posX, y: posY };
         
         puck.style.left = posX + 'px';
         puck.style.top = posY + 'px';
         
-        // Добавляем случайные изменения направления для эффекта "рикошета"
-        if (Math.random() < 0.02) {
-            var angleChange = (Math.random() - 0.5) * 20;
-            var newRad = (gameState.puckAngle || 0 + angleChange) * Math.PI / 180;
-            var newSpeed = 1.5 + Math.random() * 3;
-            // Меняем направление
-            stepX = Math.cos(newRad) * newSpeed;
-            stepY = Math.sin(newRad) * newSpeed;
+        // Случайное изменение направления для эффекта "рикошета"
+        if (!bounced && Math.random() < 0.01) {
+            var angleChange = (Math.random() - 0.5) * 40;
+            var rad2 = (gameState.puckAngle || 0 + angleChange) * Math.PI / 180;
+            var currentSpeed = Math.sqrt(dx * dx + dy * dy);
+            dx = Math.cos(rad2) * currentSpeed;
+            dy = Math.sin(rad2) * currentSpeed;
+        }
+        
+        // Постепенное замедление
+        if (steps > maxSteps * 0.6) {
+            var slowdown = 0.998;
+            dx *= slowdown;
+            dy *= slowdown;
+        }
+        
+        // Если скорость слишком маленькая, добавляем случайный импульс
+        if (Math.abs(dx) < 0.3 && Math.abs(dy) < 0.3 && steps < maxSteps * 0.8) {
+            dx += (Math.random() - 0.5) * 0.5;
+            dy += (Math.random() - 0.5) * 0.5;
+        }
+        
+        // Проверяем, остановилась ли шайба
+        if (steps > maxSteps || (Math.abs(dx) < 0.1 && Math.abs(dy) < 0.1 && steps > 50)) {
+            gameState.puckMoving = false;
+            if (gameState._puckAnimationId) {
+                cancelAnimationFrame(gameState._puckAnimationId);
+                gameState._puckAnimationId = null;
+            }
+            determineWinnerZone(winnerZone);
+            return;
         }
         
         gameState._puckAnimationId = requestAnimationFrame(animatePuck);
@@ -1202,7 +1372,7 @@ function startPuckMovement(winnerZone) {
             }
             determineWinnerZone(winnerZone);
         }
-    }, PUCK_MOVE_DURATION);
+    }, 8000);
 }
 
 function determineWinnerZone(winnerZone) {
@@ -1481,9 +1651,10 @@ function updatePlayersList() {
         var betText = formatPlayerBets(player);
         var playerValue = calculatePlayerTotalValue(player);
         var share = totalValue > 0 && playerValue > 0 ? ((playerValue / totalValue) * 100).toFixed(1) + '%' : '0%';
+        var color = player.color || ZONE_COLORS[index % ZONE_COLORS.length];
         
         return '<div class="player-row ' + (isWinner ? 'winner-row' : '') + '">' +
-            '<div class="player-row-color" style="background-color: ' + player.color + '"></div>' +
+            '<div class="player-row-color" style="background-color: ' + color + '"></div>' +
             '<img src="' + getAvatarUrl(player) + '" alt="' + player.firstName + '" class="player-row-avatar">' +
             '<span class="player-row-name">' + player.firstName + (isWinner ? ' 👑' : '') + '</span>' +
             '<span class="player-row-bet">' + betText + '</span>' +
@@ -1544,6 +1715,29 @@ function updateTimerUI() {
             timerEl.classList.add('warning');
         } else {
             timerEl.classList.remove('warning');
+        }
+        if (gameState.roundPhase === 'finished') {
+            timerEl.classList.add('finished');
+        } else {
+            timerEl.classList.remove('finished');
+        }
+    }
+    
+    // Обновляем статус в центре
+    var statusEl = document.getElementById('arenaStatus');
+    if (statusEl) {
+        if (gameState.roundPhase === 'waiting') {
+            statusEl.textContent = 'Ожидание';
+            statusEl.className = 'arena-status waiting';
+        } else if (gameState.roundPhase === 'countdown') {
+            statusEl.textContent = 'Скоро';
+            statusEl.className = 'arena-status active';
+        } else if (gameState.roundPhase === 'spinning') {
+            statusEl.textContent = 'Вращение';
+            statusEl.className = 'arena-status spinning';
+        } else if (gameState.roundPhase === 'finished') {
+            statusEl.textContent = 'Завершен';
+            statusEl.className = 'arena-status';
         }
     }
 }
@@ -1661,10 +1855,6 @@ function updateWheelImmediately() {
     console.log('🔄 Ice Arena field updated');
 }
 
-function getRandomColor() {
-    return ZONE_COLORS[Math.floor(Math.random() * ZONE_COLORS.length)];
-}
-
 // ============================================================
 // ФАЗЫ ИГРЫ
 // ============================================================
@@ -1680,6 +1870,7 @@ async function startWaitingPhase() {
     gameState.isResultLoaded = false;
     gameState._isPlacingBet = false;
     gameState.puckMoving = false;
+    gameState._usedColors = [];
     
     if (gameState.timer) clearInterval(gameState.timer);
     
@@ -1689,9 +1880,14 @@ async function startWaitingPhase() {
     if (timerEl) {
         timerEl.textContent = ROUND_DURATION;
         timerEl.classList.remove('warning');
+        timerEl.classList.remove('finished');
     }
+    
     var statusEl = document.getElementById('arenaStatus');
-    if (statusEl) statusEl.textContent = 'Ожидание';
+    if (statusEl) {
+        statusEl.textContent = 'Ожидание';
+        statusEl.className = 'arena-status waiting';
+    }
     
     var placeBtn = document.getElementById('placeBetBtn');
     if (placeBtn) {
@@ -1741,9 +1937,14 @@ function startCountdownFrom(timeLeft) {
     var timerEl = document.getElementById('arenaTimer');
     if (timerEl) {
         timerEl.textContent = gameState.timeLeft;
+        timerEl.classList.remove('warning');
     }
+    
     var statusEl = document.getElementById('arenaStatus');
-    if (statusEl) statusEl.textContent = 'До начала';
+    if (statusEl) {
+        statusEl.textContent = 'Скоро';
+        statusEl.className = 'arena-status active';
+    }
     
     var placeBtn = document.getElementById('placeBetBtn');
     if (placeBtn) placeBtn.disabled = false;
@@ -1950,12 +2151,13 @@ async function placeBet() {
         
         var player = gameState.players.find(function(p) { return p.userId === String(user.id); });
         if (!player) {
+            var color = getUniqueColor();
             player = {
                 userId: String(user.id),
                 firstName: user.first_name || 'Игрок',
                 username: user.username || 'user',
                 avatar: user.photo_url || '',
-                color: IceArenaRoomManager.getRandomColor(),
+                color: color,
                 bets: []
             };
             gameState.players.push(player);
@@ -2245,7 +2447,7 @@ async function syncRoomData() {
                 firstName: p.first_name,
                 username: p.username,
                 avatar: p.photo_url,
-                color: p.color,
+                color: p.color || getUniqueColor(),
                 bets: p.bets || []
             };
         });
@@ -2265,7 +2467,7 @@ async function syncRoomData() {
 }
 
 // ============================================================
-// ДЕПОЗИТЫ (копия из pvp.js)
+// ДЕПОЗИТЫ
 // ============================================================
 
 var depositState = {
