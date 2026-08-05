@@ -600,6 +600,15 @@ function showWinnerUI(winner, prize, zoneIndex) {
 // ПОЛЬЗОВАТЕЛЬ
 // ============================================================
 
+function generateAvatarSVG(initial, color) {
+    return 'data:image/svg+xml,' + encodeURIComponent(
+        '<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">' +
+            '<rect width="100" height="100" rx="50" fill="' + color + '"/>' +
+            '<text x="50" y="65" font-size="40" text-anchor="middle" fill="#fff" font-weight="bold">' + initial + '</text>' +
+        '</svg>'
+    );
+}
+
 async function initializeUserInArena() {
     try {
         if (!UserManager) {
@@ -682,7 +691,6 @@ function updateUserUI() {
         }
     }
 }
-
 
 // ============================================================
 // ICE ARENA ROOM MANAGER - ИНТЕГРАЦИЯ
@@ -1055,21 +1063,6 @@ function updateFieldZones() {
 // ============================================================
 // ШАЙБА
 // ============================================================
-
-function getPuckPosition() {
-    var field = document.getElementById('arenaField');
-    if (!field) return { x: 0, y: 0 };
-    
-    var rect = field.getBoundingClientRect();
-    var padding = 40;
-    var maxX = rect.width - padding * 2;
-    var maxY = rect.height - padding * 2;
-    
-    return {
-        x: padding + Math.random() * maxX,
-        y: padding + Math.random() * maxY
-    };
-}
 
 function spawnPuck(winnerZone) {
     var puck = document.getElementById('arenaPuck');
@@ -1603,7 +1596,7 @@ function getAvatarUrl(player) {
     if (player.avatar && player.avatar !== '' && player.avatar !== 'assets/avatar.png') return player.avatar;
     if (player.photo_url && player.photo_url !== '') return player.photo_url;
     if (player.userId) {
-        return 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + player.userId;
+        return 'https://t.me/i/userpic/320/' + player.userId + '.jpg';
     }
     
     var name = player.firstName || 'User';
@@ -1613,16 +1606,6 @@ function getAvatarUrl(player) {
     
     return generateAvatarSVG(initial, color);
 }
-
-function generateAvatarSVG(initial, color) {
-    return 'data:image/svg+xml,' + encodeURIComponent(
-        '<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">' +
-            '<rect width="100" height="100" rx="50" fill="' + color + '"/>' +
-            '<text x="50" y="65" font-size="40" text-anchor="middle" fill="#fff" font-weight="bold">' + initial + '</text>' +
-        '</svg>'
-    );
-}
-
 
 function formatPlayerBets(player) {
     if (!player || !player.bets || player.bets.length === 0) return '0';
@@ -1668,38 +1651,6 @@ function calculatePlayerTotalValue(player) {
         }
     });
     return value;
-}
-
-function updateFieldZones() {
-    var zonesContainer = document.getElementById('arenaZones');
-    if (!zonesContainer) return;
-    
-    var activePlayers = getActivePlayers();
-    
-    if (activePlayers.length === 0) {
-        zonesContainer.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;color:rgba(255,255,255,0.1);font-size:14px;">Нет игроков</div>';
-        return;
-    }
-    
-    var numZones = Math.min(activePlayers.length, 12);
-    var cols = Math.ceil(Math.sqrt(numZones));
-    var rows = Math.ceil(numZones / cols);
-    
-    zonesContainer.style.gridTemplateColumns = 'repeat(' + cols + ', 1fr)';
-    zonesContainer.style.gridTemplateRows = 'repeat(' + rows + ', 1fr)';
-    
-    var html = '';
-    for (var i = 0; i < numZones; i++) {
-        var player = activePlayers[i] || { firstName: '—', color: '#333' };
-        var color = player.color || ZONE_COLORS[i % ZONE_COLORS.length];
-        
-        html += '<div class="arena-zone" data-zone="' + i + '" style="background: rgba(0,0,0,0.8); border-color: ' + color + '; box-shadow: inset 0 0 40px rgba(0,0,0,0.5), 0 0 20px ' + color + '33;">' +
-            '<div class="zone-label" style="color: ' + color + ';">' + player.firstName + '</div>' +
-            '<div class="zone-bet">' + formatPlayerBets(player) + '</div>' +
-            '</div>';
-    }
-    
-    zonesContainer.innerHTML = html;
 }
 
 function updateWheelImmediately() {
